@@ -4,6 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
+Repo GitHub: `cespinosal/Muros_Contenci-n` (GitHub sanitizó el nombre pretendido
+"Muros_Contención" quitando la tilde). Clon local en
+`C:\Users\cespi\Downloads\Muros de contención` — la carpeta local sí conserva el nombre completo en
+español; solo el slug del repo remoto difiere.
+
 Muros de Contención — Torres Telecom — herramienta web (en español) para el diseño y revisión
 geotécnica/estructural de muros de contención en sitios de torres de telecomunicaciones. Hermana de
 [[project_cimentaciones_fem]] (repo `Cimentaciones_FEM`, clon local "Hoja FEM") y de TSA: mismo
