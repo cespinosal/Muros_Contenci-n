@@ -143,10 +143,10 @@ button{font-family:inherit;}
 
 /* ---------- Visor 2D (panel principal, persistente) ---------- */
 #viewer-pane{
-  width:480px; flex-shrink:0; position:sticky; top:48px; height:calc(100vh - 48px);
-  overflow-y:auto; padding:16px; background:var(--canvas); border-right:1px solid var(--border);
+  flex:1 1 auto; min-width:0; position:sticky; top:48px; height:calc(100vh - 48px);
+  overflow-y:auto; padding:18px 22px; background:var(--canvas); border-right:1px solid var(--border);
 }
-#content{flex:1; min-width:0; padding:18px 22px 60px; max-width:760px;}
+#content{width:420px; flex-shrink:0; padding:18px 20px 60px; max-width:none;}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 
@@ -229,7 +229,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
   #sidebar.open{left:0;}
   #main-layout{flex-direction:column; align-items:stretch;}
   #viewer-pane{width:100%; position:relative; top:0; height:auto; border-right:none; border-bottom:1px solid var(--border);}
-  #content{max-width:none; padding:14px;}
+  #content{width:100%; max-width:none; padding:14px;}
   .command-bar{padding:8px 10px;}
   .brand-text strong{display:none;}
 }
@@ -862,7 +862,7 @@ function dibujarMuro2D(svg, state, r){
   const heel = gc.heel, xBack = gc.xBack;
   const toe = g.toe, Bf = g.Bf, tf = g.tf, H = g.H, Hr = g.Hr, Df = g.Df, ts = g.ts, tc = g.tc;
 
-  const extraFront = 1.2, extraBack = 1.0, extraDepth = 0.6, extraTop = 0.9;
+  const extraFront = 1.2, extraBack = 1.0, extraDepth = 0.75, extraTop = 0.9;
   const slopeRise = g.beta > 0 ? Math.max(heel,1) * Math.tan(toRad(g.beta)) : 0;
 
   const modelMinX = -extraFront, modelMaxX = Bf + extraBack;
@@ -871,8 +871,13 @@ function dibujarMuro2D(svg, state, r){
 
   const viewW = 900, viewH = 560, pad = 46;
   const scale = Math.min((viewW-2*pad)/modelW, (viewH-2*pad)/modelH);
-  const X = xm => pad + (xm - modelMinX)*scale;
-  const Y = ym => viewH - pad - (ym - modelMinY)*scale;
+  // Centrar el dibujo: el espacio sobrante (cuando la relación de aspecto del
+  // muro no coincide con la del viewBox) se reparte por igual a ambos lados,
+  // en vez de acumularse solo a la derecha/arriba.
+  const offX = (viewW - modelW*scale)/2;
+  const offY = (viewH - modelH*scale)/2;
+  const X = xm => offX + (xm - modelMinX)*scale;
+  const Y = ym => viewH - offY - (ym - modelMinY)*scale;
 
   function el(tag, attrs){
     const e = document.createElementNS(NS, tag);
@@ -890,6 +895,30 @@ function dibujarMuro2D(svg, state, r){
     const t = el("text", Object.assign({x:X(xm), y:Y(ym), class:"dim-text", "text-anchor":"middle"}, extra||{}));
     t.textContent = str; svg.appendChild(t); return t;
   }
+  // Etiqueta con fondo translúcido: evita que el texto se pierda sobre
+  // rellenos de color y ayuda a separar visualmente etiquetas cercanas.
+  function labelBg(xm,ym,str,extra){
+    const t = text(xm,ym,str,extra);
+    const bb = t.getBBox();
+    const bg = el("rect",{x:bb.x-3, y:bb.y-1.5, width:bb.width+6, height:bb.height+3, fill:col("--panel"), opacity:0.82, rx:2});
+    // getBBox() es local (sin rotar): si el texto trae "transform" (p.ej. las
+    // cotas verticales, rotadas -90°), el fondo debe rotar exactamente igual
+    // para no quedar como un rectángulo horizontal fuera de lugar.
+    if(extra && extra.transform) bg.setAttribute("transform", extra.transform);
+    svg.insertBefore(bg, t);
+    return t;
+  }
+  // Dimensión horizontal con flechas y etiqueta centrada arriba de la línea.
+  function dimH(x1,x2,y,label){
+    line(x1,y,x2,y,col("--muted"),{"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
+    labelBg((x1+x2)/2, y, label, {dy:-6, "font-size":"10px"});
+  }
+  // Dimensión vertical con flechas y etiqueta rotada centrada junto a la línea.
+  function dimV(y1,y2,x,label){
+    line(x,y1,x,y2,col("--muted"),{"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
+    const midY=(y1+y2)/2;
+    labelBg(x, midY, label, {"text-anchor":"middle", transform:`rotate(-90 ${X(x)} ${Y(midY)})`});
+  }
 
   // defs: marker de flecha para cotas
   const defs = el("defs",{});
@@ -897,14 +926,19 @@ function dibujarMuro2D(svg, state, r){
   const arrowPath = el("path",{d:"M0,0 L8,4 L0,8 Z", fill: col("--muted")});
   marker.appendChild(arrowPath); defs.appendChild(marker); svg.appendChild(defs);
 
-  // Suelo de fundación (fondo)
-  poly([[modelMinX,modelMinY],[modelMaxX,modelMinY],[modelMaxX,0],[modelMinX,0]], col("--soil-fill"), col("--soil-line"));
+  // Suelo (fundación + frente al muro), en una sola figura para que no haya
+  // costuras ni traslapes entre "zonas" de suelo: sube a nivel de NTN (Df)
+  // frente a la puntera, cubre la puntera enterrada y llega a nivel de la
+  // zapata (tf) del lado del talón, donde empalma exactamente con el relleno.
+  const soilPts = [
+    [modelMinX, modelMinY], [modelMinX, Df], [0, Df], [0, tf],
+    [modelMaxX, tf], [modelMaxX, modelMinY]
+  ];
+  poly(soilPts, col("--soil-fill"), col("--soil-line"));
 
-  // Suelo frente al muro (zona pasiva) desde y=0 hasta Df
-  poly([[toe-extraFront,0],[toe,0],[toe,Df],[toe-extraFront,Df]], col("--soil-fill"), col("--soil-line"));
-  // NTN frente al muro
-  line(toe-extraFront, Df, toe, Df, col("--muted"), {"stroke-dasharray":"5,4"});
-  text((toe-extraFront+toe)/2, Df+0.18, "NTN");
+  // NTN frente al muro (nivel de terreno natural antes de la excavación)
+  line(modelMinX, Df, 0, Df, col("--muted"), {"stroke-dasharray":"5,4"});
+  labelBg((modelMinX+0)/2, Df+0.18, "NTN", {"font-size":"10px"});
 
   // Relleno detrás del muro (con talud si beta>0)
   const backTopY = tf + Hr;
@@ -920,7 +954,7 @@ function dibujarMuro2D(svg, state, r){
   // Nivel freático
   if(state.suelo.waterEnabled && state.suelo.Hw > 0){
     line(modelMinX, state.suelo.Hw, Bf+extraBack, state.suelo.Hw, col("--water-line"), {"stroke-dasharray":"6,4"});
-    text(modelMinX+0.55, state.suelo.Hw+0.18, "NF ▽", {"text-anchor":"start", fill: col("--water-line")});
+    labelBg(Bf+extraBack-0.15, state.suelo.Hw+0.16, "NF ▽", {"text-anchor":"end", fill: col("--water-line"), "font-size":"10px"});
   }
 
   // ---- Fuerzas ----
@@ -929,25 +963,24 @@ function dibujarMuro2D(svg, state, r){
     const triW = 55; // px, ancho esquemático (no a escala de presión real)
     const yTop = tf+H, yBase = tf;
     const xB = X(xBack);
-    poly([[xBack, yTop],[xBack, yBase]], "none", "none"); // no-op placeholder
     const paPts = `${xB},${Y(yTop)} ${xB},${Y(yBase)} ${xB+triW},${Y(yBase)}`;
     svg.appendChild(el("polygon",{points:paPts, fill: col("--pa-color"), opacity:0.35, stroke: col("--pa-color")}));
-    text(xBack, tf+H/3, `Pa=${fmtT(r.pres.Pa,2)} t/m`, {fill: col("--pa-color"), "text-anchor":"start", x:xB+triW+4});
+    labelBg(xBack, tf+H/3, `Pa=${fmtT(r.pres.Pa,2)} t/m`, {fill: col("--pa-color"), "text-anchor":"start", x:xB+triW+4, "font-size":"10px"});
 
     // Sobrecarga (rectángulo delgado sobre el relleno)
     if(state.cargas.qsEnabled){
-      const y1 = Y(backTopY), y2 = Y(backTopY)-10;
+      const y2 = Y(backTopY)-10;
       svg.appendChild(el("rect",{x:X(xBack), y:y2, width:X(Bf+extraBack)-X(xBack), height:10, fill: col("--pq-color"), opacity:0.5}));
-      text((xBack+Bf+extraBack)/2, backTopY, `qs=${fmt(state.cargas.qs,0)} kg/m²`, {fill: col("--pq-color"), dy:-14});
+      labelBg((xBack+Bf+extraBack)/2, backTopY, `qs=${fmt(state.cargas.qs,0)} kg/m²`, {fill: col("--pq-color"), dy:-14, "font-size":"10px"});
     }
 
-    // Presión pasiva (triángulo esquemático frente a la puntera)
+    // Presión pasiva (triángulo esquemático frente a la cara de la puntera, x=0)
     if(state.suelo.pasivoEnabled){
       const triWp = 30;
-      const xT = X(toe);
+      const xT = X(0);
       const ppPts = `${xT},${Y(0)} ${xT},${Y(Df)} ${xT-triWp},${Y(0)}`;
       svg.appendChild(el("polygon",{points:ppPts, fill: col("--pp-color"), opacity:0.35, stroke: col("--pp-color")}));
-      text(toe, Df/3, `Pp=${fmtT(r.pres.Pp,2)} t/m`, {fill: col("--pp-color"), "text-anchor":"end", x:xT-triWp-4});
+      labelBg((modelMinX+0)/2, Df+0.42, `Pp=${fmtT(r.pres.Pp,2)} t/m`, {fill: col("--pp-color"), "font-size":"10px"});
     }
 
     // Resultante y tercio central en la base de la zapata
@@ -961,24 +994,22 @@ function dibujarMuro2D(svg, state, r){
   }
 
   // ---- Cotas ----
+  // Cada medida vive en su propio "carril" (lane) de x o de y para
+  // garantizar que ninguna etiqueta se sobreponga con otra.
   if(uiState.showCotas){
-    // H (altura del fuste), a la izquierda del muro
-    const xDim = modelMinX+0.35;
-    line(xDim, tf, xDim, tf+H, col("--muted"), {"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
-    text(xDim, tf+H/2, `H=${fmt(H,2)} m`, {"text-anchor":"middle", transform:`rotate(-90 ${X(xDim)} ${Y(tf+H/2)})`});
+    // H: carril vertical más externo, a la izquierda de todo
+    dimV(tf, tf+H, modelMinX+0.28, `H=${fmt(H,2)} m`);
+    // Df: carril vertical propio, separado de H, dentro de la zona de suelo frente al muro
+    dimV(0, Df, modelMinX+0.75, `Df=${fmt(Df,2)} m`);
+    // tf: al lado derecho de la zapata (zona antes vacía), lejos del cúmulo de la puntera
+    dimV(0, tf, Bf+0.18, `tf=${fmt(tf,2)} m`);
 
-    // Bf (ancho de zapata), debajo
-    const yDim = modelMinY+0.25;
-    line(0, yDim, Bf, yDim, col("--muted"), {"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
-    text(Bf/2, yDim-0.22, `Bf=${fmt(Bf,2)} m`);
+    // toe / heel: fila intermedia, entre la zapata y la cota general Bf
+    dimH(0, toe, -0.15, `toe=${fmt(toe,2)}`);
+    dimH(xBack, Bf, -0.15, `heel=${fmt(heel,2)}`);
 
-    // toe / heel
-    text(toe/2, tf/2, `toe\n${fmt(toe,2)}`, {"font-size":"9px"});
-    text(xBack + heel/2, tf/2, `heel=${fmt(heel,2)}`, {"font-size":"9px"});
-
-    // tf, Df
-    text(-0.05, tf/2, `tf=${fmt(tf,2)}`, {"text-anchor":"end", x:X(-0.15)});
-    text(toe-extraFront*0.5, Df/2, `Df=${fmt(Df,2)}`);
+    // Bf: fila externa (cota general), más abajo que la fila toe/heel
+    dimH(0, Bf, -0.45, `Bf=${fmt(Bf,2)} m`);
   }
 
   if(gc.heel < 0){
