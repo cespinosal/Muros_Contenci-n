@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Muros de Contención — Torres Telecom</title>
+<style>
+/* ============================================================
+   TOKENS DE DISEÑO — misma paleta que Cimentaciones FEM / TSA
+   (Fluent 2 en claro, azul marino + cian en oscuro)
+   ============================================================ */
+:root{
+  --font: "Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;
+  --font-mono: "Cascadia Code","Consolas",monospace;
+
+  --brand-10:#f3f9fd; --brand-20:#deecf9; --brand-40:#c7e0f4; --brand-60:#0f6cbd;
+  --brand-70:#115ea3; --brand-80:#0c3b5e;
+
+  --nb1:#faf9f8; --nb2:#ffffff; --nb3:#f5f5f5; --nb4:#f0f0f0;
+  --ns1:#e0e0e0; --ns2:#d1d1d1; --ns-strong:#c7c6c4;
+  --nf1:#242424; --nf2:#424242; --nf3:#616161; --nf4:#8a8886;
+
+  --success-bg:#dff6dd; --success-fg:#0e5c0e; --success-border:#9fd89c;
+  --danger-bg:#fde7e9;  --danger-fg:#a80000;  --danger-border:#f1a9ad;
+  --warning-bg:#fff4ce; --warning-fg:#835c00; --warning-border:#f2d675;
+
+  --shadow2:0 1px 2px rgba(0,0,0,.11), 0 0.5px 1.5px rgba(0,0,0,.08);
+  --shadow4:0 2px 4px rgba(0,0,0,.12), 0 0.5px 2px rgba(0,0,0,.08);
+  --radius-sm:4px; --radius-md:6px; --radius-lg:10px;
+
+  --bg: var(--nb3); --canvas: var(--nb1); --panel: var(--nb2); --panel-2: var(--nb4);
+  --border: var(--ns1); --border-strong: var(--ns-strong);
+  --text: var(--nf1); --muted: var(--nf3); --subtle: var(--nf4);
+  --brand: var(--brand-60); --brand-hover: var(--brand-70); --brand-tint: var(--brand-20);
+  --accent: var(--brand-60); --accent-border: var(--brand-40);
+  --input-bg: var(--nb2); --focus-ring: var(--accent);
+
+  --soil-fill: rgba(93,64,55,.20);   --soil-line:#5D4037;
+  --fill-fill: rgba(139,105,20,.28); --fill-line:#8B6914;
+  --water-fill: rgba(21,101,192,.22); --water-line:#1565C0;
+  --pa-color:#c62828; --pp-color:#2e7d32; --pq-color:#e67e22;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1628; --canvas:#0A1628; --panel:#0D1E35; --panel-2:#111D33;
+    --border:#1E3A5F; --border-strong:#2f5a8c;
+    --text:#E2E8F0; --muted:#94A3B8; --subtle:#6B85A6;
+    --brand:#185FA5; --brand-hover:#1E6FBE; --brand-tint:rgba(0,212,255,.10);
+    --accent:#00D4FF; --accent-border:rgba(0,212,255,.35); --focus-ring:#00D4FF;
+    --input-bg:#152340;
+    --success-bg:rgba(94,234,212,.10);  --success-fg:#5EEAD4; --success-border:rgba(94,234,212,.35);
+    --danger-bg:rgba(248,113,113,.10);  --danger-fg:#F87171;  --danger-border:rgba(248,113,113,.35);
+    --warning-bg:rgba(251,191,36,.10);  --warning-fg:#FBBF24; --warning-border:rgba(251,191,36,.35);
+    --soil-fill: rgba(160,140,120,.18); --soil-line:#8d7b6c;
+    --fill-fill: rgba(180,140,40,.22);  --fill-line:#c99a3a;
+    --water-fill: rgba(0,180,255,.20);  --water-line:#4fc3f7;
+    --pa-color:#ef5350; --pp-color:#66bb6a; --pq-color:#ffa726;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A1628; --canvas:#0A1628; --panel:#0D1E35; --panel-2:#111D33;
+  --border:#1E3A5F; --border-strong:#2f5a8c;
+  --text:#E2E8F0; --muted:#94A3B8; --subtle:#6B85A6;
+  --brand:#185FA5; --brand-hover:#1E6FBE; --brand-tint:rgba(0,212,255,.10);
+  --accent:#00D4FF; --accent-border:rgba(0,212,255,.35); --focus-ring:#00D4FF;
+  --input-bg:#152340;
+  --success-bg:rgba(94,234,212,.10);  --success-fg:#5EEAD4; --success-border:rgba(94,234,212,.35);
+  --danger-bg:rgba(248,113,113,.10);  --danger-fg:#F87171;  --danger-border:rgba(248,113,113,.35);
+  --warning-bg:rgba(251,191,36,.10);  --warning-fg:#FBBF24; --warning-border:rgba(251,191,36,.35);
+  --soil-fill: rgba(160,140,120,.18); --soil-line:#8d7b6c;
+  --fill-fill: rgba(180,140,40,.22);  --fill-line:#c99a3a;
+  --water-fill: rgba(0,180,255,.20);  --water-line:#4fc3f7;
+  --pa-color:#ef5350; --pp-color:#66bb6a; --pq-color:#ffa726;
+}
+:root[data-theme="light"]{
+  --bg: var(--nb3); --canvas: var(--nb1); --panel: var(--nb2); --panel-2: var(--nb4);
+  --border: var(--ns1); --border-strong: var(--ns-strong);
+  --text: var(--nf1); --muted: var(--nf3); --subtle: var(--nf4);
+  --brand: var(--brand-60); --brand-hover: var(--brand-70); --brand-tint: var(--brand-20);
+  --accent: var(--brand-60); --accent-border: var(--brand-40);
+  --input-bg: var(--nb2); --focus-ring: var(--accent);
+  --soil-fill: rgba(93,64,55,.20);   --soil-line:#5D4037;
+  --fill-fill: rgba(139,105,20,.28); --fill-line:#8B6914;
+  --water-fill: rgba(21,101,192,.22); --water-line:#1565C0;
+  --pa-color:#c62828; --pp-color:#2e7d32; --pq-color:#e67e22;
+}
+
+*{box-sizing:border-box;}
+html,body{min-height:100%;}
+html{overflow-y:scroll; scrollbar-width:thin; scrollbar-color:var(--border-strong) transparent;}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--font); font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased; transition:background .2s,color .2s;}
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:20px; border:2px solid transparent; background-clip:padding-box;}
+:focus-visible{outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:2px;}
+button{font-family:inherit;}
+
+/* ---------- Topbar ---------- */
+.command-bar{
+  display:flex; align-items:center; gap:14px; padding:8px 16px;
+  background:var(--panel); border-bottom:1px solid var(--border); box-shadow:var(--shadow2);
+  position:sticky; top:0; z-index:30; height:48px;
+}
+.brand{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+.brand-icon{width:26px; height:26px; color:var(--accent); flex-shrink:0;}
+.brand-text{display:flex; flex-direction:column; line-height:1.15;}
+.brand-text strong{font-size:14px; white-space:nowrap;}
+.badge-version{font-size:10px; color:var(--muted); background:var(--panel-2); border-radius:999px; padding:1px 7px; width:fit-content; margin-top:2px;}
+.project-name-wrap{flex:1; display:flex; justify-content:center; min-width:0;}
+#projectNameInput{
+  width:min(420px,100%); text-align:center; background:transparent; border:1px solid transparent;
+  color:var(--text); font-size:14px; font-weight:600; padding:6px 10px; border-radius:var(--radius-md);
+}
+#projectNameInput::placeholder{color:var(--subtle); font-weight:400;}
+#projectNameInput:hover, #projectNameInput:focus{background:var(--input-bg); border-color:var(--border);}
+.cb-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+.btn{
+  background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-md);
+  padding:6px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap; transition:background .12s,border-color .12s;
+}
+.btn:hover{background:var(--brand-tint); border-color:var(--accent-border);}
+.btn-icon{width:32px; height:32px; padding:0; font-size:16px; display:flex; align-items:center; justify-content:center;}
+.btn-primary{background:var(--brand); color:#fff; border-color:var(--brand);}
+.btn-primary:hover{background:var(--brand-hover);}
+.btn-danger{color:var(--danger-fg); border-color:var(--danger-border);}
+.btn-danger:hover{background:var(--danger-bg);}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+
+/* ---------- Layout ---------- */
+#main-layout{display:flex; align-items:flex-start;}
+#sidebar{
+  width:216px; flex-shrink:0; position:sticky; top:48px; height:calc(100vh - 48px);
+  overflow-y:auto; background:var(--panel); border-right:1px solid var(--border); padding:10px 0;
+}
+.nav-item{
+  display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; text-align:left;
+  background:transparent; border:none; border-left:3px solid transparent; color:var(--text);
+  padding:10px 16px; font-size:13px; cursor:pointer;
+}
+.nav-item:hover{background:var(--brand-tint);}
+.nav-item.active{background:var(--brand-tint); border-left-color:var(--accent); font-weight:600; color:var(--accent);}
+.nav-badge{font-size:10px; padding:1px 6px; border-radius:999px; flex-shrink:0;}
+#content{flex:1; min-width:0; padding:18px 22px 60px; max-width:1180px; margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ---------- Cards & forms ---------- */
+.card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 18px; margin-bottom:16px; box-shadow:var(--shadow2);}
+.card h3{margin:0 0 4px; font-size:15px;}
+.card h4{margin:14px 0 8px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+.card .sub{color:var(--muted); font-size:12.5px; margin:0 0 12px;}
+.form-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px 16px;}
+.field{display:flex; flex-direction:column; gap:4px;}
+.field label{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px;}
+.field input, .field select, .field textarea{
+  padding:6px 9px; border:1px solid var(--border); border-radius:var(--radius-md);
+  background:var(--input-bg); color:var(--text); font-size:13px; width:100%;
+}
+.field input:focus, .field select:focus{border-color:var(--accent);}
+.field .hint{font-size:11px; color:var(--subtle);}
+.field.invalid input{border-color:var(--danger-border); background:var(--danger-bg);}
+.checkline{display:flex; align-items:center; gap:8px; font-size:13px; margin:6px 0;}
+.checkline input{width:16px; height:16px;}
+.info-box{background:var(--brand-tint); border:1px solid var(--accent-border); border-radius:var(--radius-md); padding:10px 14px; font-size:12.5px; color:var(--text); margin:10px 0;}
+.warn-box{background:var(--warning-bg); border:1px solid var(--warning-border); color:var(--warning-fg); border-radius:var(--radius-md); padding:10px 14px; font-size:12.5px; margin:10px 0;}
+.future-note{font-size:11.5px; color:var(--subtle); font-style:italic; margin-top:6px;}
+
+/* ---------- Badges ---------- */
+.badge{display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:600;}
+.badge-ok{background:var(--success-bg); color:var(--success-fg); border:1px solid var(--success-border);}
+.badge-bad{background:var(--danger-bg); color:var(--danger-fg); border:1px solid var(--danger-border);}
+.badge-warn{background:var(--warning-bg); color:var(--warning-fg); border:1px solid var(--warning-border);}
+.badge-idle{background:var(--panel-2); color:var(--muted); border:1px solid var(--border);}
+
+/* ---------- Tables ---------- */
+table.results{width:100%; border-collapse:collapse; font-size:12.8px;}
+table.results th{text-align:left; padding:8px 10px; color:var(--muted); border-bottom:1px solid var(--border-strong); font-weight:600;}
+table.results td{padding:8px 10px; border-bottom:1px solid var(--border);}
+table.results tr.row-ok td{background:var(--success-bg);}
+table.results tr.row-bad td{background:var(--danger-bg);}
+table.results tr.row-warn td{background:var(--warning-bg);}
+
+/* ---------- Summary card ---------- */
+.summary-card{border-radius:var(--radius-lg); padding:16px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px; border:1px solid var(--border);}
+.summary-card.ok{background:var(--success-bg); border-color:var(--success-border); color:var(--success-fg);}
+.summary-card.bad{background:var(--danger-bg); border-color:var(--danger-border); color:var(--danger-fg);}
+.summary-card.warn{background:var(--warning-bg); border-color:var(--warning-border); color:var(--warning-fg);}
+.summary-card .icon{font-size:28px; flex-shrink:0;}
+.summary-card ul{margin:4px 0 0; padding-left:18px;}
+
+/* ---------- Type selector ---------- */
+.type-selector{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+.type-card{border:2px solid var(--border); border-radius:var(--radius-lg); padding:12px; width:170px; cursor:pointer; background:var(--panel-2);}
+.type-card.active{border-color:var(--accent); background:var(--brand-tint);}
+.type-card.disabled{opacity:.5; cursor:not-allowed;}
+.type-card strong{display:block; font-size:13px; margin-bottom:4px;}
+.type-card span{font-size:11px; color:var(--muted);}
+
+/* ---------- 2D viewer ---------- */
+.toolbar-2d{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
+.viewer-wrap{background:var(--canvas); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;}
+#wall2d{width:100%; height:auto; display:block;}
+.dim-text{font-size:11px; fill:var(--text); font-family:var(--font-mono);}
+.legend-2d{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:8px;}
+.legend-2d span{display:inline-flex; align-items:center; gap:5px;}
+.legend-2d i{width:12px; height:12px; border-radius:3px; display:inline-block;}
+
+/* ---------- Revision history table ---------- */
+.rev-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+.rev-table th{text-align:left; padding:6px 8px; color:var(--muted); border-bottom:1px solid var(--border-strong);}
+.rev-table td{padding:4px 6px; border-bottom:1px solid var(--border);}
+.rev-table input{width:100%; border:1px solid transparent; background:transparent; color:var(--text); padding:4px 6px; border-radius:4px;}
+.rev-table input:hover, .rev-table input:focus{border-color:var(--border); background:var(--input-bg);}
+.rev-table tr.current td{background:var(--brand-tint);}
+
+/* ---------- Banner ---------- */
+#restoreBanner{display:none; background:var(--brand-tint); border-bottom:1px solid var(--accent-border); padding:8px 16px; font-size:12.5px; align-items:center; gap:12px;}
+
+@media (max-width:900px){
+  #sidebar{position:fixed; left:-220px; top:48px; z-index:25; transition:left .18s; box-shadow:var(--shadow4);}
+  #sidebar.open{left:0;}
+  #content{padding:14px;}
+  .command-bar{padding:8px 10px;}
+  .brand-text strong{display:none;}
+}
+</style>
+</head>
+<body>
+<div id="restoreBanner">
+  <span>Se detectó un proyecto anterior guardado en este equipo.</span>
+  <button class="btn btn-primary" id="btnRestore">Restaurar</button>
+  <button class="btn" id="btnDiscardRestore">Nuevo proyecto</button>
+</div>
+
+<header class="command-bar">
+  <button class="btn btn-icon" id="btnMenu" title="Menú" aria-label="Abrir menú" style="display:none;">☰</button>
+  <div class="brand">
+    <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M4 21V9l4-3 4 3 4-3 4 3v12" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M4 21h16M8 21v-6M12 21v-8M16 21v-6" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-text">
+      <strong>Muros de Contención — Torres Telecom</strong>
+      <span class="badge-version">v0.1 · Fase 1</span>
+    </div>
+  </div>
+  <div class="project-name-wrap">
+    <input id="projectNameInput" data-bind="proyecto.nombre" placeholder="Nombre del proyecto / sitio" aria-label="Nombre del proyecto">
+  </div>
+  <div class="cb-actions">
+    <button class="btn btn-icon" id="btnTheme" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">🌙</button>
+    <button class="btn" id="btnSaveJson">Guardar JSON</button>
+    <button class="btn" id="btnLoadJson">Cargar JSON</button>
+    <input type="file" id="fileLoadJson" accept="application/json" hidden>
+    <button class="btn btn-danger" id="btnReset">Restablecer</button>
+  </div>
+</header>
+
+<div id="main-layout">
+  <nav id="sidebar" aria-label="Navegación principal">
+    <button class="nav-item active" data-tab="proyecto">📋 Proyecto</button>
+    <button class="nav-item" data-tab="geometria">🧱 Geometría del muro</button>
+    <button class="nav-item" data-tab="suelo">🌍 Suelo y materiales</button>
+    <button class="nav-item" data-tab="cargas">⬇️ Cargas</button>
+    <button class="nav-item" data-tab="presiones">📐 Presiones laterales</button>
+    <button class="nav-item" data-tab="revisiones">✅ Revisiones geotécnicas <span class="nav-badge badge-idle" id="badgeRevisiones">—</span></button>
+    <button class="nav-item" data-tab="resultados">📊 Resultados</button>
+    <button class="nav-item" data-tab="referencias">📄 Referencias</button>
+  </nav>
+
+  <main id="content">
+
+    <!-- ============ TAB: PROYECTO ============ -->
+    <section class="tab-panel active" id="tab-proyecto">
+      <div class="card">
+        <h3>Datos generales</h3>
+        <p class="sub">Información del proyecto y del sitio de torre.</p>
+        <div class="form-grid">
+          <div class="field"><label>Nombre del proyecto</label><input data-bind="proyecto.nombre" placeholder="Ej. Site XXXXXX"></div>
+          <div class="field"><label>Número de asset</label><input data-bind="proyecto.assetNum" placeholder="Ej. 434535"></div>
+          <div class="field"><label>Ubicación</label><input data-bind="proyecto.ubicacion" placeholder="Municipio, estado"></div>
+          <div class="field"><label>País</label><input data-bind="proyecto.pais"></div>
+          <div class="field"><label>Ingeniero responsable</label><input data-bind="proyecto.ingeniero"></div>
+          <div class="field"><label>Revisión actual</label><input data-bind="proyecto.revision"></div>
+          <div class="field"><label>Fecha</label><input type="date" data-bind="proyecto.fecha"></div>
+        </div>
+        <div class="field" style="margin-top:12px;"><label>Notas</label><textarea data-bind="proyecto.notas" rows="2"></textarea></div>
+      </div>
+
+      <div class="card">
+        <h3>Historial de revisiones</h3>
+        <p class="sub">Cada fila representa una emisión del documento. La revisión actual se resalta.</p>
+        <table class="rev-table" id="revTable">
+          <thead><tr><th>Rev.</th><th>Fecha</th><th>Descripción</th><th>Elaboró</th><th>Revisó</th><th></th></tr></thead>
+          <tbody id="revTableBody"></tbody>
+        </table>
+        <button class="btn" id="btnAddRev" style="margin-top:8px;">+ Agregar revisión</button>
+      </div>
+    </section>
+
+    <!-- ============ TAB: GEOMETRIA ============ -->
+    <section class="tab-panel" id="tab-geometria">
+      <div class="card">
+        <h3>Tipo de muro</h3>
+        <p class="sub">En esta fase solo el muro Cantilever está implementado. Los demás tipos llegan en una fase posterior.</p>
+        <div class="type-selector" id="typeSelector">
+          <div class="type-card disabled" data-type="Gravedad"><strong>Gravedad</strong><span>H ≤ 3 m · Fase futura</span></div>
+          <div class="type-card active" data-type="Cantilever"><strong>Cantilever</strong><span>2–8 m · Disponible</span></div>
+          <div class="type-card disabled" data-type="Contrafuerte"><strong>Contrafuertes</strong><span>H &gt; 6 m · Fase futura</span></div>
+          <div class="type-card disabled" data-type="Gavión"><strong>Gavión</strong><span>H ≤ 5 m · Fase futura</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Dimensiones del fuste y la zapata</h3>
+        <div class="form-grid">
+          <div class="field"><label>Altura del fuste sobre zapata, H [m]</label><input type="number" step="0.05" data-bind="geom.H" id="in-H"></div>
+          <div class="field"><label>Espesor del fuste en la base, ts [m]</label><input type="number" step="0.01" data-bind="geom.ts"></div>
+          <div class="field"><label>Espesor del fuste en la corona, tc [m]</label><input type="number" step="0.01" data-bind="geom.tc"></div>
+          <div class="field"><label>Ancho total de la zapata, Bf [m]</label><input type="number" step="0.05" data-bind="geom.Bf"></div>
+          <div class="field"><label>Espesor de la zapata, tf [m]</label><input type="number" step="0.01" data-bind="geom.tf"></div>
+          <div class="field"><label>Vuelo de la puntera, toe [m]</label><input type="number" step="0.01" data-bind="geom.toe"></div>
+          <div class="field"><label>Vuelo del talón, heel [m]</label><input type="number" id="in-heel" disabled></div>
+          <div class="field"><label>Profundidad de desplante, Df [m]</label><input type="number" step="0.05" data-bind="geom.Df"></div>
+          <div class="field"><label>Altura del relleno sobre zapata, Hr [m]</label><input type="number" step="0.05" data-bind="geom.Hr"></div>
+          <div class="field"><label>Talud del relleno, β [°]</label><input type="number" step="1" data-bind="geom.beta"></div>
+        </div>
+        <div id="geomWarning" class="warn-box" style="display:none;"></div>
+        <p class="future-note">Proporción sugerida: Bf ≈ 0.6·H, tf ≈ máx(0.1·H, 0.30 m), toe ≈ 0.35·Bf. El auto-dimensionado y el muro con intradós inclinado llegan en una fase posterior.</p>
+      </div>
+
+      <div class="card">
+        <h3>Vista 2D del muro</h3>
+        <div class="toolbar-2d">
+          <label class="checkline"><input type="checkbox" id="chkFuerzas" checked> Fuerzas</label>
+          <label class="checkline"><input type="checkbox" id="chkCotas" checked> Cotas</label>
+          <button class="btn" id="btnExportSvg">Exportar SVG</button>
+        </div>
+        <div class="viewer-wrap">
+          <svg id="wall2d" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="legend-2d">
+          <span><i style="background:var(--fill-fill); border:1px solid var(--fill-line);"></i>Relleno</span>
+          <span><i style="background:var(--soil-fill); border:1px solid var(--soil-line);"></i>Suelo de fundación</span>
+          <span><i style="background:var(--water-fill); border:1px solid var(--water-line);"></i>Nivel freático</span>
+          <span><i style="background:var(--pa-color);"></i>Presión activa Pa</span>
+          <span><i style="background:var(--pq-color);"></i>Sobrecarga qs</span>
+          <span><i style="background:var(--pp-color);"></i>Presión pasiva Pp</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB: SUELO Y MATERIALES ============ -->
+    <section class="tab-panel" id="tab-suelo">
+      <div class="card">
+        <h3>Propiedades del relleno (backfill)</h3>
+        <div class="form-grid">
+          <div class="field"><label>Peso unitario, γᵣ [kg/m³]</label><input type="number" step="10" data-bind="suelo.gamma_r"></div>
+          <div class="field"><label>Ángulo de fricción, φᵣ [°]</label><input type="number" step="1" data-bind="suelo.phi_r"></div>
+          <div class="field"><label>Cohesión, cᵣ [kg/m²]</label><input type="number" step="10" data-bind="suelo.c_r"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Suelo de fundación</h3>
+        <div class="form-grid">
+          <div class="field"><label>Peso unitario, γf [kg/m³]</label><input type="number" step="10" data-bind="suelo.gamma_f"></div>
+          <div class="field"><label>Ángulo de fricción, φf [°]</label><input type="number" step="1" data-bind="suelo.phi_f"></div>
+          <div class="field"><label>Cohesión, cf [kg/m²]</label><input type="number" step="10" data-bind="suelo.c_f"></div>
+          <div class="field"><label>Capacidad admisible, QADM [t/m²]</label><input type="number" step="0.5" data-bind="suelo.QADM"></div>
+          <div class="field"><label>Coeficiente de fricción base μ (vacío = 2/3·tanφf)</label><input type="number" step="0.01" data-bind="suelo.mu"></div>
+        </div>
+        <h4>Resistencia pasiva frente a la puntera</h4>
+        <label class="checkline"><input type="checkbox" id="chkPasivo" data-bind="suelo.pasivoEnabled"> Considerar resistencia pasiva</label>
+        <div class="form-grid">
+          <div class="field"><label>Peso unitario, γp [kg/m³]</label><input type="number" step="10" data-bind="suelo.gamma_p"></div>
+          <div class="field"><label>Ángulo de fricción, φp [°]</label><input type="number" step="1" data-bind="suelo.phi_p"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Nivel freático</h3>
+        <label class="checkline"><input type="checkbox" id="chkAgua" data-bind="suelo.waterEnabled"> Nivel freático presente</label>
+        <div class="form-grid">
+          <div class="field"><label>Altura del agua sobre la base de la zapata, Hw [m]</label><input type="number" step="0.1" data-bind="suelo.Hw"></div>
+          <div class="field"><label>Peso unitario del agua [kg/m³]</label><input type="number" step="10" data-bind="suelo.gamma_w"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Concreto y acero</h3>
+        <p class="sub">Estos valores se usan hoy solo para el peso propio del muro; el diseño estructural (ACI 318-19) llega en una fase posterior.</p>
+        <div class="form-grid">
+          <div class="field"><label>f'c [kg/cm²]</label><input type="number" step="10" data-bind="materiales.fc"></div>
+          <div class="field"><label>fy [kg/cm²]</label><input type="number" step="100" data-bind="materiales.fy"></div>
+          <div class="field"><label>Peso unitario del concreto, γc [kg/m³]</label><input type="number" step="10" data-bind="materiales.gc"></div>
+          <div class="field"><label>Recubrimiento libre [cm]</label><input type="number" step="0.5" data-bind="materiales.recub"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB: CARGAS ============ -->
+    <section class="tab-panel" id="tab-cargas">
+      <div class="card">
+        <h3>Sobrecarga de operación</h3>
+        <label class="checkline"><input type="checkbox" id="chkQs" data-bind="cargas.qsEnabled"> Considerar sobrecarga sobre el relleno</label>
+        <div class="form-grid">
+          <div class="field">
+            <label>Nivel</label>
+            <select id="qsPreset">
+              <option value="ligera">Ligera — 250 kg/m²</option>
+              <option value="normal">Normal — 500 kg/m²</option>
+              <option value="pesada">Pesada — 1000 kg/m²</option>
+              <option value="custom">Personalizada…</option>
+            </select>
+          </div>
+          <div class="field"><label>Sobrecarga qs [kg/m²]</label><input type="number" step="10" data-bind="cargas.qs" id="in-qs"></div>
+        </div>
+        <p class="hint">Incluye personal de mantenimiento y equipo portátil. Para acceso vehicular pesado, la carga vehicular por separado llega en una fase posterior.</p>
+      </div>
+
+      <div class="card">
+        <h3>Peso propio (calculado)</h3>
+        <p class="sub">Se calcula automáticamente a partir de la geometría y γc. Valores de referencia:</p>
+        <div class="form-grid">
+          <div class="field"><label>Peso del fuste, Ws [kg/m]</label><input id="out-Ws" disabled></div>
+          <div class="field"><label>Peso de la zapata, Wf [kg/m]</label><input id="out-Wf" disabled></div>
+          <div class="field"><label>Peso del relleno sobre el talón, Wr [kg/m]</label><input id="out-Wr" disabled></div>
+          <div class="field"><label>Peso del suelo sobre la puntera, Wp [kg/m]</label><input id="out-Wp" disabled></div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        En torres de telecomunicaciones, el muro de contención típicamente delimita el compound. Las cargas de viento sobre la torre y antenas generan momentos de vuelco que pueden transmitir fuerzas horizontales al terreno circundante. Verifique que la distancia entre la cimentación de la torre y el muro sea ≥ 0.5·H para evitar interferencia de los bulbos de presión.
+      </div>
+      <p class="future-note">Carga vehicular, cargas de la torre (Pu/Mu/Vu), cerco perimetral y sismo (Mononobe-Okabe) se integrarán al cálculo en una fase posterior.</p>
+    </section>
+
+    <!-- ============ TAB: PRESIONES LATERALES ============ -->
+    <section class="tab-panel" id="tab-presiones">
+      <div class="card">
+        <h3>Método de análisis</h3>
+        <p class="sub">Fase 1: solo el método de Rankine está implementado. Coulomb, At-rest, Fluido equivalente y el incremento sísmico de Mononobe-Okabe llegan en la Fase 2.</p>
+        <div class="type-selector">
+          <div class="type-card active" data-type="Rankine"><strong>Rankine</strong><span>Recomendado · pared vertical</span></div>
+          <div class="type-card disabled"><strong>Coulomb</strong><span>Fase futura</span></div>
+          <div class="type-card disabled"><strong>At-rest (K₀)</strong><span>Fase futura</span></div>
+          <div class="type-card disabled"><strong>Fluido equivalente</strong><span>Fase futura</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Resultados de presiones</h3>
+        <div class="form-grid">
+          <div class="field"><label>Coeficiente activo, Ka</label><input id="out-Ka" disabled></div>
+          <div class="field"><label>Fuerza activa, Pa [kg/m]</label><input id="out-Pa" disabled></div>
+          <div class="field"><label>Componente horizontal, Pa,h [kg/m]</label><input id="out-Pah" disabled></div>
+          <div class="field"><label>Empuje por sobrecarga, Pq,h [kg/m]</label><input id="out-Pqh" disabled></div>
+          <div class="field"><label>Empuje hidrostático, Pw,h [kg/m]</label><input id="out-Pwh" disabled></div>
+          <div class="field"><label>Coeficiente pasivo, Kp</label><input id="out-Kp" disabled></div>
+          <div class="field"><label>Fuerza pasiva, Pp [kg/m]</label><input id="out-Pp" disabled></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB: REVISIONES GEOTECNICAS ============ -->
+    <section class="tab-panel" id="tab-revisiones">
+      <div id="summaryCardGeo"></div>
+
+      <div class="card">
+        <h3>1. Volteo (Overturning)</h3>
+        <p class="sub">Momentos respecto a la punta de la puntera (toe). Ref.: NAVFAC DM-7.02, AASHTO LRFD, IBC 1807.</p>
+        <div class="form-grid">
+          <div class="field"><label>Momento resistente, Mr [kg·m/m]</label><input id="out-Mr" disabled></div>
+          <div class="field"><label>Momento de volteo, Mov [kg·m/m]</label><input id="out-Mov" disabled></div>
+          <div class="field"><label>FS Volteo</label><input id="out-FSvolteo" disabled></div>
+        </div>
+        <div id="badge-volteo"></div>
+      </div>
+
+      <div class="card">
+        <h3>2. Deslizamiento (Sliding)</h3>
+        <p class="sub">Ref.: NAVFAC DM-7.02, AASHTO LRFD.</p>
+        <div class="form-grid">
+          <div class="field"><label>Fuerza horizontal total, Fh [kg/m]</label><input id="out-Fh" disabled></div>
+          <div class="field"><label>Resistencia total, R [kg/m]</label><input id="out-R" disabled></div>
+          <div class="field"><label>FS Deslizamiento</label><input id="out-FSdesliz" disabled></div>
+        </div>
+        <div id="badge-desliz"></div>
+      </div>
+
+      <div class="card">
+        <h3>3. Capacidad portante</h3>
+        <p class="sub">Ref.: Terzaghi, Meyerhof — NAVFAC DM-7.02. qult es informativo, no de diseño.</p>
+        <div class="form-grid">
+          <div class="field"><label>q máx [t/m²]</label><input id="out-qmax" disabled></div>
+          <div class="field"><label>q mín [t/m²]</label><input id="out-qmin" disabled></div>
+          <div class="field"><label>Distribución</label><input id="out-distrib" disabled></div>
+          <div class="field"><label>q último Terzaghi [t/m²]</label><input id="out-qult" disabled></div>
+          <div class="field"><label>FS capacidad de carga</label><input id="out-FScarga" disabled></div>
+        </div>
+        <div id="badge-carga"></div>
+      </div>
+
+      <div class="card">
+        <h3>4. Excentricidad</h3>
+        <p class="sub">Ref.: NAVFAC DM-7.02. Cumple si la resultante cae dentro del tercio central (e ≤ B/6).</p>
+        <div class="form-grid">
+          <div class="field"><label>Excentricidad, e [m]</label><input id="out-e" disabled></div>
+          <div class="field"><label>Límite tercio central, B/6 [m]</label><input id="out-B6" disabled></div>
+        </div>
+        <div id="badge-ecc"></div>
+      </div>
+
+      <div class="card">
+        <h3>5. Estabilidad global</h3>
+        <p class="sub">Revisión informativa — no reemplaza un análisis de Bishop/Janbu con software especializado.</p>
+        <div id="globalStabilityBox"></div>
+      </div>
+    </section>
+
+    <!-- ============ TAB: RESULTADOS ============ -->
+    <section class="tab-panel" id="tab-resultados">
+      <div id="summaryCardResultados"></div>
+      <div class="card">
+        <h3>Resumen geotécnico</h3>
+        <table class="results">
+          <thead><tr><th>Revisión</th><th>Valor calc.</th><th>Mínimo req.</th><th>Estado</th></tr></thead>
+          <tbody id="resumenGeoBody"></tbody>
+        </table>
+      </div>
+      <p class="future-note">Diagrama de presiones y de M/V (Plotly), diseño estructural ACI 318-19, vista 3D, exportación a Word y análisis de sensibilidad se agregan en fases posteriores.</p>
+    </section>
+
+    <!-- ============ TAB: REFERENCIAS ============ -->
+    <section class="tab-panel" id="tab-referencias">
+      <div class="card">
+        <h3>Motor de cálculo</h3>
+        <p class="sub">Funciones puras: <code>calcularPresiones(state)</code> → <code>calcularGeotecnia(state, presiones)</code>. Todas las unidades internas son kg y m (sistema técnico), salvo donde se indique t/m² para comparación con QADM.</p>
+      </div>
+      <div class="card">
+        <h3>Normas y referencias aplicadas</h3>
+        <ul>
+          <li>Rankine (1857) — teoría de presión de tierras</li>
+          <li>NAVFAC DM-7.02 — volteo, deslizamiento, capacidad de carga</li>
+          <li>Terzaghi (1943) / Meyerhof (1963) — factores de capacidad de carga</li>
+          <li>AASHTO LRFD — combinaciones y verificación de estabilidad</li>
+          <li>ACI 318-19 / ASCE 7-22 / IBC 2021 / ANSI/TIA-222-H — fases posteriores (diseño estructural, cargas de viento en torre)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Roadmap</h3>
+        <p class="sub">Ver <code>CLAUDE.md</code> en el repositorio para el detalle de fases.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   1. CONSTANTES Y UTILIDADES
+   ================================================================ */
+const STORAGE_KEY = "murosContencion.v1";
+const toRad = d => d * Math.PI / 180;
+const fmt = (n, dec) => (n===null || n===undefined || !isFinite(n)) ? "—" : n.toFixed(dec===undefined?2:dec);
+const fmtT = (kg, dec) => fmt(kg/1000, dec===undefined?2:dec); // kg -> t para mostrar
+
+function debounce(fn, ms){
+  let t = null;
+  return function(...args){
+    clearTimeout(t);
+    t = setTimeout(()=>fn.apply(this,args), ms);
+  };
+}
+
+function getPath(obj, path){
+  return path.split(".").reduce((o,k)=> (o===null||o===undefined) ? o : o[k], obj);
+}
+function setPath(obj, path, val){
+  const parts = path.split(".");
+  let o = obj;
+  for(let i=0;i<parts.length-1;i++){ o = o[parts[i]]; }
+  o[parts[parts.length-1]] = val;
+}
+
+/* ================================================================
+   2. ESTADO — ver Bloque 3 del prompt original.
+   Se define el esquema completo (incluye campos aún no usados por
+   el motor de cálculo de esta fase) para que los archivos .json
+   guardados hoy sigan siendo compatibles cuando se activen las
+   fases siguientes (sismo, otros métodos de presión, otros tipos
+   de muro, diseño estructural).
+   ================================================================ */
+function defaultState(){
+  return {
+    proyecto: { nombre:"", assetNum:"", ubicacion:"", pais:"México", ingeniero:"", revision:"0", fecha:new Date().toISOString().slice(0,10), notas:"" },
+    revisiones: [],
+    tipo: "Cantilever",
+    geom: {
+      H:3.00, ts:0.30, tc:0.20, incl:0.00,
+      Bf:2.10, tf:0.35, toe:0.40, heel:null,
+      keyEnabled:false, keyW:0.20, keyD:0.30, keyPos:"base_stem",
+      Hr:3.00, beta:0.00, alpha:0.00, Df:0.80
+    },
+    suelo: {
+      gamma_r:1800, phi_r:30, c_r:0, delta_r:null, Ks:0.5,
+      gamma_f:1900, phi_f:28, c_f:0, QADM:10, FS_qadm:3, mu:null,
+      waterEnabled:false, Hw:0, gamma_w:1000,
+      pasivoEnabled:true, gamma_p:1800, phi_p:28
+    },
+    materiales: { fc:210, fy:4200, gc:2400, recub:7.5, phiF:0.90, phiV:0.75 },
+    cargas: {
+      qsEnabled:true, qs:500, qsPreset:"normal",
+      qvEnabled:false, qv:1200, wv:2.40,
+      torreEnabled:false, Pu_torre:0, Mu_torre:0, Vu_torre:0, dist_torre:0,
+      cercoEnabled:false, P_cerco:50, h_cerco:2.0
+    },
+    sismo: { enabled:false, metodo:"Mononobe-Okabe", kh:0.15, kv:0.00, EFP_sism:7, FS_min_sism:1.1 },
+    metodo_presion: "Rankine",
+    EFP: 480,
+    diseno: {
+      varFusteExt:"#5", varFusteInt:"#4", sepFusteExt:15, sepFusteInt:30,
+      varZapataInf:"#5", varZapataSup:"#4", sepZapataInf:15, sepZapataSup:30,
+      varTemp:"#3", sepTemp:30
+    },
+    FS: { volteo_estatico:2.0, volteo_sismico:1.5, desliz_estatico:1.5, desliz_sismico:1.1, capacidad_carga:3.0, eccentricidad:"B/6" }
+  };
+}
+
+function mergeState(def, loaded){
+  if(loaded === undefined || loaded === null) return def;
+  if(Array.isArray(def)) return Array.isArray(loaded) ? loaded : def;
+  if(typeof def === "object"){
+    const out = {...def};
+    if(typeof loaded === "object"){
+      for(const k in out){ if(k in loaded) out[k] = mergeState(out[k], loaded[k]); }
+    }
+    return out;
+  }
+  return loaded;
+}
+
+let state = defaultState();
+let uiState = { showForces:true, showCotas:true };
+
+/* ================================================================
+   3. PERSISTENCIA
+   ================================================================ */
+function saveToStorage(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){/* storage lleno o no disponible */}
+}
+function loadFromStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+
+function descargarJSON(){
+  const asset = state.proyecto.assetNum || "muro";
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `${asset}_muro.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function cargarJSONFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const loaded = JSON.parse(reader.result);
+      state = mergeState(defaultState(), loaded);
+      renderAllFull();
+    }catch(e){ alert("El archivo no es un JSON válido de este programa."); }
+  };
+  reader.readAsText(file);
+}
+
+/* ================================================================
+   4. MOTOR DE CÁLCULO
+   ================================================================ */
+
+/* Geometría derivada del fuste: centroide horizontal del trapecio
+   del fuste (cara posterior vertical, cara frontal puede tener
+   batter si tc < ts) medido desde el borde de la puntera (x=0).
+   Entrada: state.geom [m]. Salida: {heel,xBack,areaStem,brazoStem} [m,m2,m]. */
+function calcGeometria(g){
+  const heel = g.Bf - g.toe - g.ts;
+  const xBack = g.Bf - heel; // = toe + ts
+  const H = g.H, ts = g.ts, tc = g.tc;
+  const areaRect = tc * H;
+  const centroidRect = xBack - tc/2;
+  const areaTri = 0.5 * (ts - tc) * H;
+  const centroidTri = xBack - (ts + 2*tc)/3;
+  const areaStem = areaRect + areaTri; // = H*(ts+tc)/2
+  const brazoStem = areaStem > 1e-9 ? (areaRect*centroidRect + areaTri*centroidTri)/areaStem : (xBack - ts/2);
+  return { heel, xBack, areaStem, brazoStem };
+}
+
+/* Presiones laterales — método de Rankine (Bloque 4, Método 1).
+   Entrada: state completo. Salida: {Ka,Pa,Pa_h,Pa_v,Pq_h,Pw_h,Kp,Pp,H} en kg/m (fuerzas) y adimensional (Ka,Kp). */
+function calcularPresiones(state){
+  const { suelo, geom, cargas } = state;
+  const H = geom.H;
+  const phi = toRad(suelo.phi_r);
+  const beta = toRad(geom.beta);
+  let Ka;
+  if(Math.abs(geom.beta) < 1e-6){
+    Ka = Math.pow(Math.tan(Math.PI/4 - phi/2), 2);
+  }else{
+    const cosB = Math.cos(beta), cosPhi = Math.cos(phi);
+    const rad = Math.max(cosB*cosB - cosPhi*cosPhi, 0);
+    const sq = Math.sqrt(rad);
+    Ka = (cosB + sq) > 1e-9 ? cosB * (cosB - sq) / (cosB + sq) : Math.pow(Math.tan(Math.PI/4 - phi/2), 2);
+  }
+  const Pa = 0.5 * Ka * suelo.gamma_r * H * H;
+  // Rankine clásico: delta=0 (pared lisa). Con talud beta, la resultante
+  // actúa paralela a la pendiente del relleno (teoría generalizada de Rankine).
+  const Pa_h = Pa * Math.cos(beta);
+  const Pa_v = Pa * Math.sin(beta);
+
+  let Pq_h = 0;
+  if(cargas.qsEnabled){ Pq_h = Ka * cargas.qs * H; }
+
+  let Pw_h = 0;
+  if(suelo.waterEnabled){ Pw_h = 0.5 * suelo.gamma_w * Math.pow(suelo.Hw, 2); }
+
+  let Kp = 0, Pp = 0;
+  if(suelo.pasivoEnabled){
+    const phiP = toRad(suelo.phi_p);
+    Kp = Math.pow(Math.tan(Math.PI/4 + phiP/2), 2);
+    Pp = 0.5 * Kp * suelo.gamma_p * Math.pow(geom.Df, 2);
+  }
+  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, H };
+}
+
+/* Revisiones geotécnicas 1-5 (Bloque 6). Momentos tomados respecto
+   a la punta de la puntera (toe, x=0 en el sistema de calcGeometria).
+   Entrada: state, presiones (de calcularPresiones). Salida: objeto
+   con todos los resultados intermedios y finales en kg, m, kg/m2. */
+function calcularGeotecnia(state, pres){
+  const { geom, suelo, materiales, cargas } = state;
+  const gc = calcGeometria(geom);
+  const { heel, areaStem, brazoStem } = gc;
+  const H = geom.H, Bf = geom.Bf, tf = geom.tf, toe = geom.toe, Df = geom.Df, Hr = geom.Hr;
+
+  const Ws = materiales.gc * areaStem;
+  const Wf = materiales.gc * Bf * tf;
+  const Wr = suelo.gamma_r * heel * Hr;
+  const Wp = suelo.gamma_f * toe * Df; // aproximación del prompt original (no resta tf)
+  const Pq_v = cargas.qsEnabled ? cargas.qs * heel : 0;
+  const Pa_v = pres.Pa_v;
+
+  const N = Ws + Wf + Wr + Wp + Pq_v + Pa_v;
+
+  const Mr = Ws*brazoStem + Wf*(Bf/2) + Wr*(Bf - heel/2) + Wp*(toe/2) + Pq_v*(Bf - heel/2) + Pa_v*Bf;
+
+  const Hw = suelo.waterEnabled ? suelo.Hw : 0;
+  const Mov = pres.Pa_h*(H/3 + tf) + pres.Pq_h*(H/2 + tf) + pres.Pw_h*(Hw/3);
+
+  const FS_volteo = Mov > 1e-6 ? Mr / Mov : Infinity;
+
+  // --- Deslizamiento ---
+  const Fh = pres.Pa_h + pres.Pq_h + pres.Pw_h;
+  const phiF = toRad(suelo.phi_f);
+  const mu = (suelo.mu !== null && suelo.mu !== undefined && suelo.mu !== "") ? suelo.mu : Math.tan(2/3 * phiF);
+  const Fr = mu * N;
+  const Pp_h = suelo.pasivoEnabled ? pres.Pp : 0;
+  let Fkey = 0;
+  if(geom.keyEnabled){
+    const KpF = Math.pow(Math.tan(Math.PI/4 + phiF/2), 2);
+    Fkey = KpF * suelo.gamma_f * geom.keyD * (geom.keyD + 2*Df);
+  }
+  const R = Fr + Pp_h + Fkey;
+  const FS_desliz = Fh > 1e-6 ? R / Fh : Infinity;
+
+  // --- Capacidad portante y excentricidad ---
+  const sumM_toe = Mr - Mov;
+  const x_r = N > 1e-6 ? sumM_toe / N : Bf/2;
+  const e = Bf/2 - x_r;
+  let q_max, q_min, distribucion;
+  if(Math.abs(e) <= Bf/6){
+    q_max = (N/Bf) * (1 + 6*e/Bf);
+    q_min = (N/Bf) * (1 - 6*e/Bf);
+    distribucion = "Trapezoidal";
+  }else{
+    const Lef = 3 * x_r;
+    q_max = Lef > 1e-6 ? 2*N/Lef : Infinity;
+    q_min = 0;
+    distribucion = "Triangular (talón despegado)";
+  }
+
+  // Terzaghi simplificado, solo informativo (sin factores de forma/profundidad)
+  const Nq = Math.exp(Math.PI * Math.tan(phiF)) * Math.pow(Math.tan(Math.PI/4 + phiF/2), 2);
+  const Nc = suelo.phi_f > 0.01 ? (Nq - 1) / Math.tan(phiF) : 5.14;
+  const Ngamma = 2 * (Nq + 1) * Math.tan(phiF);
+  const qult = suelo.c_f*Nc + suelo.gamma_f*Df*Nq + 0.5*suelo.gamma_f*Bf*Ngamma;
+  const FS_carga = q_max > 1e-6 && isFinite(q_max) ? qult / q_max : Infinity;
+
+  let eCategoria;
+  if(Math.abs(e) <= Bf/6) eCategoria = "ok";
+  else if(Math.abs(e) <= Bf/4) eCategoria = "warn";
+  else eCategoria = "bad";
+
+  // --- Estabilidad global (informativa) ---
+  const condiciones = [];
+  if(H > 5.0) condiciones.push("Altura del muro H > 5.0 m");
+  if(suelo.c_f > 0 && suelo.phi_f < 20) condiciones.push("Suelo de fundación cohesivo con φf < 20°");
+  if(suelo.waterEnabled && suelo.Hw > H/2) condiciones.push("Nivel freático alto (Hw > H/2)");
+  if(geom.beta > 10) condiciones.push("Talud del relleno β > 10°");
+  if(cargas.torreEnabled && cargas.dist_torre < H) condiciones.push("Torre cercana al muro (distancia < H)");
+  const requiereGlobal = condiciones.length > 0;
+  const phiR = toRad(suelo.phi_r), betaR = toRad(geom.beta);
+  const FS_talud_simple = geom.beta > 0.01 ? Math.tan(phiR)/Math.tan(betaR) : null;
+
+  return {
+    heel, areaStem, brazoStem,
+    Ws, Wf, Wr, Wp, Pq_v, Pa_v, N,
+    Mr, Mov, FS_volteo,
+    Fh, mu, Fr, Pp_h, Fkey, R, FS_desliz,
+    x_r, e, q_max, q_min, distribucion,
+    Nq, Nc, Ngamma, qult, FS_carga,
+    eCategoria, condiciones, requiereGlobal, FS_talud_simple
+  };
+}
+
+function calcularTodo(){
+  // Sincroniza heel calculado en el estado (solo lectura en la UI)
+  const gc = calcGeometria(state.geom);
+  state.geom.heel = gc.heel;
+  const pres = calcularPresiones(state);
+  const geo = calcularGeotecnia(state, pres);
+  return { pres, geo };
+}
+
+/* ================================================================
+   5. DIBUJO 2D (SVG)
+   ================================================================ */
+function dibujarMuro2D(svg, state, r){
+  const NS = "http://www.w3.org/2000/svg";
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const css = getComputedStyle(document.documentElement);
+  const col = name => css.getPropertyValue(name).trim();
+
+  const g = state.geom;
+  const gc = calcGeometria(g);
+  const heel = gc.heel, xBack = gc.xBack;
+  const toe = g.toe, Bf = g.Bf, tf = g.tf, H = g.H, Hr = g.Hr, Df = g.Df, ts = g.ts, tc = g.tc;
+
+  const extraFront = 1.2, extraBack = 1.0, extraDepth = 0.6, extraTop = 0.9;
+  const slopeRise = g.beta > 0 ? Math.max(heel,1) * Math.tan(toRad(g.beta)) : 0;
+
+  const modelMinX = -extraFront, modelMaxX = Bf + extraBack;
+  const modelMinY = -extraDepth, modelMaxY = tf + Hr + extraTop + slopeRise;
+  const modelW = modelMaxX - modelMinX, modelH = modelMaxY - modelMinY;
+
+  const viewW = 900, viewH = 560, pad = 46;
+  const scale = Math.min((viewW-2*pad)/modelW, (viewH-2*pad)/modelH);
+  const X = xm => pad + (xm - modelMinX)*scale;
+  const Y = ym => viewH - pad - (ym - modelMinY)*scale;
+
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function poly(points, fill, stroke, extra){
+    const p = el("polygon", Object.assign({points: points.map(pt=>`${X(pt[0])},${Y(pt[1])}`).join(" "), fill, stroke: stroke||"none", "stroke-width":1}, extra||{}));
+    svg.appendChild(p); return p;
+  }
+  function line(x1,y1,x2,y2, stroke, extra){
+    svg.appendChild(el("line", Object.assign({x1:X(x1),y1:Y(y1),x2:X(x2),y2:Y(y2),stroke,"stroke-width":1.4}, extra||{})));
+  }
+  function text(xm,ym,str,extra){
+    const t = el("text", Object.assign({x:X(xm), y:Y(ym), class:"dim-text", "text-anchor":"middle"}, extra||{}));
+    t.textContent = str; svg.appendChild(t); return t;
+  }
+
+  // defs: marker de flecha para cotas
+  const defs = el("defs",{});
+  const marker = el("marker",{id:"arrowHead", markerWidth:8, markerHeight:8, refX:4, refY:4, orient:"auto"});
+  const arrowPath = el("path",{d:"M0,0 L8,4 L0,8 Z", fill: col("--muted")});
+  marker.appendChild(arrowPath); defs.appendChild(marker); svg.appendChild(defs);
+
+  // Suelo de fundación (fondo)
+  poly([[modelMinX,modelMinY],[modelMaxX,modelMinY],[modelMaxX,0],[modelMinX,0]], col("--soil-fill"), col("--soil-line"));
+
+  // Suelo frente al muro (zona pasiva) desde y=0 hasta Df
+  poly([[toe-extraFront,0],[toe,0],[toe,Df],[toe-extraFront,Df]], col("--soil-fill"), col("--soil-line"));
+  // NTN frente al muro
+  line(toe-extraFront, Df, toe, Df, col("--muted"), {"stroke-dasharray":"5,4"});
+  text((toe-extraFront+toe)/2, Df+0.18, "NTN");
+
+  // Relleno detrás del muro (con talud si beta>0)
+  const backTopY = tf + Hr;
+  const backfillPts = [[xBack,tf],[Bf+extraBack, tf],[Bf+extraBack, backTopY+slopeRise],[Bf, backTopY],[xBack, backTopY]];
+  poly(backfillPts, col("--fill-fill"), col("--fill-line"));
+
+  // Zapata
+  poly([[0,0],[Bf,0],[Bf,tf],[0,tf]], col("--panel-2"), col("--border-strong"));
+
+  // Fuste (trapecio, cara posterior vertical en xBack)
+  poly([[toe, tf],[xBack, tf],[xBack, tf+H],[xBack-tc, tf+H]], col("--panel-2"), col("--border-strong"));
+
+  // Nivel freático
+  if(state.suelo.waterEnabled && state.suelo.Hw > 0){
+    line(modelMinX, state.suelo.Hw, Bf+extraBack, state.suelo.Hw, col("--water-line"), {"stroke-dasharray":"6,4"});
+    text(modelMinX+0.55, state.suelo.Hw+0.18, "NF ▽", {"text-anchor":"start", fill: col("--water-line")});
+  }
+
+  // ---- Fuerzas ----
+  if(uiState.showForces){
+    // Presión activa (triángulo esquemático a lo largo de la cara posterior del fuste)
+    const triW = 55; // px, ancho esquemático (no a escala de presión real)
+    const yTop = tf+H, yBase = tf;
+    const xB = X(xBack);
+    poly([[xBack, yTop],[xBack, yBase]], "none", "none"); // no-op placeholder
+    const paPts = `${xB},${Y(yTop)} ${xB},${Y(yBase)} ${xB+triW},${Y(yBase)}`;
+    svg.appendChild(el("polygon",{points:paPts, fill: col("--pa-color"), opacity:0.35, stroke: col("--pa-color")}));
+    text(xBack, tf+H/3, `Pa=${fmtT(r.pres.Pa,2)} t/m`, {fill: col("--pa-color"), "text-anchor":"start", x:xB+triW+4});
+
+    // Sobrecarga (rectángulo delgado sobre el relleno)
+    if(state.cargas.qsEnabled){
+      const y1 = Y(backTopY), y2 = Y(backTopY)-10;
+      svg.appendChild(el("rect",{x:X(xBack), y:y2, width:X(Bf+extraBack)-X(xBack), height:10, fill: col("--pq-color"), opacity:0.5}));
+      text((xBack+Bf+extraBack)/2, backTopY, `qs=${fmt(state.cargas.qs,0)} kg/m²`, {fill: col("--pq-color"), dy:-14});
+    }
+
+    // Presión pasiva (triángulo esquemático frente a la puntera)
+    if(state.suelo.pasivoEnabled){
+      const triWp = 30;
+      const xT = X(toe);
+      const ppPts = `${xT},${Y(0)} ${xT},${Y(Df)} ${xT-triWp},${Y(0)}`;
+      svg.appendChild(el("polygon",{points:ppPts, fill: col("--pp-color"), opacity:0.35, stroke: col("--pp-color")}));
+      text(toe, Df/3, `Pp=${fmtT(r.pres.Pp,2)} t/m`, {fill: col("--pp-color"), "text-anchor":"end", x:xT-triWp-4});
+    }
+
+    // Resultante y tercio central en la base de la zapata
+    const y0 = Y(0);
+    const xThirdA = X(Bf/3), xThirdB = X(2*Bf/3);
+    svg.appendChild(el("line",{x1:xThirdA,y1:y0,x2:xThirdB,y2:y0,stroke: col("--success-fg"), "stroke-width":5, opacity:.5}));
+    const xr = X(Math.min(Math.max(r.geo.x_r,0),Bf));
+    const okCentral = r.geo.eCategoria === "ok";
+    svg.appendChild(el("circle",{cx:xr, cy:y0, r:5, fill: okCentral? col("--success-fg") : col("--danger-fg")}));
+    svg.appendChild(el("line",{x1:xr,y1:y0,x2:xr,y2:y0-14,stroke: okCentral? col("--success-fg") : col("--danger-fg"), "stroke-width":1.4}));
+  }
+
+  // ---- Cotas ----
+  if(uiState.showCotas){
+    // H (altura del fuste), a la izquierda del muro
+    const xDim = modelMinX+0.35;
+    line(xDim, tf, xDim, tf+H, col("--muted"), {"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
+    text(xDim, tf+H/2, `H=${fmt(H,2)} m`, {"text-anchor":"middle", transform:`rotate(-90 ${X(xDim)} ${Y(tf+H/2)})`});
+
+    // Bf (ancho de zapata), debajo
+    const yDim = modelMinY+0.25;
+    line(0, yDim, Bf, yDim, col("--muted"), {"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
+    text(Bf/2, yDim-0.22, `Bf=${fmt(Bf,2)} m`);
+
+    // toe / heel
+    text(toe/2, tf/2, `toe\n${fmt(toe,2)}`, {"font-size":"9px"});
+    text(xBack + heel/2, tf/2, `heel=${fmt(heel,2)}`, {"font-size":"9px"});
+
+    // tf, Df
+    text(-0.05, tf/2, `tf=${fmt(tf,2)}`, {"text-anchor":"end", x:X(-0.15)});
+    text(toe-extraFront*0.5, Df/2, `Df=${fmt(Df,2)}`);
+  }
+
+  if(gc.heel < 0){
+    svg.appendChild(el("text",{x:viewW/2, y:24, "text-anchor":"middle", fill: col("--danger-fg"), "font-size":"13px", "font-weight":"700"}))
+      .textContent = "⚠ Geometría inválida: toe + ts excede Bf (heel negativo)";
+  }
+}
+
+/* ================================================================
+   6. RENDER DE TABLAS / RESULTADOS / BADGES
+   ================================================================ */
+function badgeHTML(ok, textOk, textBad, warn){
+  if(warn) return `<span class="badge badge-warn">⚠ ${textBad}</span>`;
+  return ok ? `<span class="badge badge-ok">✅ ${textOk}</span>` : `<span class="badge badge-bad">❌ ${textBad}</span>`;
+}
+
+function renderCargasOutputs(r){
+  document.getElementById("out-Ws").value = fmt(r.geo.Ws,0)+" kg/m";
+  document.getElementById("out-Wf").value = fmt(r.geo.Wf,0)+" kg/m";
+  document.getElementById("out-Wr").value = fmt(r.geo.Wr,0)+" kg/m";
+  document.getElementById("out-Wp").value = fmt(r.geo.Wp,0)+" kg/m";
+}
+
+function renderPresionesOutputs(r){
+  document.getElementById("out-Ka").value = fmt(r.pres.Ka,4);
+  document.getElementById("out-Pa").value = fmt(r.pres.Pa,0)+" kg/m";
+  document.getElementById("out-Pah").value = fmt(r.pres.Pa_h,0)+" kg/m";
+  document.getElementById("out-Pqh").value = fmt(r.pres.Pq_h,0)+" kg/m";
+  document.getElementById("out-Pwh").value = fmt(r.pres.Pw_h,0)+" kg/m";
+  document.getElementById("out-Kp").value = state.suelo.pasivoEnabled ? fmt(r.pres.Kp,4) : "—";
+  document.getElementById("out-Pp").value = state.suelo.pasivoEnabled ? fmt(r.pres.Pp,0)+" kg/m" : "—";
+}
+
+function renderRevisiones(r){
+  const geo = r.geo, FS = state.FS;
+
+  document.getElementById("out-Mr").value = fmt(geo.Mr,0);
+  document.getElementById("out-Mov").value = fmt(geo.Mov,0);
+  document.getElementById("out-FSvolteo").value = isFinite(geo.FS_volteo) ? fmt(geo.FS_volteo,2) : "∞";
+  const okVolteo = geo.FS_volteo >= FS.volteo_estatico;
+  document.getElementById("badge-volteo").innerHTML = badgeHTML(okVolteo, `CUMPLE (≥ ${FS.volteo_estatico})`, `NO CUMPLE (req. ≥ ${FS.volteo_estatico})`);
+
+  document.getElementById("out-Fh").value = fmt(geo.Fh,0);
+  document.getElementById("out-R").value = fmt(geo.R,0);
+  document.getElementById("out-FSdesliz").value = isFinite(geo.FS_desliz) ? fmt(geo.FS_desliz,2) : "∞";
+  const okDesliz = geo.FS_desliz >= FS.desliz_estatico;
+  document.getElementById("badge-desliz").innerHTML = badgeHTML(okDesliz, `CUMPLE (≥ ${FS.desliz_estatico})`, `NO CUMPLE (req. ≥ ${FS.desliz_estatico})`);
+
+  const qmax_t = geo.q_max/1000, qmin_t = geo.q_min/1000;
+  document.getElementById("out-qmax").value = isFinite(qmax_t) ? fmt(qmax_t,2) : "∞";
+  document.getElementById("out-qmin").value = fmt(qmin_t,2);
+  document.getElementById("out-distrib").value = geo.distribucion;
+  document.getElementById("out-qult").value = fmt(geo.qult/1000,2);
+  document.getElementById("out-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,2) : "∞";
+  const okCarga = qmax_t <= state.suelo.QADM && qmin_t >= 0;
+  document.getElementById("badge-carga").innerHTML = badgeHTML(okCarga, `CUMPLE (q_max ≤ ${fmt(state.suelo.QADM,1)} t/m²)`, `NO CUMPLE (q_max > ${fmt(state.suelo.QADM,1)} t/m²)`);
+
+  const B6 = state.geom.Bf/6;
+  document.getElementById("out-e").value = fmt(geo.e,3);
+  document.getElementById("out-B6").value = fmt(B6,3);
+  const eccHTML = geo.eCategoria==="ok" ? badgeHTML(true,`CUMPLE (e ≤ B/6=${fmt(B6,3)})`,"") :
+                  geo.eCategoria==="warn" ? badgeHTML(false,"", `Cerca del borde (B/6 < e ≤ B/4)`, true) :
+                  badgeHTML(false,"",`NO CUMPLE (e > B/4, talón despegado)`);
+  document.getElementById("badge-ecc").innerHTML = eccHTML;
+
+  const gsb = document.getElementById("globalStabilityBox");
+  if(geo.requiereGlobal){
+    gsb.innerHTML = `<div class="warn-box">⚠ Se recomienda análisis de estabilidad global (método de Bishop o Janbu) con un programa especializado (Slide, SLOPE/W).<br><small>${geo.condiciones.join(" · ")}</small></div>` +
+      (geo.FS_talud_simple!==null ? `<p class="hint">FS simplificado de cuña plana (referencia, no sustituye Bishop): ${fmt(geo.FS_talud_simple,2)}</p>` : "");
+  }else{
+    gsb.innerHTML = `<div class="info-box">No se identifican condicionantes que obliguen a un análisis de estabilidad global detallado con la información actual.</div>`;
+  }
+
+  // badge de sidebar
+  const allOk = okVolteo && okDesliz && okCarga && geo.eCategoria!=="bad";
+  const anyBad = !okVolteo || !okDesliz || !okCarga || geo.eCategoria==="bad";
+  const badge = document.getElementById("badgeRevisiones");
+  badge.className = "nav-badge " + (anyBad ? "badge-bad" : (allOk ? "badge-ok" : "badge-warn"));
+  badge.textContent = anyBad ? "❌" : "✅";
+
+  return { okVolteo, okDesliz, okCarga, allOk, anyBad };
+}
+
+function renderSummaryCards(r, checks){
+  const html = checks.anyBad
+    ? `<div class="summary-card bad"><span class="icon">❌</span><div><strong>El muro no cumple una o más revisiones geotécnicas.</strong>
+       <ul>
+        ${!checks.okVolteo?"<li>Volteo</li>":""}
+        ${!checks.okDesliz?"<li>Deslizamiento</li>":""}
+        ${!checks.okCarga?"<li>Capacidad portante</li>":""}
+        ${r.geo.eCategoria==="bad"?"<li>Excentricidad</li>":""}
+       </ul></div></div>`
+    : (r.geo.eCategoria==="warn"
+        ? `<div class="summary-card warn"><span class="icon">⚠</span><div><strong>Cumple, pero con margen de seguridad estrecho en excentricidad.</strong></div></div>`
+        : `<div class="summary-card ok"><span class="icon">✅</span><div><strong>Todas las revisiones geotécnicas implementadas en esta fase cumplen.</strong></div></div>`);
+  document.getElementById("summaryCardGeo").innerHTML = html;
+  document.getElementById("summaryCardResultados").innerHTML = html;
+
+  const FS = state.FS;
+  const rows = [
+    { nombre:"FS Volteo (estático)", valor: isFinite(r.geo.FS_volteo)?fmt(r.geo.FS_volteo,2):"∞", min:`≥ ${FS.volteo_estatico}`, ok: checks.okVolteo },
+    { nombre:"FS Deslizamiento (estático)", valor: isFinite(r.geo.FS_desliz)?fmt(r.geo.FS_desliz,2):"∞", min:`≥ ${FS.desliz_estatico}`, ok: checks.okDesliz },
+    { nombre:"q máx", valor: fmt(r.geo.q_max/1000,2)+" t/m²", min:`≤ ${fmt(state.suelo.QADM,1)} t/m²`, ok: (r.geo.q_max/1000)<=state.suelo.QADM },
+    { nombre:"q mín", valor: fmt(r.geo.q_min/1000,2)+" t/m²", min:"≥ 0", ok: r.geo.q_min>=0 },
+    { nombre:"Excentricidad e", valor: fmt(r.geo.e,3)+" m", min:`≤ B/6 = ${fmt(state.geom.Bf/6,3)} m`, ok: r.geo.eCategoria!=="bad", warn: r.geo.eCategoria==="warn" }
+  ];
+  document.getElementById("resumenGeoBody").innerHTML = rows.map(row=>{
+    const cls = row.warn ? "row-warn" : (row.ok ? "row-ok" : "row-bad");
+    const badge = row.warn ? badgeHTML(false,"","Cerca del límite",true) : badgeHTML(row.ok, "CUMPLE", "NO CUMPLE");
+    return `<tr class="${cls}"><td>${row.nombre}</td><td>${row.valor}</td><td>${row.min}</td><td>${badge}</td></tr>`;
+  }).join("");
+}
+
+function renderGeomWarning(){
+  const gc = calcGeometria(state.geom);
+  const box = document.getElementById("geomWarning");
+  document.getElementById("in-heel").value = fmt(gc.heel,2);
+  if(gc.heel < 0){
+    box.style.display = "block";
+    box.textContent = "⚠ toe + ts supera a Bf: el talón (heel) resulta negativo. Ajuste las dimensiones.";
+  }else{
+    box.style.display = "none";
+  }
+}
+
+function renderRevTable(){
+  const tbody = document.getElementById("revTableBody");
+  tbody.innerHTML = state.revisiones.map((rev, i)=>{
+    const isCurrent = String(rev.rev) === String(state.proyecto.revision);
+    return `<tr class="${isCurrent?"current":""}" data-idx="${i}">
+      <td><input data-rev-field="rev" value="${rev.rev||""}"></td>
+      <td><input type="date" data-rev-field="fecha" value="${rev.fecha||""}"></td>
+      <td><input data-rev-field="descripcion" value="${rev.descripcion||""}"></td>
+      <td><input data-rev-field="por" value="${rev.por||""}"></td>
+      <td><input data-rev-field="reviso" value="${rev.reviso||""}"></td>
+      <td><button class="btn btn-icon" data-rev-del="${i}" title="Eliminar">✕</button></td>
+    </tr>`;
+  }).join("");
+  tbody.querySelectorAll("[data-rev-field]").forEach(inp=>{
+    inp.addEventListener("input", e=>{
+      const tr = e.target.closest("tr");
+      const idx = parseInt(tr.dataset.idx,10);
+      state.revisiones[idx][e.target.dataset.revField] = e.target.value;
+      if(e.target.dataset.revField==="rev") renderRevTable();
+      saveToStorage();
+    });
+  });
+  tbody.querySelectorAll("[data-rev-del]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      state.revisiones.splice(parseInt(btn.dataset.revDel,10),1);
+      renderRevTable(); saveToStorage();
+    });
+  });
+}
+
+/* ================================================================
+   7. RENDER GENERAL
+   ================================================================ */
+function renderAll(){
+  const r = calcularTodo();
+  renderGeomWarning();
+  renderCargasOutputs(r);
+  renderPresionesOutputs(r);
+  const checks = renderRevisiones(r);
+  renderSummaryCards(r, checks);
+  dibujarMuro2D(document.getElementById("wall2d"), state, r);
+  saveToStorage();
+}
+
+function syncInputsFromState(){
+  document.querySelectorAll("[data-bind]").forEach(el=>{
+    const path = el.getAttribute("data-bind");
+    const val = getPath(state, path);
+    if(el.type === "checkbox"){ el.checked = !!val; }
+    else if(document.activeElement !== el){ el.value = (val===null||val===undefined) ? "" : val; }
+  });
+  document.getElementById("qsPreset").value = state.cargas.qsPreset || "custom";
+}
+
+function renderAllFull(){
+  syncInputsFromState();
+  renderRevTable();
+  renderAll();
+}
+
+const scheduleRecalc = debounce(renderAll, 100);
+
+/* ================================================================
+   8. BINDINGS DE INPUTS
+   ================================================================ */
+function bindAll(){
+  document.querySelectorAll("[data-bind]").forEach(el=>{
+    const path = el.getAttribute("data-bind");
+    const evt = (el.tagName==="SELECT" || el.type==="checkbox") ? "change" : "input";
+    el.addEventListener(evt, ()=>{
+      let val;
+      if(el.type==="checkbox") val = el.checked;
+      else if(el.type==="number") val = el.value===""? null : parseFloat(el.value);
+      else val = el.value;
+      setPath(state, path, val);
+      scheduleRecalc();
+    });
+  });
+
+  // Presets de sobrecarga (Bloque 17)
+  const QS_PRESETS = { ligera:250, normal:500, pesada:1000 };
+  document.getElementById("qsPreset").addEventListener("change", e=>{
+    const v = e.target.value;
+    state.cargas.qsPreset = v;
+    if(v!=="custom"){ state.cargas.qs = QS_PRESETS[v]; document.getElementById("in-qs").value = QS_PRESETS[v]; }
+    scheduleRecalc();
+  });
+  document.getElementById("in-qs").addEventListener("input", ()=>{
+    state.cargas.qsPreset = "custom";
+    document.getElementById("qsPreset").value = "custom";
+  });
+
+  // Toolbar 2D
+  document.getElementById("chkFuerzas").addEventListener("change", e=>{ uiState.showForces = e.target.checked; renderAll(); });
+  document.getElementById("chkCotas").addEventListener("change", e=>{ uiState.showCotas = e.target.checked; renderAll(); });
+  document.getElementById("btnExportSvg").addEventListener("click", exportarSVG);
+
+  // Historial de revisiones
+  document.getElementById("btnAddRev").addEventListener("click", ()=>{
+    state.revisiones.push({ rev:String(state.revisiones.length), fecha:new Date().toISOString().slice(0,10), descripcion:"", por:"", reviso:"" });
+    renderRevTable(); saveToStorage();
+  });
+
+  // Topbar
+  document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+  document.getElementById("btnSaveJson").addEventListener("click", descargarJSON);
+  document.getElementById("btnLoadJson").addEventListener("click", ()=> document.getElementById("fileLoadJson").click());
+  document.getElementById("fileLoadJson").addEventListener("change", e=>{
+    if(e.target.files[0]) cargarJSONFile(e.target.files[0]);
+    e.target.value = "";
+  });
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    if(confirm("¿Restablecer el proyecto a los valores por defecto? Se perderán los cambios no guardados.")){
+      state = defaultState();
+      renderAllFull();
+    }
+  });
+
+  // Restaurar banner
+  document.getElementById("btnRestore").addEventListener("click", ()=>{
+    const loaded = loadFromStorage();
+    if(loaded) state = mergeState(defaultState(), loaded);
+    document.getElementById("restoreBanner").style.display = "none";
+    renderAllFull();
+  });
+  document.getElementById("btnDiscardRestore").addEventListener("click", ()=>{
+    document.getElementById("restoreBanner").style.display = "none";
+  });
+
+  // Sidebar / tabs
+  document.querySelectorAll(".nav-item").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+      if(window.innerWidth<=900) document.getElementById("sidebar").classList.remove("open");
+    });
+  });
+  document.getElementById("btnMenu")?.addEventListener("click", ()=> document.getElementById("sidebar").classList.toggle("open"));
+}
+
+function exportarSVG(){
+  const svg = document.getElementById("wall2d");
+  const serializer = new XMLSerializer();
+  let src = serializer.serializeToString(svg);
+  if(!src.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) src = src.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  const blob = new Blob([src], {type:"image/svg+xml;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "muro_alzado.svg";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ================================================================
+   9. TEMA CLARO / OSCURO
+   ================================================================ */
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("btnTheme").textContent = theme==="dark" ? "🌙" : "☀️";
+  localStorage.setItem("murosContencion.theme", theme);
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light");
+  applyTheme(cur==="dark" ? "light" : "dark");
+}
+function initTheme(){
+  const saved = localStorage.getItem("murosContencion.theme");
+  if(saved){ applyTheme(saved); }
+  else{ applyTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); }
+}
+
+/* ================================================================
+   10. INICIALIZACIÓN
+   ================================================================ */
+function init(){
+  initTheme();
+  bindAll();
+
+  const saved = loadFromStorage();
+  if(saved){
+    document.getElementById("restoreBanner").style.display = "flex";
+  }
+  renderAllFull();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>

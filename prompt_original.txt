@@ -1,0 +1,1375 @@
+================================================================
+PROMPT COMPLETO — PROGRAMA HTML TIPO HOJA FEM
+MUROS DE CONTENCIÓN — REVISIÓN GEOTÉCNICA Y ESTRUCTURAL
+ENFOCADO A TORRES DE TELECOMUNICACIONES
+================================================================
+Versión 1.0 | Basado en: ACI 318-19 · ASCE 7-22 · IBC 2021 ·
+ANSI/TIA-222-H · Rankine · Coulomb · Mononobe-Okabe
+================================================================
+
+
+================================================================
+CONTEXTO GENERAL — LEE TODO ANTES DE ESCRIBIR UNA LÍNEA
+================================================================
+
+Crea un programa web completo, autocontenido en UN SOLO ARCHIVO
+index.html, para el diseño, análisis y revisión de muros de
+contención en sitios de torres de telecomunicaciones.
+
+El programa debe seguir exactamente la misma arquitectura,
+estilo visual e interactividad de la app "Cimentaciones FEM"
+(https://github.com/cespinosal/Cimentaciones_FEM):
+  - Un solo archivo index.html autocontenido (sin dependencias externas)
+  - Todo el CSS, JS y SVG embebido dentro del mismo archivo
+  - Tema claro y oscuro con toggle, usando CSS custom properties
+  - Sistema de pestañas laterales (sidebar nav) + panel de contenido
+  - Inputs dinámicos con actualización en tiempo real
+  - Visualización 2D interactiva con SVG (esquema del muro)
+  - Visualización 3D interactiva con Three.js r128 (embebido)
+  - Diagramas de resultados con Plotly.js (desde CDN permitido)
+  - Tablas de resultados con badge CUMPLE / NO CUMPLE por fila
+  - Exportación de memoria de cálculo en Word (.docx)
+  - Responsive para pantallas de escritorio y tablet
+
+ENFOQUE PARA TORRES DE TELECOMUNICACIONES:
+  Los muros de contención en sitios de torres tienen cargas y
+  condicionantes especiales que los diferencian de muros en
+  edificación convencional:
+  1. Sobrecarga de operación y mantenimiento sobre la losa/platea
+     (equipo, personas, vehículos de servicio)
+  2. Cargas laterales transmitidas por la torre al terreno
+     (momento de vuelco, cortante basal — leídos del análisis
+     de la torre o ingresados manualmente)
+  3. Dinámico de viento sobre la torre y antenas que genera
+     cargas variables en el tiempo sobre el muro
+  4. Acceso vehicular pesado al compound (camiones de mantenimiento)
+     que genera sobrecargas puntuales y lineales sobre el relleno
+  5. Cerco perimetral típicamente anclado en la coronación del muro
+  6. Requerimientos de drenaje estrictos para proteger la cimentación
+     de la torre del nivel freático
+
+
+================================================================
+BLOQUE 1 — ARQUITECTURA Y LAYOUT DE LA APP
+================================================================
+
+ESTRUCTURA HTML GENERAL:
+  <!DOCTYPE html>
+  <html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muros de Contención — Torres Telecom</title>
+    <!-- TODO el CSS embebido aquí -->
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header superior fijo -->
+      <header id="topbar">...</header>
+
+      <!-- Layout principal: sidebar + contenido -->
+      <div id="main-layout">
+        <nav id="sidebar">...</nav>
+        <main id="content">
+          <!-- Pestañas: cada una es un div.tab-panel -->
+        </main>
+      </div>
+    </div>
+    <!-- TODOS los scripts al final del body -->
+    <script>/* Three.js r128 embebido completo */</script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+    <script>/* Toda la lógica de la app aquí */</script>
+  </body>
+  </html>
+
+------------------------------------------------------------
+TOPBAR (header fijo, altura 48px):
+------------------------------------------------------------
+  Izquierda:
+    - Ícono SVG de muro de contención (inline)
+    - Título: "Muros de Contención — Torres Telecom"
+    - Badge de versión: "v1.0"
+
+  Centro:
+    - Nombre del proyecto (input editable inline)
+
+  Derecha:
+    - Toggle tema claro/oscuro (ícono sol/luna, animado)
+    - Botón "Exportar Word" (ícono documento + texto)
+    - Botón "Guardar JSON" (ícono descarga)
+    - Botón "Cargar JSON" (ícono subida, input file oculto)
+    - Botón "Restablecer" (ícono reset, con confirmación)
+
+------------------------------------------------------------
+SIDEBAR (navegación lateral, ancho 220px, colapsable):
+------------------------------------------------------------
+  Grupos de navegación con íconos SVG inline:
+
+  [📋] PROYECTO
+       └─ Datos generales
+       └─ Historial de revisiones
+
+  [🧱] GEOMETRÍA DEL MURO
+       └─ Tipo de muro
+       └─ Dimensiones
+       └─ Talud del relleno
+       └─ Vista 2D interactiva
+
+  [🌍] SUELO Y MATERIALES
+       └─ Propiedades del relleno
+       └─ Propiedades del suelo de fundación
+       └─ Nivel freático
+       └─ Propiedades del concreto/acero
+
+  [⬇️] CARGAS
+       └─ Peso propio
+       └─ Sobrecarga de operación
+       └─ Cargas de la torre
+       └─ Carga vehicular (camiones)
+       └─ Sismo (Mononobe-Okabe)
+
+  [📐] PRESIONES LATERALES
+       └─ Método de análisis
+       └─ Diagrama de presiones
+       └─ Presión hidrostática
+
+  [✅] REVISIONES GEOTÉCNICAS
+       └─ 1. Volteo (Overturning)
+       └─ 2. Deslizamiento (Sliding)
+       └─ 3. Capacidad portante
+       └─ 4. Excentricidad
+       └─ 5. Estabilidad global
+
+  [🏗️] DISEÑO ESTRUCTURAL
+       └─ 6. Flexión del fuste
+       └─ 7. Cortante del fuste
+       └─ 8. Diseño de la zapata (talón y puntera)
+       └─ 9. Revisión de llave de corte
+
+  [📊] RESULTADOS
+       └─ Resumen ejecutivo
+       └─ Diagrama de presiones (Plotly)
+       └─ Diagrama M y V del fuste (Plotly)
+       └─ Vista 3D del muro
+
+  [📄] REFERENCIAS
+       └─ Motor de cálculo
+       └─ Normas aplicadas
+
+
+================================================================
+BLOQUE 2 — TEMA CLARO Y OSCURO (CSS CUSTOM PROPERTIES)
+================================================================
+
+:root[data-theme="dark"] {
+  --bg:          #0A1628;
+  --bg2:         #111D35;
+  --panel:       #162040;
+  --panel2:      #1C2A4E;
+  --border:      #2A3F6B;
+  --border-strong: #3B5490;
+  --text:        #E8EDF5;
+  --text2:       #A8B8D8;
+  --muted:       #637AA0;
+  --brand:       #4A90D9;
+  --brand-dark:  #1B3A6B;
+  --brand-light: #7AB8F5;
+  --accent:      #4FC3F7;
+  --success-bg:  #0D2918;
+  --success-fg:  #4CAF50;
+  --success-border: #2E7D32;
+  --danger-bg:   #2D1010;
+  --danger-fg:   #EF5350;
+  --danger-border: #C62828;
+  --warn-bg:     #2D2200;
+  --warn-fg:     #FFC107;
+  --warn-border: #F57F17;
+  --canvas:      #070F20;
+  --shadow:      0 2px 8px rgba(0,0,0,0.5);
+  --radius:      6px;
+  --radius-lg:   10px;
+  --font:        'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:   'Consolas', 'Fira Code', monospace;
+}
+
+:root[data-theme="light"] {
+  --bg:          #F4F6FB;
+  --bg2:         #FFFFFF;
+  --panel:       #FFFFFF;
+  --panel2:      #F0F4FA;
+  --border:      #D1D9E8;
+  --border-strong: #A8B8D8;
+  --text:        #1A2540;
+  --text2:       #4A5A7A;
+  --muted:       #7A8AAA;
+  --brand:       #1B3A6B;
+  --brand-dark:  #0D1F3C;
+  --brand-light: #2E5FAC;
+  --accent:      #0277BD;
+  --success-bg:  #E8F5E9;
+  --success-fg:  #2E7D32;
+  --success-border: #4CAF50;
+  --danger-bg:   #FFEBEE;
+  --danger-fg:   #C62828;
+  --danger-border: #EF5350;
+  --warn-bg:     #FFF8E1;
+  --warn-fg:     #F57F17;
+  --warn-border: #FFC107;
+  --canvas:      #E8EDF5;
+  --shadow:      0 1px 4px rgba(0,0,0,0.12);
+  --radius:      6px;
+  --radius-lg:   10px;
+}
+
+El toggle de tema debe:
+  - Animarse con transición de 0.3s en todos los colores
+  - Persistir la preferencia en localStorage
+  - Detectar la preferencia del sistema con
+    window.matchMedia("(prefers-color-scheme: dark)") al inicio
+
+
+================================================================
+BLOQUE 3 — ESTADO DE LA APLICACIÓN (objeto state)
+================================================================
+
+const defaultState = () => ({
+  proyecto: {
+    nombre:      "",
+    assetNum:    "",
+    ubicacion:   "",
+    pais:        "México",
+    ingeniero:   "",
+    revision:    "0",
+    fecha:       new Date().toISOString().slice(0,10),
+    notas:       ""
+  },
+
+  revisiones: [],        // array de { rev, fecha, descripcion, por }
+
+  tipo: "Cantilever",    // "Gravedad" | "Cantilever" | "Contrafuerte" | "Gavión"
+
+  geom: {
+    // Fuste (stem)
+    H:     3.00,   // Altura total del muro sobre zapata [m]
+    ts:    0.30,   // Espesor del fuste en la base [m]
+    tc:    0.20,   // Espesor del fuste en la corona [m]
+    incl:  0.00,   // Inclinación del intradós [°] (0 = vertical)
+
+    // Zapata (footing)
+    Bf:    2.10,   // Ancho total de la zapata [m] (típico 0.5-0.7*H)
+    tf:    0.35,   // Espesor de la zapata [m]
+    toe:   0.40,   // Vuelo de la puntera (toe) [m]
+    heel:  null,   // Calculado: Bf - toe - ts_base
+
+    // Llave de corte (shear key) — opcional
+    keyEnabled: false,
+    keyW:  0.20,   // Ancho de la llave [m]
+    keyD:  0.30,   // Profundidad de la llave [m]
+    keyPos: "base_stem",  // "base_stem" | "center" | "custom"
+
+    // Relleno
+    Hr:    3.00,   // Altura del relleno sobre la zapata [m] (= H típicamente)
+    beta:  0.00,   // Ángulo del talud del relleno [°] (0 = horizontal)
+    alpha: 0.00,   // Ángulo del intradós con la vertical [°]
+
+    // Profundidad de desplante
+    Df:    0.80,   // Profundidad de empotramiento (desde NTN a fondo zapata) [m]
+  },
+
+  suelo: {
+    // Relleno (backfill)
+    gamma_r:  1800,   // Peso unitario del relleno [kg/m³]
+    phi_r:    30,     // Ángulo de fricción interna del relleno [°]
+    c_r:      0,      // Cohesión del relleno [kg/m²]
+    delta_r:  null,   // Ángulo de fricción muro-suelo [°] (null = phi_r/2)
+    Ks:       0.5,    // Coeficiente de empuje en reposo K0 (para At-rest)
+
+    // Suelo de fundación (foundation soil)
+    gamma_f:  1900,   // Peso unitario del suelo de fundación [kg/m³]
+    phi_f:    28,     // Ángulo de fricción del suelo de fundación [°]
+    c_f:      0,      // Cohesión del suelo de fundación [kg/m²]
+    QADM:     10,     // Capacidad admisible del suelo [t/m²]
+    FS_qadm:  3,      // Factor de seguridad de capacidad de carga
+    mu:       null,   // Coeficiente de fricción base-suelo (null = tan(phi_f*2/3))
+
+    // Nivel freático
+    waterEnabled: false,
+    Hw:       0,      // Altura del agua sobre la base de la zapata [m]
+    gamma_w:  1000,   // Peso unitario del agua [kg/m³]
+
+    // Pasivo del suelo de la puntera
+    pasivoEnabled: true,
+    gamma_p:  1800,   // Peso unitario del suelo frente al muro [kg/m³]
+    phi_p:    28,     // Ángulo de fricción del suelo pasivo [°]
+  },
+
+  materiales: {
+    fc:    210,    // Resistencia del concreto f'c [kg/cm²]
+    fy:    4200,   // Resistencia del acero fy [kg/cm²]
+    gc:    2400,   // Peso unitario del concreto [kg/m³]
+    recub: 7.5,    // Recubrimiento libre [cm]
+    phiF:  0.90,   // Factor phi flexión
+    phiV:  0.75,   // Factor phi cortante
+  },
+
+  cargas: {
+    // Sobrecarga de operación sobre el relleno (surcharge)
+    qsEnabled: true,
+    qs:    1000,   // Sobrecarga uniformemente distribuida [kg/m²]
+                   // Típico: 500-1000 kg/m² (personal + equipo)
+
+    // Sobrecarga vehicular (camiones de mantenimiento)
+    qvEnabled: false,
+    qv:    1200,   // Sobrecarga vehicular [kg/m²] (AASHTO H-10 típico)
+    wv:    2.40,   // Ancho de la franja de carga vehicular [m]
+
+    // Cargas de la torre transmitidas al terreno
+    torreEnabled: false,
+    Pu_torre:  0,  // Carga axial de la torre sobre la cimentación [kN]
+    Mu_torre:  0,  // Momento de vuelco de la torre (en la dirección del muro) [kN·m]
+    Vu_torre:  0,  // Cortante basal de la torre (paralelo al muro) [kN]
+    dist_torre: 0, // Distancia horizontal del centro de la torre al muro [m]
+
+    // Cerco perimetral
+    cercoEnabled: false,
+    P_cerco:  50,  // Carga del cerco por metro lineal [kg/m]
+    h_cerco:  2.0, // Altura del cerco [m]
+  },
+
+  sismo: {
+    enabled:  false,
+    metodo:   "Mononobe-Okabe",  // "Mononobe-Okabe" | "EFP_sismico"
+    kh:       0.15,  // Coeficiente sísmico horizontal
+    kv:       0.00,  // Coeficiente sísmico vertical
+    // EFP sísmico (alternativo simple):
+    EFP_sism: 7,     // Presión adicional en pcf por pie de altura (7H psf típico)
+    FS_min_sism: 1.1, // FS mínimo bajo sismo
+  },
+
+  metodo_presion: "Rankine",
+  // "Rankine" | "Coulomb" | "At-rest" | "Fluido_equivalente"
+  EFP: 480,   // Presión de fluido equivalente [kg/m³] (si se usa EFP)
+
+  diseno: {
+    // Acero fuste
+    varFusteExt:   "#5",  // Varilla cara exterior (tensión)
+    varFusteInt:   "#4",  // Varilla cara interior
+    sepFusteExt:   15,    // Separación cara exterior [cm]
+    sepFusteInt:   30,    // Separación cara interior [cm]
+    // Acero zapata
+    varZapataInf:  "#5",  // Varilla lecho inferior zapata
+    varZapataSup:  "#4",  // Varilla lecho superior zapata
+    sepZapataInf:  15,    // Separación [cm]
+    sepZapataSup:  30,    // Separación [cm]
+    // Temperatura y retracción
+    varTemp:       "#3",
+    sepTemp:       30,
+  },
+
+  // Factores de seguridad mínimos
+  FS: {
+    volteo_estatico:    2.0,
+    volteo_sismico:     1.5,
+    desliz_estatico:    1.5,
+    desliz_sismico:     1.1,
+    capacidad_carga:    3.0,
+    eccentricidad:      "B/6",  // resultante dentro del tercio central
+  }
+});
+
+let state = defaultState();
+
+
+================================================================
+BLOQUE 4 — MÉTODOS DE ANÁLISIS DE PRESIÓN LATERAL
+(IMPLEMENTAR TODOS, con selector en la UI)
+================================================================
+
+El usuario puede elegir el método de cálculo de presión lateral.
+Implementar las 4 teorías y recalcular en tiempo real al cambiar.
+
+------------------------------------------------------------
+MÉTODO 1 — RANKINE (default recomendado)
+------------------------------------------------------------
+Aplica cuando: pared vertical, sin fricción muro-suelo, relleno
+horizontal o con talud. Más conservador que Coulomb.
+
+Ka = tan²(45 - phi/2)                    [presión activa]
+Kp = tan²(45 + phi/2)                    [presión pasiva]
+
+Con talud beta en el relleno (Rankine generalizado):
+Ka = cos(beta) * [cos(beta) - sqrt(cos²(beta) - cos²(phi))]
+               / [cos(beta) + sqrt(cos²(beta) - cos²(phi))]
+
+Presión activa triangular: pa(z) = Ka * gamma_r * z  [kg/m²]
+Fuerza activa total:       Pa = 0.5 * Ka * gamma_r * H²
+Punto de aplicación:       a 1/3 de la base (H/3)
+
+Sobrecarga uniformemente distribuida (Rankine):
+  Dp_q = Ka * qs                          [kg/m², uniforme en altura]
+  Fuerza:  Pq = Ka * qs * H
+  Aplicación: H/2 desde la base
+
+Presión pasiva:            pp(z) = Kp * gamma_f * z  [kg/m²]
+Fuerza pasiva:             Pp = 0.5 * Kp * gamma_f * Df²
+Punto de aplicación:       a Df/3 desde la base
+
+------------------------------------------------------------
+MÉTODO 2 — COULOMB
+------------------------------------------------------------
+Aplica cuando: hay fricción muro-suelo (delta ≠ 0), pared
+inclinada, o relleno con talud. Más realista que Rankine
+pero puede sobreestimar la presión pasiva.
+
+delta = phi_r / 2  (valor típico si no se especifica)
+
+Ka_coulomb = sin²(theta + phi) /
+  [ sin²(theta) * sin(theta - delta) *
+    (1 + sqrt(sin(phi+delta)*sin(phi-beta) /
+              (sin(theta-delta)*sin(theta+beta))))² ]
+
+Donde:
+  theta = ángulo del intradós con la horizontal (90° - alpha)
+  phi   = ángulo de fricción del relleno
+  delta = ángulo de fricción muro-suelo
+  beta  = ángulo del talud del relleno
+
+Fuerza activa: Pa = 0.5 * Ka_coulomb * gamma_r * H²
+Componente horizontal: Ph = Pa * cos(delta)
+Componente vertical:   Pv = Pa * sin(delta)
+Punto de aplicación: H/3 desde la base
+
+------------------------------------------------------------
+MÉTODO 3 — AT-REST (en reposo) K0
+------------------------------------------------------------
+Aplica para: muros rígidos sin movimiento esperado (sótanos,
+muros anclados, muros en roca). Más conservador que Ka.
+
+K0 = 1 - sin(phi_r)          (Jaky, suelo normalmente consolidado)
+K0 = (1-sin(phi_r)) * OCR^sin(phi_r)  (suelo sobreconsolidado)
+También: K0 puede ingresarse manualmente (Ks en state.suelo)
+
+P0 = 0.5 * K0 * gamma_r * H²
+Punto de aplicación: H/3 desde la base
+
+------------------------------------------------------------
+MÉTODO 4 — FLUIDO EQUIVALENTE (EFP)
+------------------------------------------------------------
+Aplica para: diseño simplificado, verificación rápida.
+Parámetro único: EFP [kg/m³] (típico: 320-640 kg/m³)
+
+pa(z) = EFP * z               [kg/m²]
+Pa    = 0.5 * EFP * H²
+Punto de aplicación: H/3
+
+------------------------------------------------------------
+PRESIÓN SÍSMICA ADICIONAL — MONONOBE-OKABE
+------------------------------------------------------------
+Aplica: cuando sismo está habilitado y método = Mononobe-Okabe.
+Referencia: ASCE 7-22, AASHTO LRFD, Seed & Whitman (1970).
+
+psi = atan(kh / (1 - kv))         [ángulo sísmico]
+
+KAE = sin²(phi + theta - psi) /
+  [ cos(psi) * sin²(theta) * sin(theta - delta - psi) *
+    (1 + sqrt(sin(phi+delta)*sin(phi-beta-psi) /
+              (sin(theta-delta-psi)*sin(theta+beta))))² ]
+
+Incremento sísmico:
+  DeltaPAE = 0.5 * (KAE - Ka) * gamma_r * H²   [kg/m]
+  Punto de aplicación: 0.6*H desde la base
+  (Seed & Whitman: el incremento dinámico actúa a 0.6H)
+
+También disponible el método EFP sísmico simplificado:
+  Presión adicional = EFP_sism * H  [kg/m] uniforme
+  (Equivalente a la práctica de muchos códigos locales)
+
+------------------------------------------------------------
+PRESIÓN HIDROSTÁTICA (si nivel freático habilitado)
+------------------------------------------------------------
+  pw(z) = gamma_w * z_w     [kg/m²]  (z_w = z medido desde NF)
+  Pw = 0.5 * gamma_w * Hw²
+  Punto de aplicación: Hw/3 desde la base
+
+  IMPORTANTE: si hay agua, usar gamma_r_sat y Ka con phi_r
+  en condición saturada (reducir phi en 2-5° como conservador).
+
+------------------------------------------------------------
+INTERFAZ DEL SELECTOR DE MÉTODO:
+------------------------------------------------------------
+Panel visual tipo "card selector" con 4 tarjetas, cada una con:
+  - Ícono/diagrama SVG del diagrama de presiones
+  - Nombre del método
+  - Cuándo usarlo (2 líneas de texto)
+  - Badge "Más conservador" / "Recomendado" / "Simplificado"
+  - Borde resaltado en azul al seleccionar
+Al cambiar la selección: recalcular todo en tiempo real.
+
+
+================================================================
+BLOQUE 5 — VISTA 2D INTERACTIVA DEL MURO (SVG DINÁMICO)
+================================================================
+
+Generar un SVG dinámico que muestre el alzado del muro
+actualizado en tiempo real con cada cambio de parámetro.
+
+El SVG debe mostrar:
+
+GEOMETRÍA (a escala, con cotas):
+  - Fuste del muro (tronco de pirámide si tc ≠ ts)
+  - Zapata (puntera + talón + espesor)
+  - Llave de corte (si está habilitada)
+  - NTN (nivel de terreno natural) con línea punteada
+  - NF  (nivel freático) con línea azul y símbolo de agua
+  - Relleno representado con patrón de rayas diagonales
+  - Suelo de fundación con patrón de puntos
+  - Cotas interactivas: H, Bf, tf, toe, heel, ts, tc, Df, Hw
+
+FUERZAS Y PRESIONES (capa togglable):
+  - Diagrama triangular de presión activa (rojo, a la derecha del fuste)
+  - Diagrama de sobrecarga (naranja, rectángulo sobre la activa)
+  - Diagrama de presión pasiva (verde, frente al muro)
+  - Flecha de fuerza activa Pa con valor y punto de aplicación
+  - Flecha de fuerza pasiva Pp con valor y punto de aplicación
+  - Flecha de sobrecarga Pq con valor
+  - Resultante de cargas verticales W con valor
+  - Flecha de fuerza sísmica (amarilla, si está habilitada)
+
+PUNTO DE APLICACIÓN DE LA RESULTANTE:
+  - Línea vertical punteada en la base de la zapata
+  - Punto rojo = resultante
+  - Zona verde = "tercio central" (B/6 a cada lado del centro)
+  - Si el punto cae fuera del tercio: zona roja + advertencia
+
+INTERACTIVIDAD:
+  - Hover sobre cualquier cota: tooltip con el valor numérico
+  - Clic en las flechas de fuerza: tooltip con la fórmula y valor
+  - Los elementos del SVG responden al tema claro/oscuro
+  - Botones sobre el SVG:
+      [Fuerzas ON/OFF] [Cotas ON/OFF] [Escala x1/x2/Auto]
+      [Exportar SVG] [Exportar PNG]
+
+FUNCIÓN:
+  function dibujarMuro2D(svg_el, state, resultados) {
+    // 1. Calcular escala automática para que el muro quepa en el SVG
+    // 2. Dibujar geometría (polígonos del fuste, zapata, llave)
+    // 3. Dibujar relleno y suelo
+    // 4. Dibujar líneas de referencia (NTN, NF)
+    // 5. Dibujar cotas con texto
+    // 6. Si fuerzas visibles: dibujar diagramas de presión y flechas
+    // 7. Dibujar resultante y zona del tercio central
+  }
+  Llamar dibujarMuro2D() cada vez que el estado cambie.
+
+
+================================================================
+BLOQUE 6 — REVISIONES GEOTÉCNICAS
+(Implementar con fórmulas completas y referencias normativas)
+================================================================
+
+Crear la función calcularGeotecnia(state) que retorna un objeto
+con todos los resultados geotécnicos.
+
+------------------------------------------------------------
+REVISIÓN 1 — VOLTEO (OVERTURNING)
+Referencia: NAVFAC DM-7.02, AASHTO LRFD, IBC 1807
+------------------------------------------------------------
+Calcular tomando momentos respecto al TOE (punta de la puntera).
+
+FUERZAS DESESTABILIZADORAS (momentos de volteo, Mov):
+  Pa_h = Pa * cos(delta)            [fuerza horizontal activa]
+  Pq_h = Ka * qs * H               [sobrecarga horizontal]
+  Pw_h = 0.5 * gamma_w * Hw²       [agua, si aplica]
+  PSISM_h = DeltaPAE * cos(delta)   [sísmica, si aplica]
+
+  Mov = Pa_h * (H/3 + tf)           [momento Pa respecto al toe]
+      + Pq_h * (H/2 + tf)           [momento sobrecarga]
+      + Pw_h * (Hw/3)               [momento agua]
+      + PSISM_h * (0.6*H + tf)      [momento sísmico]
+
+FUERZAS ESTABILIZADORAS (momentos de resistencia, Mr):
+  Calcular el momento de TODAS las fuerzas verticales respecto al TOE:
+  - Peso del fuste:       Ws = gc * Vol_fuste,    brazo = dist_centroide_fuste_al_toe
+  - Peso de la zapata:    Wf = gc * Bf * tf,      brazo = Bf/2
+  - Peso del relleno sobre el talón: Wr = gamma_r * heel * Hr, brazo = Bf - heel/2
+  - Peso del suelo sobre la puntera: Wp = gamma_f * toe * Df,  brazo = toe/2
+  - Sobrecarga vertical:  Pq_v = qs * heel,        brazo = Bf - heel/2
+  - Fuerza vertical activa: Pa_v = Pa * sin(delta), brazo = Bf (en la base del fuste)
+  - Cargas de la torre: si torreEnabled
+  - Cerco: si cercoEnabled
+
+  Mr = Ws*brazo_s + Wf*brazo_f + Wr*brazo_r + Wp*brazo_p +
+       Pq_v*brazo_pq + Pa_v*brazo_pav
+
+FS_volteo = Mr / Mov
+
+Verificar:
+  FS_volteo >= FS.volteo_estatico  (estático)
+  FS_volteo >= FS.volteo_sismico   (sísmico, si aplica)
+
+------------------------------------------------------------
+REVISIÓN 2 — DESLIZAMIENTO (SLIDING)
+Referencia: NAVFAC DM-7.02, AASHTO LRFD
+------------------------------------------------------------
+FUERZA HORIZONTAL TOTAL:
+  Fh = Pa_h + Pq_h + Pw_h + PSISM_h   [kg/m]
+
+FUERZAS RESISTENTES AL DESLIZAMIENTO:
+  Peso vertical total: N = Ws + Wf + Wr + Wp + Pq_v + Pa_v
+  Fricción base:       Fr = mu * N     donde mu = tan(2/3*phi_f)
+  Pasivo del suelo:    Pp_h = Pp * cos(delta_p)  [solo si pasivoEnabled]
+  Llave de corte:      Fkey = Kp * gamma_f * keyD * (keyD + 2*Df)
+                              (si keyEnabled)
+
+  Resistencia total: R = Fr + Pp_h + Fkey
+
+FS_desliz = R / Fh
+
+Verificar:
+  FS_desliz >= FS.desliz_estatico  (estático)
+  FS_desliz >= FS.desliz_sismico   (sísmico)
+
+------------------------------------------------------------
+REVISIÓN 3 — CAPACIDAD PORTANTE (BEARING CAPACITY)
+Referencia: Terzaghi, Meyerhof — NAVFAC DM-7.02
+------------------------------------------------------------
+Calcular la presión bajo la zapata (distribución trapezoidal):
+
+ΣV = N (peso vertical total)
+ΣH = Fh (fuerza horizontal total)
+ΣM_toe = Mr - Mov  (momento resultante respecto al toe)
+
+Distancia de la resultante al toe:
+  x_r = ΣM_toe / ΣV
+
+Excentricidad respecto al CENTRO de la zapata:
+  e = Bf/2 - x_r          [m]
+
+Presión máxima (en el toe):
+  Si |e| <= Bf/6:           distribución trapezoidal
+    q_max = (ΣV/Bf) * (1 + 6*e/Bf)   [kg/m²]
+    q_min = (ΣV/Bf) * (1 - 6*e/Bf)   [kg/m²]
+  Si |e| > Bf/6:            distribución triangular (peligroso)
+    L_efectiva = 3 * x_r              [longitud efectiva]
+    q_max = 2*ΣV / (3*x_r)           [kg/m²]
+    q_min = 0                         (despegue del talón)
+
+Comparar con la capacidad admisible:
+  q_max <= QADM       (en el caso ASD / trabajantes)
+  O usar LRFD con factores apropiados de ASCE 7
+
+Capacidad última de Terzaghi (para información, no diseño):
+  qult = c_f*Nc*sc*dc + gamma_f*Df*Nq*sq*dq + 0.5*gamma_f*Bf*N_gamma*s_gamma*d_gamma
+  (Nc, Nq, N_gamma = factores de capacidad de carga de Terzaghi/Meyerhof)
+  FS_carga = qult / q_max  → debe ser >= FS_qadm
+
+------------------------------------------------------------
+REVISIÓN 4 — EXCENTRICIDAD
+Referencia: NAVFAC DM-7.02
+------------------------------------------------------------
+  e = |Bf/2 - x_r|
+
+  CUMPLE si:  e <= Bf/6   (resultante en el tercio central)
+  ALERTA si:  Bf/6 < e <= Bf/4   (resultante cerca del borde)
+  NO CUMPLE:  e > Bf/4   (distribución triangular, talón despegado)
+
+------------------------------------------------------------
+REVISIÓN 5 — ESTABILIDAD GLOBAL
+Referencia: Bishop, Fellenius (análisis de talud)
+------------------------------------------------------------
+  Esta revisión es informativa — el programa indica si se
+  requiere un análisis de estabilidad global por un especialista.
+
+  Condiciones que REQUIEREN análisis de estabilidad global:
+  - H > 5.0 m
+  - Suelo de fundación con c_f > 0 y phi_f < 20°
+  - Nivel freático alto (Hw > H/2)
+  - Talud del relleno beta > 10°
+  - Torre cercana al muro (dist_torre < H)
+
+  Si se cumple alguna condición: mostrar alerta amarilla con
+  el texto:
+  "⚠ Se recomienda análisis de estabilidad global (método de
+   Bishop o Janbu) con un programa especializado (Slide, SLOPE/W)."
+
+  El programa no ejecuta el análisis de Bishop pero sí calcula
+  el FS de la cuña de deslizamiento plana (método simplificado)
+  como referencia rápida.
+
+
+================================================================
+BLOQUE 7 — DISEÑO ESTRUCTURAL
+(ACI 318-19, LRFD)
+================================================================
+
+Crear la función calcularEstructural(state, geotecnia) que
+retorna el diseño del fuste y la zapata.
+
+------------------------------------------------------------
+REVISIÓN 6 — FLEXIÓN DEL FUSTE
+ACI 318-19 §22.3, método LRFD
+------------------------------------------------------------
+El fuste actúa como una viga en voladizo empotrada en la zapata.
+
+Sección crítica: en la base del fuste (en la interfaz con la zapata).
+
+Momento factorizado en la base del fuste (por metro de muro):
+  Combinaciones ASCE 7-22 LRFD:
+    1.4D:         Mu = 1.4 * (Peso propio del fuste)
+    1.2D + 1.6H:  Mu = 1.2 * MD + 1.6 * MH_activa + 1.6 * Mq
+    0.9D + 1.0H:  Mu = 0.9 * MD + 1.0 * MH_activa
+    (H = cargas de suelo/agua, factor 1.6 o 1.0 según ASCE 7)
+
+  MH = Pa_h * H/3 + Pq_h * H/2 + Pw_h * Hw/3
+       (momentos de fuerzas laterales desde la corona hasta la base)
+
+Peralte efectivo:
+  d = ts - recub - d_estribo - d_varilla/2    [cm]
+
+As_req por flexión (ACI 318-19 §22.3):
+  As = (0.85*fc*b / fy) * (d - sqrt(d² - 2*Mu/(0.85*fc*phi_F*b)))
+  (b = 100 cm/m, Mu en kg·cm, fc y fy en kg/cm²)
+
+As_min (ACI 318-19 §9.6.1.2):
+  As_min = max(0.25*sqrt(fc)/fy * b*d, 1.4/fy * b*d)
+
+Verificación con acero propuesto:
+  As_prov = REBAR_AREAS[varFusteExt] / (sepFusteExt/100)  [cm²/m]
+  Comparar As_prov >= max(As_req, As_min)
+
+phi*Mn (capacidad del fuste):
+  a   = As_prov * fy / (0.85 * fc * b)
+  phi_Mn = phi_F * As_prov * fy * (d - a/2)    [kg·cm/m]
+  Verificar: phi_Mn >= Mu
+
+------------------------------------------------------------
+REVISIÓN 7 — CORTANTE DEL FUSTE
+ACI 318-19 §22.5
+------------------------------------------------------------
+Sección crítica: a distancia d desde la base del fuste.
+
+Fuerza cortante factorizada:
+  Vu = 1.6 * (Pa_h_d + Pq_h_d)
+       (fuerzas laterales por encima de la sección crítica,
+        a distancia d desde la base)
+
+Resistencia al cortante del concreto (ACI 318-19 §22.5.5.1):
+  Vc = (0.17*lambda*sqrt(fc) + Nu/(6*Ag)) * b * d    [MPa]
+  phi_Vc = phi_V * Vc
+  (convertir a kg/cm²: sqrt(fc_psi)/14.5 o usar fc en MPa)
+
+  Simplificado SI: phi_Vc = phi_V * 0.17 * sqrt(fc_MPa) * b_mm * d_mm  [N]
+                 = phi_V * 0.53 * sqrt(fc_kgcm2) * b_cm * d_cm  [kg]
+
+Verificar: phi_Vc >= Vu  (sin estribos en muros, ACI §11.7.3)
+Si no cumple: aumentar espesor del fuste ts.
+
+------------------------------------------------------------
+REVISIÓN 8 — DISEÑO DE LA ZAPATA (TALÓN Y PUNTERA)
+ACI 318-19 §13.3
+------------------------------------------------------------
+La zapata actúa como viga en voladizo desde el fuste.
+
+PUNTERA (toe):
+  Carga hacia arriba: presión del suelo q(x) en la puntera
+  Carga hacia abajo: peso propio de la zapata + suelo sobre puntera
+  Neta: queda una distribución hacia arriba (la presión domina)
+  Sección crítica: en la cara del fuste (a toe del intradós)
+  Mu_toe = q_toe_avg * toe * toe/2 - gc * tf * toe * toe/2
+
+TALÓN (heel):
+  Carga hacia abajo: peso del relleno + peso de la zapata
+  Carga hacia arriba: presión del suelo q(x) en el talón
+  Neta: generalmente hacia abajo (el relleno domina)
+  Sección crítica: en la cara del fuste (al intradós del fuste)
+  Mu_heel = (gamma_r*Hr + gc*tf) * heel²/2 - q_heel_avg * heel²/2
+
+Calcular As_req para cada vuelo (puntera y talón).
+Comparar con As_prov = REBAR_AREAS[varZapataInf] / sepZapataInf
+
+------------------------------------------------------------
+REVISIÓN 9 — LLAVE DE CORTE (SHEAR KEY)
+ACI 318-19, si keyEnabled
+------------------------------------------------------------
+La llave de corte aumenta la resistencia al deslizamiento.
+Verificar la resistencia al cortante en la raíz de la llave.
+
+Fuerza en la llave = ΔF = Fh - Fr_base
+(la porción de la fuerza horizontal que excede la fricción base)
+
+Mu_key = ΔF * (keyD/2 + tf/2)
+phi_Vc_key = phi_V * 0.53 * sqrt(fc) * keyW_cm * (keyW_cm*0.75)
+Verificar phi_Vc_key >= ΔF
+
+------------------------------------------------------------
+DIAGRAMA M y V DEL FUSTE (Plotly.js):
+------------------------------------------------------------
+Generar un gráfico combinado con dos paneles (subplot):
+  Panel izquierdo: Diagrama de Momento (M) a lo largo del fuste
+    - Línea azul = Mu factorizado por altura
+    - Línea verde punteada = phi*Mn capacidad del acero propuesto
+    - Línea roja punteada = phi*Mn del acero mínimo
+    - Eje Y = altura del fuste [m], Eje X = Momento [t·m/m]
+
+  Panel derecho: Diagrama de Cortante (V) a lo largo del fuste
+    - Línea naranja = Vu factorizado por altura
+    - Línea verde punteada = phi*Vc resistencia del concreto
+    - Punto rojo = sección crítica de cortante (en z=d desde la base)
+    - Eje Y = altura del fuste [m], Eje X = Cortante [t/m]
+
+
+================================================================
+BLOQUE 8 — VISTA 3D DEL MURO (Three.js r128 embebido)
+================================================================
+
+Renderizar una vista 3D interactiva del muro en un canvas WebGL.
+Three.js r128 debe ir EMBEBIDO en el index.html (sin CDN).
+Usar OrbitControls (también embebido).
+
+GEOMETRÍA 3D A RENDERIZAR (largo de muro = 6m por defecto):
+  a) Cuerpo del muro (concreto, gris claro):
+     - Fuste: ExtrudeGeometry del perfil trapezoidal
+     - Zapata: BoxGeometry(Bf, tf, L_muro)
+     - Llave de corte: BoxGeometry(keyW, keyD, L_muro) si aplica
+
+  b) Relleno (terreno, marrón semitransparente):
+     - BoxGeometry desde la cara posterior del fuste hasta atrás,
+       altura Hr, ancho del talón + extra 2m
+     - opacity: 0.35
+
+  c) Suelo de fundación (gris terroso, semitransparente):
+     - Plano debajo de la zapata, profundidad Df, ancho > Bf
+     - opacity: 0.20
+
+  d) Nivel freático (plano azul semitransparente):
+     - Solo si waterEnabled
+     - Plano horizontal a la altura del NF
+     - opacity: 0.25, color azul (#2196F3)
+
+  e) Acero de refuerzo (toggle, ver Bloque 9):
+     - Varillas del fuste (naranja, CylinderGeometry)
+     - Varillas de la zapata (azul y verde)
+     - Estribos del fuste (morado)
+
+MATERIALES:
+  concreto_mat   = MeshStandardMaterial(color:#8a95a5, roughness:0.8)
+  relleno_mat    = MeshStandardMaterial(color:#8B6914, roughness:0.9, transparent, opacity:0.35)
+  suelo_mat      = MeshStandardMaterial(color:#5D4037, roughness:0.9, transparent, opacity:0.20)
+  agua_mat       = MeshStandardMaterial(color:#1565C0, roughness:0.1, metalness:0.2, transparent, opacity:0.25)
+
+LUCES:
+  AmbientLight(0xffffff, 0.7)
+  DirectionalLight(pos=(5,10,5), intensity=0.6)
+  DirectionalLight(pos=(-4,6,-6), intensity=0.3)
+
+CONTROLES (panel superpuesto, misma lógica que Cimentaciones FEM):
+  ☑ Concreto  ☑ Relleno  ☑ Suelo  ☑ Agua  ☐ Acero
+  [Isométrica] [Alzado] [Planta] [Sección A-A]
+  [Exportar PNG]
+
+COTAS 3D (THREE.Sprite con CanvasTexture):
+  - H (altura del muro)
+  - Bf (ancho de la zapata)
+  - tf (espesor de la zapata)
+  - ts (espesor del fuste en la base)
+  - Df (profundidad de desplante)
+
+La vista 3D debe actualizarse automáticamente cada vez que
+cambie cualquier parámetro geométrico.
+
+
+================================================================
+BLOQUE 9 — ACERO DE REFUERZO EN 3D
+================================================================
+
+Usando Three.js, agregar una capa de acero de refuerzo a la
+vista 3D (activable con checkbox).
+
+FUSTE — VARILLAS VERTICALES CARA EXTERIOR (tensión):
+  Distribuidas uniformemente a sepFusteExt [cm]
+  Longitud: desde la zapata + ld_gancho hasta la corona
+  Gancho en la base (90°) dentro de la zapata
+  Color: naranja (#E65100)
+
+FUSTE — VARILLAS VERTICALES CARA INTERIOR (compresión):
+  Distribuidas a sepFusteInt [cm]
+  Color: amarillo (#F9A825)
+
+FUSTE — ESTRIBOS HORIZONTALES (temperatura y retracción):
+  Cada sepTemp [cm]
+  Rectángulos horizontales siguiendo el perfil del fuste
+  Color: morado (#6A1B9A)
+
+ZAPATA — LECHO INFERIOR:
+  Barras horizontales (en X) a sepZapataInf [cm]
+  Color: azul (#1565C0)
+
+ZAPATA — LECHO SUPERIOR:
+  Barras horizontales (en X) a sepZapataSup [cm]
+  Color: verde (#2E7D32)
+
+LONGITUDES DE DESARROLLO ACI 318-19:
+  Calcular ld y ldh para cada tipo de varilla.
+  Mostrar en la vista 3D la zona de desarrollo como una zona
+  translúcida de diferente color sobre la varilla.
+
+LEYENDA DE COLORES (div superpuesto):
+  ● Naranja — Vertical ext. (tensión): varFusteExt @ sepFusteExt cm
+  ● Amarillo — Vertical int. (compresión): varFusteInt @ sepFusteInt cm
+  ● Morado  — Temperatura/retracción: varTemp @ sepTemp cm
+  ● Azul    — Zapata lecho inf.: varZapataInf @ sepZapataInf cm
+  ● Verde   — Zapata lecho sup.: varZapataSup @ sepZapataSup cm
+
+
+================================================================
+BLOQUE 10 — TABLA DE RESULTADOS INTERACTIVA
+================================================================
+
+Mostrar en la pestaña "Resultados" un resumen ejecutivo con:
+
+------------------------------------------------------------
+TABLA RESUMEN GEOTÉCNICO:
+------------------------------------------------------------
+| Revisión          | Valor calc. | Mínimo req. | Estado       |
+|-------------------|-------------|-------------|--------------|
+| FS Volteo (estát) |   2.45      |   >= 2.0    | ✅ CUMPLE    |
+| FS Volteo (sísm)  |   1.65      |   >= 1.5    | ✅ CUMPLE    |
+| FS Desliz (estát) |   1.72      |   >= 1.5    | ✅ CUMPLE    |
+| FS Desliz (sísm)  |   1.18      |   >= 1.1    | ✅ CUMPLE    |
+| q_max             | 18.4 t/m²   | <= 25 t/m²  | ✅ CUMPLE    |
+| q_min             |  2.1 t/m²   | >= 0        | ✅ CUMPLE    |
+| Excentricidad e   |  0.24 m     | <= B/6=0.35 | ✅ CUMPLE    |
+
+Color de la fila completa: verde si CUMPLE, rojo si NO CUMPLE.
+Badge en la última columna: icono SVG + texto.
+
+------------------------------------------------------------
+TABLA RESUMEN ESTRUCTURAL:
+------------------------------------------------------------
+| Elemento          | Mu/Vu req.  | phi·Mn/Vn   | D/C  | Estado |
+|-------------------|-------------|-------------|------|--------|
+| Flexión fuste     | 8.45 t·m/m  | 12.3 t·m/m  | 0.69 | ✅     |
+| Cortante fuste    | 4.12 t/m    |  7.8 t/m    | 0.53 | ✅     |
+| Flexión puntera   | 2.30 t·m/m  |  5.1 t·m/m  | 0.45 | ✅     |
+| Flexión talón     | 3.75 t·m/m  |  5.1 t·m/m  | 0.74 | ✅     |
+| Llave de corte    | 1.85 t/m    |  3.2 t/m    | 0.58 | ✅     |
+
+------------------------------------------------------------
+CARD RESUMEN GENERAL (en la cima de la pestaña):
+------------------------------------------------------------
+  VERDE con checkmark si TODOS los chequeos cumplen.
+  ROJO con X si alguno no cumple, listando los que fallan.
+  AMARILLO con ! si todo cumple pero algún FS es < 1.1*FS_min
+  (margen de seguridad estrecho).
+
+------------------------------------------------------------
+DIAGRAMA INTERACTIVO DE PRESIONES (Plotly.js):
+------------------------------------------------------------
+  Gráfico de área/línea mostrando la distribución de presiones
+  en función de la profundidad:
+    - Línea roja: presión activa pa(z)
+    - Línea naranja: sobrecarga qs (uniforme)
+    - Línea azul: presión hidrostática (si aplica)
+    - Línea amarilla: presión sísmica ΔpAE (si aplica)
+    - Línea morada punteada: presión total = suma de todas
+    - Línea verde: presión pasiva (en el otro lado)
+  Eje X = presión [kg/m²], Eje Y = profundidad desde la corona [m]
+  Línea horizontal punteada = nivel freático (si aplica)
+  Al hover: tooltip con todos los valores a esa profundidad.
+
+
+================================================================
+BLOQUE 11 — TIPOS DE MURO SOPORTADOS
+================================================================
+
+El programa soporta 4 tipos de muro. El selector cambia la
+geometría disponible y los cálculos aplicables:
+
+------------------------------------------------------------
+TIPO 1: MURO DE GRAVEDAD (Gravity Wall)
+------------------------------------------------------------
+  Altura típica: <= 3m
+  Sin acero de refuerzo (o mínimo)
+  Resistencia por peso propio del concreto
+  Sección: trapezoidal o rectangular masiva
+
+  Parámetros adicionales:
+    - Ancho en la corona: tc_grav [m]
+    - Ancho en la base: ts_grav [m] (típico 0.5-0.8*H)
+
+  Nota en la UI: "Recomendado para H <= 3m. Para H > 3m
+  considere muro cantilever o contrafuerte."
+
+------------------------------------------------------------
+TIPO 2: MURO CANTILEVER (tipo L o T) — DEFAULT
+------------------------------------------------------------
+  Altura típica: 2m - 8m
+  El más común para sitios de torres de telecomunicaciones.
+  Fuste delgado + zapata con puntera y talón.
+
+  Parámetros estándar (ya definidos en state.geom).
+  Regla de proporciones iniciales sugeridas por el programa:
+    Bf   ≈ 0.5 a 0.7 * H  (recomendado 0.6*H)
+    tf   ≈ 0.1 * H  (mín 30 cm)
+    ts   ≈ 0.08 a 0.12 * H  (mín 25 cm)
+    tc   ≈ max(0.2*ts, 20 cm)
+    toe  ≈ 0.3 a 0.4 * Bf
+
+  Botón "Auto-dimensionar" que calcula las proporciones
+  iniciales basándose en H, phi_r y QADM.
+
+------------------------------------------------------------
+TIPO 3: MURO DE CONTRAFUERTES (Counterfort Wall)
+------------------------------------------------------------
+  Altura típica: > 6m
+  Más económico que cantilever para H > 6-8m.
+  El fuste trabaja como losa continua entre los contrafuertes.
+
+  Parámetros adicionales:
+    - Separación entre contrafuertes: Sc [m] (típico 3-5m)
+    - Ancho del contrafuerte: bc [m] (típico 30-40 cm)
+
+  El cálculo del fuste cambia: se diseña como losa bidereccional
+  simple entre contrafuertes (Mu = Pa(z)*Sc²/8 en el tramo
+  y Mu = Pa(z)*Sc²/24 en los apoyos).
+
+  Nota en la UI: "Para H <= 6m evalúe primero muro cantilever.
+  Contrafuertes son más económicos para H > 6m pero requieren
+  más complejidad constructiva."
+
+------------------------------------------------------------
+TIPO 4: MURO DE GAVIÓN (Gabion Wall)
+------------------------------------------------------------
+  Altura típica: <= 5m (económico en sitios remotos)
+  Muy usado en sitios de torres en zonas rurales o de difícil
+  acceso donde el concreto y el acero son costosos.
+  Se llena con piedra local.
+
+  Parámetros:
+    - Módulos: alto x largo x fondo (estándar: 1m x 2m x 1m)
+    - Número de filas verticales: n_row (= ceil(H/1.0))
+    - Escalonamiento: 0-20% de retroceso por fila (batter)
+    - Peso unitario del gavión lleno: gamma_gav (típico 1600-1800 kg/m³)
+
+  Cálculo especial:
+    - Verificar la estabilidad de cada fila por separado
+    - El gavión se comporta como muro de gravedad
+    - Sin diseño de acero (no aplica ACI)
+    - Verificar: FS_volteo, FS_desliz, q_max para cada fila
+
+  Nota en la UI: "Gaviones son permeables y toleran
+  asentamientos diferenciales. Ideales para sitios sin acceso
+  a camión hormigonero."
+
+------------------------------------------------------------
+SELECTOR DE TIPO (card-selector con 4 tarjetas):
+------------------------------------------------------------
+  Al cambiar el tipo:
+    - Mostrar/ocultar los parámetros relevantes
+    - Cambiar el diagrama SVG 2D
+    - Cambiar los cálculos activos
+    - Mostrar la nota de uso recomendado
+
+
+================================================================
+BLOQUE 12 — INTERACTIVIDAD AVANZADA
+================================================================
+
+INTERACTIVIDAD EN TIEMPO REAL:
+  Cada cambio en cualquier input (usando eventos 'input' y
+  'change') debe:
+    1. Actualizar state
+    2. Validar el valor (rango mínimo/máximo)
+    3. Recalcular geotecnia y diseño estructural
+    4. Actualizar el SVG 2D
+    5. Actualizar las tablas de resultados
+    6. Actualizar las badges CUMPLE/NO CUMPLE
+    7. Actualizar el card de resumen general
+    8. Si la pestaña 3D está activa: actualizar la vista 3D
+    9. Si la pestaña de resultados está activa: actualizar Plotly
+    Todo esto en < 100ms para que se sienta instantáneo.
+
+VALIDACIÓN DE INPUTS:
+  Cada campo tiene:
+    - min y max definidos en un objeto LIMITES
+    - Al salir del rango: borde rojo + tooltip de error
+    - Al volver al rango: borde verde momentáneo
+    - Placeholder con el valor típico para torres telecom
+    - Tooltip de ayuda con el ícono ⓘ que explica el parámetro
+
+SUGERENCIAS AUTOMÁTICAS:
+  Cuando el usuario ingresa H, el programa sugiere:
+    "Sugerencia: Bf ≈ {0.6*H} m, tf ≈ {max(0.1*H,0.3)} m"
+  Con un botón "Aplicar sugerencia" que auto-rellena los campos.
+
+INDICADORES DE ESTADO EN TIEMPO REAL:
+  En la sidebar, cada grupo de navegación muestra un badge:
+    ✅ verde si todas las revisiones del grupo CUMPLEN
+    ❌ rojo si alguna NO CUMPLE
+    ⚠ amarillo si hay advertencias
+    ⏳ gris si no se ha calculado aún
+  Esto permite ver de un vistazo qué sección necesita atención.
+
+COMPARADOR DE MÉTODOS:
+  Botón "Comparar métodos" en la pestaña de Presiones Laterales.
+  Genera una tabla mostrando Pa, Ka, FS_volteo y FS_desliz
+  para los 4 métodos simultáneamente, resaltando el más
+  conservador y el más económico.
+  | Método      | Ka    | Pa [t/m] | FS_volt | FS_desli |
+  |-------------|-------|----------|---------|----------|
+  | Rankine     | 0.333 | 8.44     | 2.45    | 1.72     |
+  | Coulomb     | 0.297 | 7.52     | 2.61    | 1.89     |
+  | At-rest     | 0.500 | 12.66    | 1.68    | 1.31     |
+  | EFP=480     | —     | 10.58    | 2.01    | 1.49     |
+
+MODO SENSIBILIDAD:
+  En la pestaña de Resultados, un panel plegable "Análisis de
+  Sensibilidad" permite variar un parámetro en un rango y ver
+  cómo cambia el FS. Por ejemplo:
+    Parámetro: phi_r
+    Rango: de 20° a 40° en pasos de 5°
+    Resultado: tabla y gráfico Plotly de FS_volteo vs phi_r
+
+
+================================================================
+BLOQUE 13 — PERSISTENCIA Y GESTIÓN DE PROYECTOS
+================================================================
+
+GUARDAR / CARGAR (JSON):
+  Guardar:  JSON.stringify(state) → descarga como {assetNum}_muro.json
+  Cargar:   FileReader → JSON.parse → mergeState(loadedState, defaultState())
+  mergeState: deep merge que preserva campos nuevos del defaultState
+  que no estén en el archivo cargado (compatibilidad hacia adelante).
+
+AUTO-GUARDADO EN localStorage:
+  Cada cambio de state → debounce 500ms → localStorage.setItem("muro_state", JSON.stringify(state))
+  Al cargar la app: intentar restaurar desde localStorage.
+  Si localStorage tiene datos: mostrar banner "Proyecto anterior detectado.
+  [Restaurar] [Nuevo proyecto]"
+
+HISTORIAL DE REVISIONES:
+  Tabla editable con filas:
+    Rev. | Fecha | Descripción | Elaboró | Revisó
+  Botón "Agregar revisión" que añade una fila editable.
+  La revisión actual se resalta con borde azul.
+
+PROYECTOS RECIENTES (localStorage):
+  Guardar los últimos 5 proyectos con sus metadatos.
+  Al abrir la app: botón "Proyectos recientes" con lista desplegable.
+
+
+================================================================
+BLOQUE 14 — EXPORTACIÓN DE MEMORIA DE CÁLCULO EN WORD
+================================================================
+
+MISMA ESTRUCTURA QUE Cimentaciones FEM (ver prompt anterior).
+Scripts requeridos al final del body:
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+
+ESTRUCTURA DEL DOCUMENTO WORD:
+  Portada (banda azul oscuro, metadatos del proyecto)
+  Índice automático
+  1. Información general y datos del proyecto
+  2. Descripción del tipo de muro
+  3. Propiedades de materiales y suelo
+  4. Geometría del muro (tabla + imagen SVG del alzado)
+  5. Cargas (tabla de todas las cargas por combinación)
+  6. Método de cálculo de presiones laterales + fórmulas
+  7. Diagrama de presiones (imagen Plotly)
+  8. Revisiones geotécnicas (tabla resumen con CUMPLE/NO CUMPLE)
+     - 7.1 Volteo (con cálculo detallado)
+     - 7.2 Deslizamiento
+     - 7.3 Capacidad portante
+     - 7.4 Excentricidad
+     - 7.5 Estabilidad global (nota si aplica)
+  9. Diseño estructural (tabla resumen con D/C por elemento)
+     - 8.1 Flexión del fuste
+     - 8.2 Cortante del fuste
+     - 8.3 Diseño de la zapata
+     - 8.4 Llave de corte (si aplica)
+  10. Diagrama M y V del fuste (imagen Plotly)
+  11. Vista 3D del muro (imagen PNG del canvas Three.js)
+  12. Acero de refuerzo (tabla de varillas + imagen 3D)
+  13. Longitudes de desarrollo ACI 318-19 (tabla)
+  14. Referencias normativas
+
+BOTÓN EN LA TOPBAR: "Exportar Word"
+  - Al hacer clic: mostrar toast "Generando memoria..."
+  - Capturar canvas3d (vista 3D) → PNG
+  - Capturar div de Plotly (diagrama de presiones) → PNG
+  - Capturar SVG del alzado 2D → PNG
+  - Construir documento con docx.js
+  - Descargar: {assetNum}_{nombre}_muro_{fecha}.docx
+
+
+================================================================
+BLOQUE 15 — NOTAS DE IMPLEMENTACIÓN TÉCNICA
+================================================================
+
+1. THREE.JS r128:
+   Embeber el código completo de three.min.js (r128) dentro del
+   index.html en un <script> tag.
+   También embeber OrbitControls.js de r128.
+   NO usar CDN para Three.js — debe funcionar offline.
+   CapsuleGeometry NO está en r128. Usar CylinderGeometry.
+
+2. PLOTLY.JS:
+   Cargar desde CDN: https://cdn.plot.ly/plotly-2.35.2.min.js
+   Inicializar los gráficos solo cuando la pestaña está activa.
+   Usar Plotly.react() para actualizar (evita parpadeo).
+   Colores de las líneas respetan el tema claro/oscuro:
+     Obtener con getComputedStyle(root).getPropertyValue("--text")
+
+3. CÁLCULOS:
+   Todas las fórmulas en unidades consistentes [kg, m, kg/cm²].
+   Crear funciones puras (sin side effects):
+     calcularPresiones(state) → { Ka, Pa, Pq, Pp, ... }
+     calcularGeotecnia(state, presiones) → { FS_volteo, FS_desliz, ... }
+     calcularEstructural(state, presiones, geotecnia) → { As_req, ... }
+   Llamar en cadena desde la función principal calcularTodo(state).
+
+4. RENDIMIENTO:
+   Usar debounce(calcularTodo, 100) para no recalcular con cada
+   pulsación de tecla.
+   requestAnimationFrame para el loop del renderer 3D.
+   Pausar el loop 3D cuando la pestaña no está visible.
+
+5. ACCESIBILIDAD:
+   Todos los inputs tienen id, label y aria-label.
+   Los badges CUMPLE/NO CUMPLE tienen role="status" y aria-live.
+   El toggle de tema tiene aria-label="Cambiar tema claro/oscuro".
+   Navegación por teclado funcional en el sidebar.
+
+6. COMPATIBILIDAD:
+   Chrome, Edge, Firefox modernos (los 3 últimos releases).
+   NO Internet Explorer.
+   WebGL requerido para la vista 3D (mostrar mensaje si no disponible).
+
+7. TAMAÑO DEL ARCHIVO:
+   El index.html resultante será grande (~3-5 MB con Three.js embebido).
+   Esto es aceptable y esperado, igual que Cimentaciones FEM.
+   Minimizar el CSS y JS propio de la app (no el de Three.js).
+
+8. COMENTARIOS EN EL CÓDIGO:
+   Cada función principal debe tener un bloque de comentario que indique:
+   - Qué calcula
+   - Referencia normativa (ej: "ACI 318-19 §22.3")
+   - Unidades de entrada y salida
+   - Ejemplo de uso
+
+9. REBAR_AREAS y REBAR_DIAM_IN:
+   Reutilizar exactamente las mismas tablas que Cimentaciones FEM:
+   const REBAR_AREAS = {
+     "#3":0.71, "#4":1.27, "#5":1.99, "#6":2.87, "#7":3.88,
+     "#8":5.07, "#9":6.41, "#10":7.94, "#11":9.58, "#12":11.4
+   }; // cm²
+
+   const REBAR_DIAM_IN = {
+     "#3":0.375, "#4":0.500, "#5":0.625, "#6":0.750, "#7":0.875,
+     "#8":1.000, "#9":1.128, "#10":1.270, "#11":1.410, "#12":1.693
+   }; // pulgadas
+
+10. FUNCIÓN calcLengthsACI():
+    Reutilizar exactamente la misma función que en Cimentaciones FEM
+    para calcular ld, ldh, ls con ACI 318-19.
+
+
+================================================================
+BLOQUE 16 — COMBINACIONES DE CARGA ASCE 7-22 / LRFD
+================================================================
+
+Implementar las siguientes combinaciones para el diseño estructural:
+
+COMBINACIONES ASD (para revisiones geotécnicas):
+  1. D                           (solo cargas muertas)
+  2. D + H                       (muerta + empuje lateral)
+  3. D + H + L                   (+ sobrecarga)
+  4. D + H + 0.75L               (+ 75% sobrecarga)
+  5. 0.6D + H                    (mínimo muerto + empuje)
+
+COMBINACIONES LRFD (para diseño estructural ACI 318):
+  U1: 1.4D
+  U2: 1.2D + 1.6H + 1.6L
+  U3: 1.2D + 1.6H + 1.0L
+  U4: 0.9D + 1.6H
+  U5: 1.2D + 1.0H + 1.0E + 1.0L  (sísmico, si aplica)
+  U6: 0.9D + 1.0H + 1.0E          (sísmico mínimo)
+
+  Donde:
+    D = cargas muertas (peso propio del muro + relleno)
+    H = empuje lateral del suelo/agua (factor 1.6 con D favorable)
+    L = sobrecargas de operación y vehicular
+    E = cargas sísmicas (Mononobe-Okabe)
+
+TABLA DE COMBINACIONES EN LA UI:
+  Mostrar una tabla con todas las combinaciones y los valores
+  de Mu, Vu para cada una. Resaltar la combinación crítica.
+
+
+================================================================
+BLOQUE 17 — PARÁMETROS ESPECÍFICOS PARA TORRES TELECOM
+================================================================
+
+En la pestaña "Cargas", agregar una subsección especial:
+"Cargas específicas para torres de telecomunicaciones"
+
+SOBRECARGA DE OPERACIÓN:
+  Dropdown: [Ligera 250 kg/m²] [Normal 500 kg/m²]
+            [Pesada 1000 kg/m²] [Personalizada...]
+  Tooltip: "Incluye personal de mantenimiento, equipo portátil,
+  generadores temporales. Para acceso vehicular activar carga
+  vehicular por separado."
+
+CARGA VEHICULAR:
+  Dropdown: [Sin acceso vehicular] [Camioneta 1T] [Camión 3T]
+            [Camión pesado 5T] [Personalizada...]
+  Al seleccionar: auto-rellena qs_v y wv
+
+CARGAS DE LA TORRE:
+  Input: Pu_torre [kN] con tooltip: "Carga axial de la pata más
+  cargada de la torre. Obtener del análisis de la torre (TSA o
+  similar)."
+  Input: Mu_torre [kN·m] con tooltip: "Momento de vuelco de la
+  torre en la dirección del muro. Usar el momento basal del
+  análisis de viento."
+  Input: Vu_torre [kN] con tooltip: "Cortante basal paralelo al
+  muro."
+  Input: dist_torre [m] con tooltip: "Distancia horizontal del
+  centroide de la cimentación al muro."
+
+  Cómo se integra al cálculo:
+  El momento de la torre genera una sobrecarga adicional sobre
+  el relleno detrás del muro:
+    q_torre = Pu_torre / (pi * dist_torre²)   [kg/m²] (distribución Boussinesq simplificada)
+    O como sobrecarga puntual equivalente a banda: q_banda = Mu_torre / (dist_torre * L_muro)
+
+CERCO PERIMETRAL:
+  Checkbox: "El cerco está anclado en la coronación del muro"
+  Si activo: agregar P_cerco como carga puntual en la corona
+  y h_cerco para calcular el momento adicional.
+  Alerta: "Si el cerco es de concreto o mampostería (> 200 kg/m),
+  reconsiderar el diseño del fuste."
+
+NOTA INFORMATIVA PERMANENTE (caja informativa azul):
+  "En torres de telecomunicaciones, el muro de contención
+  típicamente delimita el compound. Las cargas de viento sobre
+  la torre y antenas generan momentos de vuelco que pueden
+  transmitir fuerzas horizontales al terreno circundante.
+  Verificar que la distancia entre la cimentación de la torre
+  y el muro sea >= 0.5 * H_muro para evitar interferencia
+  de los bulbos de presión."
+
+
+================================================================
+FIN DEL PROMPT
+================================================================
+Versión del prompt: 1.0
+Fecha: 2026-08-02
+Basado en investigación de: Rankine (1857), Coulomb (1776),
+Mononobe-Okabe (1929), Terzaghi (1943), Meyerhof (1963),
+ACI 318-19, ASCE 7-22, IBC 2021, NAVFAC DM-7.02,
+ANSI/TIA-222-H, ASDIP RETAIN, SkyCiv, Geoengineer.org
+================================================================
