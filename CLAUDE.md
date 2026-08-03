@@ -81,22 +81,39 @@ implementa un subconjunto (Fase 1, ver abajo); el resto del prompt describe fase
 
 ## Roadmap (fases, ver `prompt_original.txt` para el detalle completo de fórmulas)
 
+Estado real al 2026-08-03 — varias cosas se adelantaron fuera de orden a pedido del usuario, además
+de la Fase 1 "oficial":
+
 - **Fase 1 (implementada)** — núcleo de la app, muro Cantilever únicamente, método de Rankine
-  únicamente (sin sismo), revisiones geotécnicas 1-5, vista 2D, persistencia JSON/localStorage,
+  únicamente (sin sismo), revisiones geotécnicas 1-5, vista 2D, persistencia `.gcon`/localStorage,
   tema claro/oscuro.
-- **Fase 2** — Coulomb, At-rest, Fluido equivalente (selector de 4 métodos con recálculo en tiempo
-  real) + sismo Mononobe-Okabe + cargas vehiculares/de la torre/cerco perimetral integradas al
-  cálculo (Bloques 4, 17).
-- **Fase 3** — Diseño estructural ACI 318-19: flexión y cortante del fuste, diseño de zapata
-  (talón/puntera), llave de corte, combinaciones ASCE 7-22 LRFD/ASD (Bloques 7, 16).
-- **Fase 4** — Vista 3D con Three.js r128 embebido (sin CDN) + acero de refuerzo 3D (Bloques 8, 9).
-- **Fase 5** — Diagramas Plotly (presiones, M/V del fuste), comparador de métodos, análisis de
-  sensibilidad (Bloques 10, 12).
-- **Fase 6** — Exportación de memoria de cálculo a Word (`docx.js` + `FileSaver.js` desde CDN,
-  mismo patrón que Cimentaciones FEM) (Bloque 14).
-- **Fase 7** — Otros tipos de muro: Gravedad, Contrafuertes, Gavión (Bloque 11).
-- **Fase 8** — Pulido: auto-dimensionado, validación de rangos con tooltips, proyectos recientes,
-  accesibilidad completa (Bloque 12, 13, 15).
+- **Adelantos fuera de orden (implementados)** — rediseño de arquitectura a ribbon estilo
+  Microsoft 365 (reemplaza sidebar+topbar); MVP de vista 3D (Three.js r128 embebido: concreto +
+  relleno + suelo + agua, largo de muro fijo en 6 m, sin acero ni vistas Alzado/Planta/Sección);
+  guardar/abrir con extensión `.gcon` vía File System Access API; varios pulidos del visor 2D
+  (auto-ajuste sin scrollbar, cotas con líneas de proyección, talud desde la corona, etc.).
+- **Fase 2 (pendiente)** — Coulomb, At-rest, Fluido equivalente (selector de 4 métodos con
+  recálculo en tiempo real) + sismo Mononobe-Okabe + cargas vehiculares/de la torre/cerco
+  perimetral integradas al cálculo (Bloques 4, 17).
+- **Fase 3 (pendiente) — DISEÑO ESTRUCTURAL ACI 318-19**: flexión y cortante del fuste, diseño de
+  la zapata (talón y puntera), revisión de la llave de corte, combinaciones de carga ASCE 7-22
+  LRFD/ASD (Bloques 7, 16). Es la revisión estructural propiamente dicha — hoy la app solo cubre
+  geotecnia (volteo/deslizamiento/capacidad/excentricidad/estabilidad global); no hay ningún
+  cálculo de acero de refuerzo, cuantías, ni verificación de secciones de concreto todavía.
+- **Fase 4 (resto pendiente)** — sobre el MVP ya adelantado: acero de refuerzo en 3D con
+  longitudes de desarrollo ACI, vistas preestablecidas (Isométrica/Alzado/Planta/Sección A-A),
+  largo de muro editable (hoy fijo en 6 m), export a PNG (Bloques 8, 9).
+- **Fase 5 (pendiente)** — Diagramas Plotly (presiones, M/V del fuste — este último depende de que
+  Fase 3 exista primero), comparador de métodos, análisis de sensibilidad (Bloques 10, 12).
+- **Fase 6 (pendiente)** — Exportación de memoria de cálculo a Word (`docx.js` + `FileSaver.js`
+  desde CDN, mismo patrón que Cimentaciones FEM) — necesita Fase 3 para tener algo estructural que
+  reportar (Bloque 14).
+- **Fase 7 (pendiente)** — Otros tipos de muro: Gravedad, Contrafuertes, Gavión (Bloque 11).
+- **Fase 8 (pendiente)** — Pulido: auto-dimensionado, validación de rangos con tooltips, proyectos
+  recientes, accesibilidad completa (Bloque 12, 13, 15).
 
 No iniciar una fase sin confirmación explícita del usuario — el patrón acordado en este proyecto es
-igual al de [[project_geocim]] y [[project_tsa]]: construir y verificar una fase a la vez.
+igual al de [[project_geocim]] y [[project_tsa]]: construir y verificar una fase a la vez. En la
+práctica el usuario también pide adelantos puntuales de fases futuras a mitad de otra fase (ver
+[[project_muros_contencion]] memoria) — eso es aceptable, pero cada adelanto debe quedar anotado
+aquí para no perder de vista qué falta de la fase "oficial" correspondiente.
