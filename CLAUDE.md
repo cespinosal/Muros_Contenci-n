@@ -49,6 +49,65 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
 4. **Motor de cálculo** (funciones puras, sin side effects sobre el DOM):
    - `calcGeometria(geom)` → geometría derivada del fuste trapezoidal (cara posterior vertical,
      cara frontal con batter si `tc < ts`, descompuesto en rectángulo+triángulo para el centroide).
+   - **Relleno estratificado (`suelo.capasRelleno[]`, 2026-08-10, estilo GeoCim)**: el backfill ya
+     no es un único `gamma_r/phi_r/c_r` plano, sino una lista de estratos
+     `{nm,hatch,color,from,to,gamma,phi,c}` con profundidad ACUMULADA (`from`/`to`, no espesor
+     suelto) — mismo esquema que el `profile` de GeoCim (`C:\Users\cespi\Downloads\GeoCim\index.html`,
+     de donde se portaron literalmente `HATCH_DEFS`/`COLOR_PALETTE`/`hatchPatternSVG` para las 12
+     texturas de suelo). La UI es una tarjeta compacta por estrato (pestaña Suelo y materiales,
+     `renderCapasRelleno()` → `#capasRellenoList`) con textura+nombre+editar/eliminar, más un modal
+     `#strat-modal` (nombre, profundidad hasta, grilla de texturas, paleta de color, γ/c/φ) para
+     agregar/editar — `addEstrato()`/`editEstrato(i)`/`removeEstrato(i)`/`openStratModal`/
+     `confirmStratModal` reconectan la cadena `from`/`to` igual que GeoCim (al editar o borrar un
+     estrato intermedio, el siguiente hereda el `from` correcto). El modal usa `toDisplay`/`toBase`
+     con las categorías `longitud`/`pesoVol`/`presion` del sistema de unidades — no las suyas propias
+     de GeoCim. **Importante:** el script vive en un IIFE, así que el modal usa `addEventListener`
+     en vez del `onclick`/`oninput` inline que tiene GeoCim (esas funciones no son globales aquí).
+     Solo el RELLENO se estratifica — el suelo de fundación (`gamma_f/phi_f/c_f`) sigue siendo un
+     único material, a propósito. `resolverCapas(capas, Hobjetivo)` deriva el espesor de cada
+     estrato (`to-from`) y normaliza la lista contra una altura objetivo, recortando el sobrante si
+     la suma se pasa — nunca falla ni deja huecos.
+
+     **`alturaRellenoEfectiva(suelo, H)` — altura real del relleno, ya no `geom.Hr` (2026-08-10,
+     corrección el mismo día que se agregó el modal, a pedido del usuario):** el viejo campo
+     editable `geom.Hr` desapareció. La altura real del relleno ahora es
+     `Math.min(sumaDeEstratos, geom.H)` — si el usuario captura MENOS que `H`, esa altura menor se
+     queda tal cual (el fuste se dibuja con un tramo expuesto arriba, sin relleno) y el cálculo usa
+     esa altura real, NO se estira artificialmente hasta `H` como pasaba antes; si captura MÁS que
+     `H`, se sigue recortando como ya ocurría. El campo `Hr` en la UI (pestaña Geometría del muro)
+     quedó como `disabled`, poblado en `renderGeomWarning()` — es de solo lectura, igual que `heel`.
+     `calcularPresiones` usa esta altura efectiva para TODO lo relacionado al relleno (Pa integrado
+     capa por capa, Pq_h de la sobrecarga, ΔPAE sísmico — las tres formulas usaban `geom.H`
+     directamente antes de este cambio, ahora usan la altura efectiva) y la devuelve en `pres.H`
+     para que `calcularGeotecnia` reutilice el MISMO valor en los brazos de momento de `Pq_h`/`ΔPAE_h`
+     de `Mov` y en el peso `Wr` (antes `Wr` se resolvía aparte contra `geom.Hr`) — un solo número,
+     sin riesgo de que diverja entre fuerza y brazo. `dibujarMuro2D`/`actualizarModelo3D` la calculan
+     igual para posicionar el tope del relleno — por eso el tramo expuesto del fuste (si lo hay)
+     aparece automáticamente en 2D y 3D sin código de dibujo extra. La integración de Pa por capas
+     descompone el diagrama de cada estrato en rectángulo (presión constante = la del tope, según
+     el Ka de ESE estrato) + triángulo (el incremento hasta la base), sumando fuerza y momento
+     respecto a la base del muro — de ahí sale `pres.arm` (brazo real de Pa, ya no fijo en `H/3`,
+     aunque con un solo estrato que cubra toda la altura efectiva la fórmula se reduce exactamente
+     al caso verificado de siempre). Simplificaciones documentadas en el propio código: la cohesión
+     de cada estrato (`capa.c`) se captura pero no se usa (igual que `suelo.c_r` antes); el método
+     Fluido equivalente y el incremento sísmico Mononobe-Okabe NO se estratifican (EFP ya es un
+     valor único por definición; el sismo usa la φ del PRIMER estrato + el peso volumétrico promedio
+     ponderado del relleno como referencia única). `migrarSueloViejo()` tiene DOS pasos: sintetiza
+     un estrato único a partir de un `gamma_r/phi_r/c_r` plano (formato de antes del relleno
+     estratificado), o convierte `h`→`from`/`to` con nombre/textura por default (formato intermedio
+     de la tabla editable que existió brevemente antes del modal) — para no perder valores al abrir
+     un `.gcon`/localStorage de cualquiera de esas dos versiones previas (ninguno de los dos formatos
+     viejos tenía tampoco el problema de `geom.Hr` porque ese campo simplemente se ignora al fusionar
+     con el nuevo `defaultState()`, que ya no lo declara).
+
+     La tarjeta de cada estrato (`renderCapasRelleno()`) muestra el rango EFECTIVO ya resuelto
+     contra la altura efectiva (vía `resolverCapas`), no el `from`/`to` tal cual se tecleó — con
+     "(recortado)" cuando el total se pasa de H, y "fuera de H" si el estrato queda totalmente
+     excluido por el recorte. Ya no existe un caso "(extendido)": antes, un solo estrato más corto
+     que H se mostraba como "0–3 m" en la tarjeta mientras el dibujo y el cálculo lo estiraban a
+     "0–H m" — inconsistencia que reportó el usuario y que llevó primero a corregir el TEXTO de la
+     tarjeta, y ese mismo día a retirar el estiramiento por completo (ver párrafo de
+     `alturaRellenoEfectiva` arriba).
    - `calcularPresiones(state)` → los 4 métodos del Bloque 4 (`rankineKa`/`coulombKa` como
      funciones auxiliares reutilizables; At-rest usa `suelo.Ks` directo, no la fórmula de Jaky;
      Fluido equivalente usa `state.EFP` sin concepto de Ka, que queda `null`) + incremento sísmico
@@ -56,14 +115,60 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
      (`sismo.EFP_sism`, reinterpretado en kg/m³ métrico — el prompt original daba un valor en
      unidades imperiales incompatible con esta app). Con `beta > 0` (Rankine/Coulomb) reparte la
      resultante en componentes horizontal/vertical paralelas a la pendiente.
+
+     **H' en vez de H para Pa/Pq_h/ΔPAE (2026-08-10, verificado contra el Ejemplo 8.1 de Das —
+     Fundamentos de Ingeniería de Cimentaciones, p. 390-393):** el empuje activo NO se integra solo
+     sobre la altura del relleno (H) — se integra sobre el plano vertical que pasa por el talón,
+     desde el FONDO de la zapata hasta donde ese plano cruza la superficie del talud (`Hprime = tf +
+     H + heel·tan(beta)`, exactamente la fórmula `H'=H1+H2+H3` del libro). Se arma extendiendo la
+     lista de capas resueltas (`capasExt`) con dos tramos ficticios que toman prestadas las
+     propiedades del estrato más cercano (no hay estrato real definido ahí): el talud sobre la
+     corona (si `beta>0`, usa el PRIMER estrato) y el espesor de la zapata (usa el ÚLTIMO estrato).
+     Con `beta=0` y `tf=0` esta extensión desaparece y `Hprime=H` — pero en la práctica `tf` casi
+     nunca es 0, así que Pa YA CAMBIÓ incluso en el caso por default (antes de este cambio se
+     ignoraba el tramo de la zapata por completo). `pres.arm` (brazo de Pa) queda medido desde el
+     FONDO de la zapata en vez de desde el tope — `calcularGeotecnia` ya no le suma `tf` aparte en
+     `Mov`. `pres.H` (altura real del relleno, para `Wr`) y `pres.Hprime` (para los brazos de
+     `Pq_h`/`ΔPAE_h`) se devuelven por separado porque sirven para cosas distintas.
+
+     **Cohesión en la presión pasiva (ecuación 8.9, Das):** `Pp` ahora suma
+     `2·c_p·√Kp·Df` al término friccionante de siempre — antes solo tenía el primero. `suelo.c_p`
+     es un campo nuevo (cohesión de la zona pasiva, independiente de `c_f` por si el usuario quiere
+     modelar un suelo distinto ahí, igual que ya pasaba con `gamma_p`/`phi_p`).
+
+     Estas tres correcciones (más la cohesión en deslizamiento de abajo) se verificaron reproduciendo
+     el Ejemplo 8.1 completo del libro (H=6, x1=0.5/x2=0.7/x3=0.7/x4=2.6 m, D=1.5 m, β=10°, γ1=18/
+     φ1=30°/c1=0 kN, γ2=19/φ2=20°/c2=40 kN/m²) contra una réplica independiente en Python: FS
+     volteo=2.91 (libro 2.95), deslizamiento=2.74 (libro 2.70), capacidad de carga=2.79 (libro 2.98)
+     — mucho más cerca que antes (3.25/1.30/4.96). La brecha restante es la Ka por fórmula cerrada
+     vs. tabla interpolada del libro (~1%) y que `Wr` todavía no incluye el triángulo de suelo sobre
+     el talud (zona ⑤ de la figura 8.12) — mejora pendiente, no pedida en esta ronda.
    - `calcularGeotecnia(state, pres)` → revisiones 1-5 del Bloque 6 (volteo, deslizamiento,
-     capacidad portante + Terzaghi informativo, excentricidad, estabilidad global informativa),
-     más el momento/fuerza del cerco perimetral si `cargas.cercoEnabled` (ver "Cargas de torre y
-     cerco" abajo). Todos los momentos se toman respecto a la punta de la puntera (`x=0`).
+     capacidad portante, excentricidad, estabilidad global informativa), más el momento/fuerza del
+     cerco perimetral si `cargas.cercoEnabled` (ver "Cargas de torre y cerco" abajo). Todos los
+     momentos se toman respecto a la punta de la puntera (`x=0`).
      **Simplificación de sismo**: cuando `sismo.enabled`, el incremento sísmico ya viene sumado
      dentro de `Mov`/`Fh` y las revisiones comparan contra `FS.volteo_sismico`/`desliz_sismico` en
      vez de los estáticos — es un solo caso de carga combinado, no dos casos (estático puro +
      sísmico puro) evaluados por separado.
+
+     **Cohesión en deslizamiento (ecuación 8.11, Das, 2026-08-10):** la resistencia `R` ahora suma
+     `Bf·k2·suelo.c_f` (antes solo tenía la fricción `Fr=mu·N` y la pasiva). `suelo.k2` es un campo
+     nuevo, mismo patrón que `suelo.mu`: vacío = 2/3 (igual que `k1` en `mu`, "Sea k1=k2=2/3" del
+     libro), o se puede sobreescribir.
+
+     **Capacidad de carga — Meyerhof/Vesic completo en vez de Terzaghi liso (ecuaciones 8.22-8.24,
+     Das, 2026-08-10):** `qult` ahora incluye factores de profundidad (`Fcd`, `Fqd`, `Fgd=1`) e
+     inclinación de la carga (`Fci=Fqi=(1-ψ°/90°)²`, `Fgi=(1-ψ/φf)²`, con
+     `ψ=atan(Fh/N)`) y usa el ancho EFECTIVO `B'=Bf-2|e|` en el tercer término, en vez del `Bf`
+     completo. `Nc`/`Nq`/`Nγ` no cambiaron (ya coincidían exactamente con las tablas del libro).
+     Este cambio por sí solo es el que más baja `FS_carga` respecto al Terzaghi liso de antes (el
+     ejemplo verificado pasó de FS=4.96 a FS=2.79, mucho más cerca del 2.98 del libro).
+
+     **`cargas.qsEnabled` ahora arranca en `false`** (2026-08-10): antes el estado por default traía
+     una sobrecarga de 500 kg/m² activada, lo que ensuciaba cualquier comparación contra un ejemplo
+     de libro que no la tuviera (hubo que descubrir esto a mano al no cuadrar un resultado). Ahora
+     hay que activarla a propósito desde el ribbon si el caso la necesita.
    - `calcularTodo()` encadena las tres anteriores y sincroniza `state.geom.heel` (campo calculado,
      de solo lectura en la UI).
 5. **Dibujo 2D** (`dibujarMuro2D`) — SVG generado a mano (sin librería), con capas de suelo/relleno/
@@ -71,11 +176,47 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
    presión real, son indicativos), cerco perimetral, y la zona del tercio central con el punto de
    la resultante. El `viewBox` se recalcula en cada render contra el tamaño real en píxeles del
    panel (`clientWidth`/`clientHeight`), no una caja fija, para maximizar el tamaño del dibujo sin
-   scrollbar.
+   scrollbar. **Relleno estratificado en el dibujo (2026-08-10)**: ya no es un solo polígono de
+   color plano — se resuelve `suelo.capasRelleno` contra `Hr` (`resolverCapas`, la misma función
+   del motor de cálculo, que ahora conserva `nm/hatch/color` además de `gamma/phi/c/h` para que el
+   dibujo no tenga que recalcular nada por su cuenta) y cada estrato se pinta con su propia textura
+   SVG (`hatchPatternSVG`, inyectada vía `defs.insertAdjacentHTML` — funciona porque `defs` ya es
+   un nodo SVG real) + una etiqueta con nombre y φ si el estrato mide más de 0.35 m (para no
+   saturar de texto los estratos delgados). El talud (si `beta>0`) solo levanta el borde superior
+   del PRIMER estrato (el que aflora); los estratos de abajo son horizontales. **Ojo:** el
+   triángulo de Pa/ΔPAE (sección "Fuerzas" más abajo en esta misma función) tiene que usar esta
+   misma `Hr`, NO `H` (altura del fuste) — se corrigió un bug (2026-08-10) donde el triángulo seguía
+   dibujándose hasta la corona aunque el relleno real fuera más corto, viéndose como si el suelo
+   cubriera todo el fuste cuando no era así (el número de Pa ya estaba bien calculado con `Hprime`,
+   solo el dibujo del triángulo tenía la altura equivocada).
    **5b. Vista 3D** (`actualizarModelo3D`, Three.js r128 + OrbitControls embebidos offline) — MVP:
    concreto + relleno + suelo + agua, largo de muro fijo en 6 m. Solo se renderiza mientras
    `uiState.viewMode==="3d"`.
-6. **Render de tablas/badges** y **7. Render general** (`renderAll`/`renderAllFull`) — único punto
+6. **Render de tablas/badges** — incluye `renderResultadosDetalle(r)` (pestaña Resultados → card
+   "Memoria de cálculo", agregada 2026-08-10): consolida en un solo lugar TODOS los valores
+   intermedios (pesos, presiones laterales, Ka/Kp, momentos, Fh/R, q máx/mín, qult, e) que ya se
+   muestran repartidos en las pestañas Cargas/Presiones laterales/Revisiones geotécnicas — mismos
+   números, solo reunidos para no ir y venir entre pestañas al armar un reporte. No duplica lógica
+   de cálculo, solo lectura del mismo objeto `r` de `calcularTodo()`. También incluye
+   `renderResultsBar(r, checks)` (`#resultsBar`, agregada 2026-08-10, estilo GeoCim `.results`):
+   franja oscura `position:fixed` al pie de toda la app (mismos colores "acero" que la QAT,
+   siempre oscura sin importar el tema), visible sin importar la pestaña activa. Convierte cada
+   revisión de FS (capacidad/demanda, "más alto mejor") a una "utilización" demanda/capacidad
+   ("más bajo mejor", vía `colorScaleGeo()` con los mismos umbrales de GeoCim: verde ≤0.85, ámbar
+   ≤1.0, rojo >1.0) — Volteo/Deslizamiento usan `umbral/FS`, Capacidad de carga usa `q_max/QADM`
+   directo, Excentricidad usa `|e|/(B/6)` directo. El veredicto CUMPLE/NO CUMPLE grande de la
+   izquierda usa `checks.anyBad` (la lógica real de la app), no solo "¿utilización máxima ≤1.0?",
+   para no desalinearse con los badges de cada pestaña en casos borde (q_min<0, excentricidad
+   "warn"). El botón "Ver memoria de cálculo" salta a la pestaña Resultados. Reemplaza al viejo
+   `#summaryCardViewer` (un banner simple que vivía en el visor 2D/3D, ahora retirado por
+   redundante). **Ojo con la altura del layout**: al ser `position:fixed`, `#resultsBar` NO empuja
+   contenido — su alto vive en la variable `--results-bar-h` (junto a `--qat-h`/`--tabs-h`/
+   `--ribbon-h`/`--header-h` en `:root`) y hay que restarlo donde se calculen alturas contra
+   `100vh` (`#viewer-pane{height:calc(100vh - var(--header-h) - var(--results-bar-h))}`) además de
+   dársela como `padding-bottom` al `body` — si se agrega otro elemento `position:fixed` al layout,
+   revisar estos dos puntos o el contenido queda tapado/recortado detrás de la barra nueva (bug
+   real que pasó al agregar `#resultsBar` en esta misma fecha, corregido el mismo día).
+   **7. Render general** (`renderAll`/`renderAllFull`) — único punto
    de recálculo y repintado; cualquier cambio de `state` termina en `scheduleRecalc()`
    (`debounce(renderAll, 100)`). `renderProjectTitle()` autogenera el nombre del QAT superior desde
    `proyecto.nombre` + `proyecto.assetNum`.
@@ -110,18 +251,32 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
   textual: `P_cerco` se trata como carga horizontal de viento actuando a media altura del cerco por
   encima de la corona (brazo = `tf+H+h_cerco/2` respecto al toe). Documentado también en el
   comentario de `calcularGeotecnia`.
-- **Sistema de unidades (`sistemaUnidades`, botón "kgf"/"SI" en la QAT)**: `state` SIEMPRE guarda
-  kgf-técnico internamente (kg, kg/m, kg/m², kg/m³, kg·m/m, kg/cm² — el sistema ya verificado a mano
-  contra Python); el motor de cálculo nunca ve valores en SI. El toggle convierte tanto los
-  RESULTADOS (`fmtFuerza`/`fmtMomento`/`fmtPresionSuelo`) como los campos EDITABLES marcados con
-  `data-unit="F|Q|S"` (`UNIT_FACTORS`: F=kgf-familia→kN-familia ×0.00980665, Q=tf/m²→kPa ×9.80665,
-  S=kgf/cm²→MPa ×0.0980665) — la conversión de los editables ocurre en la frontera
-  display↔state: `syncInputsFromState()` convierte kgf→SI solo para mostrar, y el handler de
-  `bindAll()` convierte lo que el usuario tecleó de vuelta a kgf antes de `setPath()`. Las etiquetas
-  `<span class="unit-tag" data-tec="…" data-si="…">` se sincronizan con `syncUnitLabels()`. Campos
-  de longitud/ángulo/adimensionales (H, ts, Bf, φ, Ka, FS, kh…) no llevan `data-unit` — ya son
-  compatibles con SI tal cual. `cargas.Pu_torre/Mu_torre/Vu_torre` quedan fuera a propósito: el
-  prompt original ya los definió en kN/kN·m (no kgf), así que no tienen conversión kgf→SI que hacer.
+- **Sistema de unidades por categoría (2026-08-10, reemplaza el toggle binario kgf/SI anterior)**:
+  `state` SIEMPRE guarda la unidad base técnica internamente (kg, kg/m, kg/m², kg/m³, kg·m/m,
+  kg/cm², metros — el sistema ya verificado a mano contra Python); el motor de cálculo nunca ve
+  otra unidad. El usuario elige la unidad de despliegue **por categoría**, no un sistema global:
+  `state.unidades = { longitud, pesoVol, fuerza, presion, momento, material }`, editable en un
+  card "Unidades" de la pestaña Proyecto (ya no hay botón en la QAT) — se guarda con el proyecto
+  (`.gcon`), no en localStorage como el tema. `UNIT_DEFS` (junto a `defaultState()`) define, por
+  categoría, las opciones disponibles y su factor "1 unidad-base → unidad-destino" (incluye
+  técnico ampliado, SI e imperial, ej. longitud: m/cm/ft/in; presión: kg/m²/kg/cm²/Tn/m²/kPa/MPa/
+  psf/ksf). `unitFactor(cat)`/`unitLabel(cat)`/`toDisplay(cat,val)`/`toBase(cat,val)` son los
+  helpers genéricos; `fmtFuerza`/`fmtMomento`/`fmtPresionSuelo`/`fmtLong` son envolturas de
+  `fmtCat(cat,val,dec)` con el nombre histórico (para no tocar cada punto de llamada). Los campos
+  editables marcados con `data-unit="<categoria>"` (ya no `F|Q|S`) se convierten en la frontera
+  display↔state: `syncInputsFromState()` usa `toDisplay()` para mostrar, y el handler de
+  `bindAll()` usa `toBase()` para volver a la unidad base antes de `setPath()`; cambiar un
+  `<select data-bind="unidades.*">` dispara además un `syncInputsFromState()` inmediato (no solo
+  el `scheduleRecalc()` debounced) para refrescar todos los campos afectados al toque. Las
+  etiquetas `<span class="unit-tag" data-cat="<categoria>">` se sincronizan con `syncUnitLabels()`.
+  Los ocho rótulos de cota del dibujo 2D (H, Df, tf, toe, ts, heel, Bf, tc) y el campo calculado
+  `in-heel` también usan la categoría "longitud". **`suelo.QADM` cambió de guardarse en tf/m² a
+  kgf/m²** (unificado dentro de la categoría "presion" junto con `c_r`/`c_f`/`qs`) — el valor por
+  default pasó de `10` a `10000` para mostrar exactamente lo mismo (10 t/m²) con el default de esa
+  categoría. Campos de ángulo/adimensionales (φ, Ka, FS, kh…) no llevan `data-unit`. Excepciones
+  que quedan fuera a propósito: `cargas.Pu_torre/Mu_torre/Vu_torre` (el prompt original ya los
+  definió en kN/kN·m) y `materiales.recub` (sigue fijo en cm, campo reservado sin uso todavía en
+  el motor de cálculo).
 
 ## Roadmap (fases, ver `prompt_original.txt` para el detalle completo de fórmulas)
 

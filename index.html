@@ -99,7 +99,7 @@ body{margin:0; background:var(--bg); color:var(--text); font-family:var(--font);
 button{font-family:inherit;}
 
 /* ---------- Quick Access Toolbar (fila superior, estilo Office) ---------- */
-:root{ --qat-h:40px; --tabs-h:36px; --ribbon-h:78px; --header-h: calc(var(--qat-h) + var(--tabs-h) + var(--ribbon-h)); }
+:root{ --qat-h:40px; --tabs-h:36px; --ribbon-h:86px; --header-h: calc(var(--qat-h) + var(--tabs-h) + var(--ribbon-h)); --results-bar-h:72px; }
 /* Barra QAT estilo GeoCim: gradiente "steel" oscuro fijo, igual en tema
    claro y oscuro (no usa var(--panel) del tema) — las variables de texto
    se redefinen localmente para que .btn/#projectNameInput (que usan
@@ -126,6 +126,35 @@ button{font-family:inherit;}
 .qat-credit{display:flex; align-items:center; gap:10px; flex-shrink:0; font-size:12px; color:#1f6fd6;}
 .qat-credit b{font-weight:700;}
 .qat-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+
+/* ---------- Barra de resultados fija (estilo GeoCim), visible en
+   cualquier pestaña — mismos colores "acero" que la QAT, siempre oscura
+   sin importar el tema claro/oscuro de la app. ---------- */
+#resultsBar{
+  position:fixed; left:0; right:0; bottom:0; z-index:40; height:var(--results-bar-h);
+  display:flex; align-items:stretch;
+  background:linear-gradient(180deg,#222c3c,#1b2330); border-top:1px solid #11161f;
+  box-shadow:0 -4px 16px rgba(0,0,0,.18); color:#cdd6e2;
+}
+.rb-verdict{display:flex; align-items:center; gap:14px; padding:0 22px; border-right:1px solid #3f4d61; flex-shrink:0;}
+.rb-verdict .rb-big{font-size:24px; font-weight:800; line-height:1;}
+.rb-verdict.ok .rb-big{color:#4fd08a;}
+.rb-verdict.fail .rb-big{color:#ff7a6f;}
+.rb-lbl{font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#8b97a8;}
+.rb-state{font-weight:700; font-size:13px; display:flex; align-items:center; gap:6px; margin-top:2px;}
+.rb-verdict.ok .rb-state{color:#4fd08a;}
+.rb-verdict.fail .rb-state{color:#ff7a6f;}
+.rb-checks{display:flex; flex:1; overflow-x:auto; overflow-y:hidden;}
+.rb-check{padding:9px 18px; border-right:1px solid #3f4d61; display:flex; flex-direction:column; gap:4px; min-width:140px; flex-shrink:0;}
+.rb-check .ct{font-size:10px; color:#8b97a8; letter-spacing:.3px; white-space:nowrap;}
+.rb-check .cv{font-family:var(--font-mono); font-size:12.5px; font-weight:600; color:#e7edf4;}
+.rb-check .bar{height:4px; border-radius:3px; background:#3f4d61; overflow:hidden; margin-top:1px;}
+.rb-check .bar i{display:block; height:100%; border-radius:3px; transition:width .4s cubic-bezier(.2,.7,.3,1);}
+.rb-check .util{font-size:9.5px; font-family:var(--font-mono);}
+.rb-actions{display:flex; align-items:center; padding:0 18px; margin-left:auto; border-left:1px solid #3f4d61; flex-shrink:0;}
+.btn-ghost{background:transparent; color:#aeb9c8; border:1px solid #3f4d61; padding:8px 14px; border-radius:7px; font-weight:500; font-size:12px; cursor:pointer; white-space:nowrap;}
+.btn-ghost:hover{border-color:#5a6a80; color:#fff;}
+body{padding-bottom:var(--results-bar-h);}
 .btn{
   background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-md);
   padding:6px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap; transition:background .12s,border-color .12s;
@@ -158,11 +187,11 @@ button{font-family:inherit;}
   background:var(--panel); border-bottom:1px solid var(--border); box-shadow:var(--shadow2);
   position:sticky; top:calc(var(--qat-h) + var(--tabs-h)); z-index:30; height:var(--ribbon-h);
 }
-.ribbon-panel{display:none; align-items:stretch; height:100%; padding:6px 14px; overflow-x:auto; overflow-y:hidden;}
+.ribbon-panel{display:none; align-items:stretch; height:100%; padding:6px 14px 10px; overflow-x:auto; overflow-y:hidden;}
 .ribbon-panel.active{display:flex;}
 .ribbon-group{display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:2px 8px; flex-shrink:0;}
 .ribbon-group-row{display:flex; align-items:center; gap:2px; flex:1;}
-.ribbon-group-caption{font-size:10px; color:var(--muted); margin-top:3px; white-space:nowrap;}
+.ribbon-group-caption{font-size:10px; color:var(--muted); margin-top:4px; white-space:nowrap;}
 .ribbon-sep{width:1px; background:var(--border); margin:4px 4px; align-self:stretch; flex-shrink:0;}
 .ribbon-btn, .ribbon-choice, .ribbon-toggle{
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
@@ -171,6 +200,8 @@ button{font-family:inherit;}
 }
 .ribbon-btn:hover, .ribbon-choice:hover, .ribbon-toggle:hover{background:var(--brand-tint); border-color:var(--accent-border);}
 .ribbon-btn .rb-icon, .ribbon-choice .rb-icon, .ribbon-toggle .rb-icon{font-size:17px; line-height:1;}
+.rb-icon svg{display:block; width:20px; height:20px; color:var(--text);}
+.ribbon-choice.active .rb-icon svg{color:var(--accent);}
 .ribbon-btn .rb-label, .ribbon-choice .rb-label, .ribbon-toggle .rb-label{font-size:10px; text-align:center; line-height:1.15;}
 .ribbon-choice.active{background:var(--brand-tint); border-color:var(--accent); color:var(--accent);}
 .ribbon-btn.disabled, .ribbon-choice.disabled{opacity:.4; cursor:not-allowed;}
@@ -187,7 +218,8 @@ button{font-family:inherit;}
 
 /* ---------- Visor 2D (panel principal, persistente) ---------- */
 #viewer-pane{
-  flex:1 1 auto; min-width:0; position:sticky; top:var(--header-h); height:calc(100vh - var(--header-h));
+  flex:1 1 auto; min-width:0; position:sticky; top:var(--header-h);
+  height:calc(100vh - var(--header-h) - var(--results-bar-h));
   overflow-y:auto; padding:18px 22px; background:var(--canvas); border-right:1px solid var(--border);
   display:flex; flex-direction:column;
 }
@@ -229,6 +261,53 @@ table.results tr.row-ok td{background:var(--success-bg);}
 table.results tr.row-bad td{background:var(--danger-bg);}
 table.results tr.row-warn td{background:var(--warning-bg);}
 
+/* ---------- Estratos del relleno (tarjetas + modal, estilo GeoCim) ---------- */
+.estrato-card{border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:6px;}
+.estrato-card-hd{display:flex; align-items:center; gap:8px;}
+.estrato-card-hd .ec-swatch{width:28px; height:20px; border-radius:3px; border:1px solid var(--border); flex-shrink:0;}
+.estrato-card-hd .ec-nm{flex:1; font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
+.estrato-card-hd button{width:24px; height:24px; border:1px solid var(--border); border-radius:var(--radius-sm); background:transparent; cursor:pointer; display:grid; place-items:center; font-size:12px; flex-shrink:0; color:var(--text);}
+.estrato-card-hd button:hover{background:var(--brand-tint);}
+.estrato-card-hd .ec-del{color:var(--danger-fg);}
+.estrato-card-hd .ec-del:hover{background:var(--danger-bg);}
+.estrato-card-sub{font-size:10.5px; color:var(--muted); padding-top:3px;}
+.btn-add-dashed{width:100%; padding:8px 0; margin-top:2px; border:1.5px dashed var(--border); border-radius:var(--radius-sm); background:none; cursor:pointer; font-size:12.5px; color:var(--accent);}
+.btn-add-dashed:hover{background:var(--brand-tint);}
+
+.sm-overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:9999;}
+.sm-card{background:var(--panel); border-radius:var(--radius-lg); width:560px; max-width:92vw; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); display:flex; flex-direction:column;}
+.sm-hd{display:flex; align-items:center; justify-content:space-between; padding:15px 18px; border-bottom:1px solid var(--border);}
+.sm-hd-title{font-size:14px; font-weight:700; color:var(--text);}
+.sm-hd-close{border:none; background:none; font-size:16px; cursor:pointer; color:var(--muted); line-height:1;}
+.sm-body{padding:14px 18px; display:flex; flex-direction:column; gap:14px; flex:1; overflow-y:auto;}
+.sm-sec{font-size:10.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
+.sm-ft{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--border);}
+.sm-input{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); padding:7px 10px; font-family:var(--font-mono); font-size:12px; color:var(--text); background:var(--panel); outline:none; box-sizing:border-box;}
+.sm-input:focus{border-color:var(--accent);}
+.hatch-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+.hc{border:2px solid var(--border); border-radius:7px; padding:6px 6px 5px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:border-color .12s; user-select:none;}
+.hc:hover{border-color:var(--accent-border);}
+.hc.sel{border-color:var(--accent); background:var(--brand-tint);}
+.hc.sel .hc-nm{color:var(--accent);}
+.hc-svg{width:100%; height:44px; border-radius:3px; display:block; border:1px solid rgba(0,0,0,.15);}
+.hc-nm{font-size:9px; color:var(--text); text-align:center; line-height:1.2;}
+.color-palette{display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+.cp-sw{width:26px; height:26px; border-radius:50%; border:2.5px solid transparent; cursor:pointer; transition:transform .1s; flex-shrink:0;}
+.cp-sw:hover{transform:scale(1.15);}
+.cp-sw.sel{border-color:var(--text); box-shadow:0 0 0 1px var(--panel) inset;}
+.cp-custom{width:26px; height:26px; border-radius:50%; border:2px dashed var(--border); cursor:pointer; display:grid; place-items:center; font-size:15px; line-height:1; color:var(--muted); background:var(--panel); flex-shrink:0;}
+.cp-custom:hover{border-color:var(--accent); color:var(--accent);}
+.cp-custom.sel{border-style:solid; border-color:var(--text);}
+.soil-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;}
+.soil-grid-lbl{font-size:10px; color:var(--muted); margin-bottom:3px;}
+.soil-mini-in{width:100%; border:1px solid var(--border); border-radius:5px; overflow:hidden; background:var(--panel); box-sizing:border-box;}
+.soil-mini-in:focus-within{border-color:var(--accent);}
+.soil-mini-in input{width:100%; border:0; padding:6px 8px; font-family:var(--font-mono); font-size:12px; color:var(--text); outline:none; background:transparent; box-sizing:border-box;}
+.inwrap{display:flex; align-items:center; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; background:var(--panel);}
+.inwrap:focus-within{border-color:var(--accent);}
+.btn-pri{padding:8px 20px; border-radius:var(--radius-sm); border:none; background:var(--accent); color:#fff; font-size:12px; cursor:pointer; font-weight:600;}
+.btn-sec{padding:8px 16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:none; color:var(--text); font-size:12px; cursor:pointer;}
+
 /* ---------- Summary card ---------- */
 .summary-card{border-radius:var(--radius-lg); padding:16px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px; border:1px solid var(--border);}
 .summary-card.ok{background:var(--success-bg); border-color:var(--success-border); color:var(--success-fg);}
@@ -262,13 +341,10 @@ table.results tr.row-warn td{background:var(--warning-bg);}
 #wall2d{width:100%; height:100%; display:block;}
 .dim-text{font-size:11px; fill:var(--text); font-family:var(--font-mono);}
 .legend-2d{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:8px; flex-shrink:0;}
-#summaryCardViewer{flex-shrink:0;}
-#summaryCardViewer .summary-card{margin-top:8px; margin-bottom:0;}
 .legend-2d span{display:inline-flex; align-items:center; gap:5px;}
 .legend-2d i{width:12px; height:12px; border-radius:3px; display:inline-block;}
 
 /* ---------- Banner ---------- */
-#restoreBanner{display:none; background:var(--brand-tint); border-bottom:1px solid var(--accent-border); padding:8px 16px; font-size:12.5px; align-items:center; gap:12px;}
 
 
 @media (max-width:1100px){
@@ -289,12 +365,6 @@ table.results tr.row-warn td{background:var(--warning-bg);}
 </style>
 </head>
 <body>
-<div id="restoreBanner">
-  <span>Se detectó un proyecto anterior guardado en este equipo.</span>
-  <button class="btn btn-primary" id="btnRestore">Restaurar</button>
-  <button class="btn" id="btnDiscardRestore">Nuevo proyecto</button>
-</div>
-
 <header id="qat">
   <div class="brand">
     <svg class="brand-icon" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
@@ -337,7 +407,6 @@ table.results tr.row-warn td{background:var(--warning-bg);}
     <span>Created by: <b>Ing. Juan C. Espinosa López</b></span>
   </div>
   <div class="qat-actions">
-    <button class="btn" id="btnUnidades" title="Cambiar sistema de unidades de los resultados (los campos editables siempre se ingresan en kgf-técnico)" aria-label="Cambiar sistema de unidades">kgf</button>
     <button class="btn btn-icon" id="btnTheme" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">🌙</button>
   </div>
 </header>
@@ -375,10 +444,10 @@ table.results tr.row-warn td{background:var(--warning-bg);}
   <div class="ribbon-panel" data-ribbon="geometria">
     <div class="ribbon-group">
       <div class="ribbon-group-row">
-        <button class="ribbon-choice disabled" title="H ≤ 3 m · Fase futura"><span class="rb-icon">🧱</span><span class="rb-label">Gravedad</span></button>
-        <button class="ribbon-choice active" title="2–8 m · Disponible"><span class="rb-icon">📐</span><span class="rb-label">Cantilever</span></button>
-        <button class="ribbon-choice disabled" title="H &gt; 6 m · Fase futura"><span class="rb-icon">🏛️</span><span class="rb-label">Contra-<br>fuerte</span></button>
-        <button class="ribbon-choice disabled" title="H ≤ 5 m · Fase futura"><span class="rb-icon">🪨</span><span class="rb-label">Gavión</span></button>
+        <button class="ribbon-choice disabled" title="H ≤ 3 m · Fase futura"><span class="rb-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="2" y1="20.5" x2="22" y2="20.5" stroke="currentColor" stroke-width="1" opacity="0.4"/><polygon points="10,4 14,4 14,20 4,20" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span><span class="rb-label">Gravedad</span></button>
+        <button class="ribbon-choice active" title="2–8 m · Disponible"><span class="rb-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="2" y1="20.5" x2="22" y2="20.5" stroke="currentColor" stroke-width="1" opacity="0.4"/><rect x="4" y="17" width="16" height="3" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="4" width="3" height="13" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.2"/></svg></span><span class="rb-label">Cantilever</span></button>
+        <button class="ribbon-choice disabled" title="H &gt; 6 m · Fase futura"><span class="rb-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="2" y1="20.5" x2="22" y2="20.5" stroke="currentColor" stroke-width="1" opacity="0.4"/><rect x="4" y="17" width="16" height="3" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="4" width="3" height="13" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.2"/><polygon points="10,10 10,17 16,17" fill="currentColor" fill-opacity="0.28" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg></span><span class="rb-label">Contra-<br>fuerte</span></button>
+        <button class="ribbon-choice disabled" title="H ≤ 5 m · Fase futura"><span class="rb-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="2" y1="20.5" x2="22" y2="20.5" stroke="currentColor" stroke-width="1" opacity="0.4"/><g fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><rect x="4" y="16" width="12" height="4"/><rect x="6" y="12" width="10" height="4"/><rect x="8" y="8" width="8" height="4"/><rect x="10" y="4" width="6" height="4"/></g><g fill="currentColor" opacity="0.55"><circle cx="7" cy="18" r="0.6"/><circle cx="10" cy="18" r="0.6"/><circle cx="13" cy="18" r="0.6"/><circle cx="9" cy="14" r="0.6"/><circle cx="12" cy="14" r="0.6"/><circle cx="11" cy="10" r="0.6"/><circle cx="14" cy="10" r="0.6"/><circle cx="13" cy="6" r="0.6"/></g></svg></span><span class="rb-label">Gavión</span></button>
       </div>
       <div class="ribbon-group-caption">Tipo de muro</div>
     </div>
@@ -488,7 +557,6 @@ table.results tr.row-warn td{background:var(--warning-bg);}
       <span><i style="background:#fbc02d;"></i>Incremento sísmico ΔPAE</span>
       <span><i style="background:#8e24aa;"></i>Cerco perimetral</span>
     </div>
-    <div id="summaryCardViewer"></div>
   </section>
 
   <main id="content">
@@ -521,6 +589,66 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         </div>
         <div class="field" style="margin-top:12px;"><label>Notas</label><textarea data-bind="proyecto.notas" rows="2"></textarea></div>
       </div>
+
+      <div class="card">
+        <h3>Unidades</h3>
+        <p class="sub">Cada categoría tiene su propio selector — puedes combinar, por ejemplo, longitudes en ft con presiones en kPa. El motor de cálculo interno siempre trabaja en kgf-técnico/metros; esto solo cambia cómo se muestran y capturan los valores. Se guarda con el proyecto (.gcon).</p>
+        <div class="form-grid">
+          <div class="field"><label>Longitud</label>
+            <select data-bind="unidades.longitud">
+              <option value="m">m</option>
+              <option value="cm">cm</option>
+              <option value="ft">ft</option>
+              <option value="in">in</option>
+            </select>
+          </div>
+          <div class="field"><label>Peso volumétrico</label>
+            <select data-bind="unidades.pesoVol">
+              <option value="kgm3">kg/m³</option>
+              <option value="tnm3">Tn/m³</option>
+              <option value="knm3">kN/m³</option>
+              <option value="pcf">lb/ft³</option>
+            </select>
+          </div>
+          <div class="field"><label>Fuerza lineal (por m/ft de muro)</label>
+            <select data-bind="unidades.fuerza">
+              <option value="kgm">kg/m</option>
+              <option value="tnm">Tn/m</option>
+              <option value="knm">kN/m</option>
+              <option value="lbft">lb/ft</option>
+              <option value="kipft">kip/ft</option>
+            </select>
+          </div>
+          <div class="field"><label>Presión de suelo (cohesión, sobrecarga, capacidad admisible)</label>
+            <select data-bind="unidades.presion">
+              <option value="kgm2">kg/m²</option>
+              <option value="kgcm2">kg/cm²</option>
+              <option value="tnm2">Tn/m²</option>
+              <option value="kpa">kPa</option>
+              <option value="mpa">MPa</option>
+              <option value="psf">psf</option>
+              <option value="ksf">ksf</option>
+            </select>
+          </div>
+          <div class="field"><label>Momento (por m/ft de muro)</label>
+            <select data-bind="unidades.momento">
+              <option value="kgmm">kg·m/m</option>
+              <option value="tnmm">Tn·m/m</option>
+              <option value="knmm">kN·m/m</option>
+              <option value="lbftft">lb·ft/ft</option>
+              <option value="kipftft">kip·ft/ft</option>
+            </select>
+          </div>
+          <div class="field"><label>Esfuerzo de materiales (f'c, fy)</label>
+            <select data-bind="unidades.material">
+              <option value="kgcm2">kg/cm²</option>
+              <option value="mpa">MPa</option>
+              <option value="psi">psi</option>
+              <option value="ksi">ksi</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ============ TAB: GEOMETRIA ============ -->
@@ -533,15 +661,15 @@ table.results tr.row-warn td{background:var(--warning-bg);}
       <div class="card">
         <h3>Dimensiones del fuste y la zapata</h3>
         <div class="form-grid">
-          <div class="field"><label>Altura del fuste sobre zapata, H [m]</label><input type="number" step="0.05" data-bind="geom.H" id="in-H"></div>
-          <div class="field"><label>Espesor del fuste en la base, ts [m]</label><input type="number" step="0.01" data-bind="geom.ts"></div>
-          <div class="field"><label>Espesor del fuste en la corona, tc [m]</label><input type="number" step="0.01" data-bind="geom.tc"></div>
-          <div class="field"><label>Ancho total de la zapata, Bf [m]</label><input type="number" step="0.05" data-bind="geom.Bf"></div>
-          <div class="field"><label>Espesor de la zapata, tf [m]</label><input type="number" step="0.01" data-bind="geom.tf"></div>
-          <div class="field"><label>Vuelo de la puntera, toe [m]</label><input type="number" step="0.01" data-bind="geom.toe"></div>
-          <div class="field"><label>Vuelo del talón, heel [m]</label><input type="number" id="in-heel" disabled></div>
-          <div class="field"><label>Profundidad de desplante, Df [m]</label><input type="number" step="0.05" data-bind="geom.Df"></div>
-          <div class="field"><label>Altura del relleno sobre zapata, Hr [m]</label><input type="number" step="0.05" data-bind="geom.Hr"></div>
+          <div class="field"><label>Altura del fuste sobre zapata, H <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.05" data-bind="geom.H" data-unit="longitud" id="in-H"></div>
+          <div class="field"><label>Espesor del fuste en la base, ts <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.01" data-bind="geom.ts" data-unit="longitud"></div>
+          <div class="field"><label>Espesor del fuste en la corona, tc <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.01" data-bind="geom.tc" data-unit="longitud"></div>
+          <div class="field"><label>Ancho total de la zapata, Bf <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.05" data-bind="geom.Bf" data-unit="longitud"></div>
+          <div class="field"><label>Espesor de la zapata, tf <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.01" data-bind="geom.tf" data-unit="longitud"></div>
+          <div class="field"><label>Vuelo de la puntera, toe <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.01" data-bind="geom.toe" data-unit="longitud"></div>
+          <div class="field"><label>Vuelo del talón, heel <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" id="in-heel" data-unit="longitud" disabled></div>
+          <div class="field"><label>Profundidad de desplante, Df <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.05" data-bind="geom.Df" data-unit="longitud"></div>
+          <div class="field"><label>Altura real del relleno, Hr <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" id="in-Hr" data-unit="longitud" disabled title="Calculada a partir de los estratos definidos en Suelo y materiales (tope: H). Si suman menos que H, el fuste queda con un tramo expuesto arriba."></div>
           <div class="field"><label>Talud del relleno, β [°]</label><input type="number" step="1" data-bind="geom.beta"></div>
         </div>
         <div id="geomWarning" class="warn-box" style="display:none;"></div>
@@ -553,27 +681,28 @@ table.results tr.row-warn td{background:var(--warning-bg);}
     <section class="tab-panel" id="tab-suelo">
       <div class="card">
         <h3>Propiedades del relleno (backfill)</h3>
-        <div class="form-grid">
-          <div class="field"><label>Peso unitario, γᵣ <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_r" data-unit="F"></div>
-          <div class="field"><label>Ángulo de fricción, φᵣ [°]</label><input type="number" step="1" data-bind="suelo.phi_r"></div>
-          <div class="field"><label>Cohesión, cᵣ <span class="unit-tag" data-tec="[kg/m²]" data-si="[kPa]">[kg/m²]</span></label><input type="number" step="10" data-bind="suelo.c_r" data-unit="F"></div>
-        </div>
+        <p class="sub">Puedes definir uno o varios estratos, de arriba (corona) hacia abajo. Si la suma de espesores no alcanza la altura del fuste H, el relleno real (Hr) se queda en esa cota menor — el tramo superior del fuste se dibuja expuesto y el cálculo usa esa altura real, no H. Si la supera, se recorta el sobrante.</p>
+        <div id="capasRellenoList"></div>
+        <button class="btn-add-dashed" id="btnAddCapa" type="button">+ Agregar estrato</button>
+        <p class="hint" id="capasRellenoResumen"></p>
       </div>
 
       <div class="card">
         <h3>Suelo de fundación</h3>
         <div class="form-grid">
-          <div class="field"><label>Peso unitario, γf <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_f" data-unit="F"></div>
+          <div class="field"><label>Peso unitario, γf <span class="unit-tag" data-cat="pesoVol">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_f" data-unit="pesoVol"></div>
           <div class="field"><label>Ángulo de fricción, φf [°]</label><input type="number" step="1" data-bind="suelo.phi_f"></div>
-          <div class="field"><label>Cohesión, cf <span class="unit-tag" data-tec="[kg/m²]" data-si="[kPa]">[kg/m²]</span></label><input type="number" step="10" data-bind="suelo.c_f" data-unit="F"></div>
-          <div class="field"><label>Capacidad admisible, QADM <span class="unit-tag" data-tec="[t/m²]" data-si="[kPa]">[t/m²]</span></label><input type="number" step="0.5" data-bind="suelo.QADM" data-unit="Q"></div>
+          <div class="field"><label>Cohesión, cf <span class="unit-tag" data-cat="presion">[kg/m²]</span></label><input type="number" step="10" data-bind="suelo.c_f" data-unit="presion"></div>
+          <div class="field"><label>Capacidad admisible, QADM <span class="unit-tag" data-cat="presion">[t/m²]</span></label><input type="number" step="0.5" data-bind="suelo.QADM" data-unit="presion"></div>
           <div class="field"><label>Coeficiente de fricción base μ (vacío = 2/3·tanφf)</label><input type="number" step="0.01" data-bind="suelo.mu"></div>
+          <div class="field"><label>Factor k₂, cohesión en deslizamiento (vacío = 2/3)</label><input type="number" step="0.01" data-bind="suelo.k2" title="Ecuación 8.11 (Das): resistencia adicional B·k₂·c_f sumada al deslizamiento."></div>
         </div>
         <h4>Resistencia pasiva frente a la puntera</h4>
         <p class="sub">Activar/desactivar desde la pestaña Suelo y materiales del ribbon (arriba).</p>
         <div class="form-grid">
-          <div class="field"><label>Peso unitario, γp <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_p" data-unit="F"></div>
+          <div class="field"><label>Peso unitario, γp <span class="unit-tag" data-cat="pesoVol">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_p" data-unit="pesoVol"></div>
           <div class="field"><label>Ángulo de fricción, φp [°]</label><input type="number" step="1" data-bind="suelo.phi_p"></div>
+          <div class="field"><label>Cohesión, cp <span class="unit-tag" data-cat="presion">[kg/m²]</span></label><input type="number" step="10" data-bind="suelo.c_p" data-unit="presion"></div>
         </div>
       </div>
 
@@ -581,8 +710,8 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>Nivel freático</h3>
         <p class="sub">Activar/desactivar desde la pestaña Suelo y materiales del ribbon (arriba).</p>
         <div class="form-grid">
-          <div class="field"><label>Altura del agua sobre la base de la zapata, Hw [m]</label><input type="number" step="0.1" data-bind="suelo.Hw"></div>
-          <div class="field"><label>Peso unitario del agua <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_w" data-unit="F"></div>
+          <div class="field"><label>Altura del agua sobre la base de la zapata, Hw <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.1" data-bind="suelo.Hw" data-unit="longitud"></div>
+          <div class="field"><label>Peso unitario del agua <span class="unit-tag" data-cat="pesoVol">[kg/m³]</span></label><input type="number" step="10" data-bind="suelo.gamma_w" data-unit="pesoVol"></div>
         </div>
       </div>
 
@@ -590,9 +719,9 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>Concreto y acero</h3>
         <p class="sub">Estos valores se usan hoy solo para el peso propio del muro; el diseño estructural (ACI 318-19) llega en una fase posterior.</p>
         <div class="form-grid">
-          <div class="field"><label>f'c <span class="unit-tag" data-tec="[kg/cm²]" data-si="[MPa]">[kg/cm²]</span></label><input type="number" step="10" data-bind="materiales.fc" data-unit="S"></div>
-          <div class="field"><label>fy <span class="unit-tag" data-tec="[kg/cm²]" data-si="[MPa]">[kg/cm²]</span></label><input type="number" step="100" data-bind="materiales.fy" data-unit="S"></div>
-          <div class="field"><label>Peso unitario del concreto, γc <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span></label><input type="number" step="10" data-bind="materiales.gc" data-unit="F"></div>
+          <div class="field"><label>f'c <span class="unit-tag" data-cat="material">[kg/cm²]</span></label><input type="number" step="10" data-bind="materiales.fc" data-unit="material"></div>
+          <div class="field"><label>fy <span class="unit-tag" data-cat="material">[kg/cm²]</span></label><input type="number" step="100" data-bind="materiales.fy" data-unit="material"></div>
+          <div class="field"><label>Peso unitario del concreto, γc <span class="unit-tag" data-cat="pesoVol">[kg/m³]</span></label><input type="number" step="10" data-bind="materiales.gc" data-unit="pesoVol"></div>
           <div class="field"><label>Recubrimiento libre [cm]</label><input type="number" step="0.5" data-bind="materiales.recub"></div>
         </div>
       </div>
@@ -604,7 +733,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>Sobrecarga de operación</h3>
         <p class="sub">Activar y elegir el nivel desde la pestaña Cargas del ribbon (arriba).</p>
         <div class="form-grid">
-          <div class="field"><label>Sobrecarga qs <span class="unit-tag" data-tec="[kg/m²]" data-si="[kPa]">[kg/m²]</span></label><input type="number" step="10" data-bind="cargas.qs" id="in-qs" data-unit="F"></div>
+          <div class="field"><label>Sobrecarga qs <span class="unit-tag" data-cat="presion">[kg/m²]</span></label><input type="number" step="10" data-bind="cargas.qs" id="in-qs" data-unit="presion"></div>
         </div>
         <p class="hint">Incluye personal de mantenimiento y equipo portátil. Para acceso vehicular pesado, la carga vehicular por separado llega en una fase posterior.</p>
       </div>
@@ -627,7 +756,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
           <div class="field"><label>Carga axial de la pata más cargada, Pu_torre [kN]</label><input type="number" step="10" data-bind="cargas.Pu_torre"></div>
           <div class="field"><label>Momento de vuelco en dirección del muro, Mu_torre [kN·m]</label><input type="number" step="10" data-bind="cargas.Mu_torre"></div>
           <div class="field"><label>Cortante basal paralelo al muro, Vu_torre [kN]</label><input type="number" step="5" data-bind="cargas.Vu_torre"></div>
-          <div class="field"><label>Distancia centroide cimentación–muro, dist_torre [m]</label><input type="number" step="0.5" data-bind="cargas.dist_torre"></div>
+          <div class="field"><label>Distancia centroide cimentación–muro, dist_torre <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.5" data-bind="cargas.dist_torre" data-unit="longitud"></div>
         </div>
       </div>
 
@@ -635,8 +764,8 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>Cerco perimetral</h3>
         <p class="sub">Activar desde el ribbon (pestaña Cargas, arriba). Se modela como carga horizontal de viento sobre el cerco, actuando a media altura del cerco por encima de la corona del muro.</p>
         <div class="form-grid">
-          <div class="field"><label>Carga horizontal del cerco, P_cerco <span class="unit-tag" data-tec="[kg/m]" data-si="[kN/m]">[kg/m]</span></label><input type="number" step="5" data-bind="cargas.P_cerco" data-unit="F"></div>
-          <div class="field"><label>Altura del cerco, h_cerco [m]</label><input type="number" step="0.1" data-bind="cargas.h_cerco"></div>
+          <div class="field"><label>Carga horizontal del cerco, P_cerco <span class="unit-tag" data-cat="fuerza">[kg/m]</span></label><input type="number" step="5" data-bind="cargas.P_cerco" data-unit="fuerza"></div>
+          <div class="field"><label>Altura del cerco, h_cerco <span class="unit-tag" data-cat="longitud">[m]</span></label><input type="number" step="0.1" data-bind="cargas.h_cerco" data-unit="longitud"></div>
         </div>
         <p class="hint">Si el cerco es de concreto o mampostería (&gt; 200 kg/m), reconsiderar el diseño del fuste.</p>
       </div>
@@ -656,17 +785,17 @@ table.results tr.row-warn td{background:var(--warning-bg);}
           <div class="field" id="fieldDeltaR"><label>Ángulo de fricción muro-suelo, δ [°] (vacío = φᵣ/2) — Coulomb</label><input type="number" step="1" data-bind="suelo.delta_r"></div>
           <div class="field" id="fieldAlpha"><label>Ángulo del intradós con la vertical, α [°] — Coulomb</label><input type="number" step="1" data-bind="geom.alpha"></div>
           <div class="field" id="fieldKs"><label>Coeficiente K₀ — At-rest</label><input type="number" step="0.01" data-bind="suelo.Ks"></div>
-          <div class="field" id="fieldEFP"><label>Peso de fluido equivalente, EFP <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span> — Fluido equivalente</label><input type="number" step="10" data-bind="EFP" data-unit="F"></div>
+          <div class="field" id="fieldEFP"><label>Peso de fluido equivalente, EFP <span class="unit-tag" data-cat="pesoVol">[kg/m³]</span> — Fluido equivalente</label><input type="number" step="10" data-bind="EFP" data-unit="pesoVol"></div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cardSismo">
         <h3>Sismo (Mononobe-Okabe)</h3>
         <p class="sub">Activar desde el ribbon (arriba). El incremento sísmico ΔPAE se suma a la fuerza activa en volteo y deslizamiento, y las revisiones pasan a comparar contra los factores de seguridad sísmicos.</p>
         <div class="form-grid">
           <div class="field" id="fieldKh"><label>Coeficiente sísmico horizontal, kh</label><input type="number" step="0.01" data-bind="sismo.kh"></div>
           <div class="field" id="fieldKv"><label>Coeficiente sísmico vertical, kv</label><input type="number" step="0.01" data-bind="sismo.kv"></div>
-          <div class="field" id="fieldEFPsism"><label>EFP sísmico adicional <span class="unit-tag" data-tec="[kg/m³]" data-si="[kN/m³]">[kg/m³]</span></label><input type="number" step="10" data-bind="sismo.EFP_sism" data-unit="F"></div>
+          <div class="field" id="fieldEFPsism"><label>EFP sísmico adicional <span class="unit-tag" data-cat="pesoVol">[kg/m³]</span></label><input type="number" step="10" data-bind="sismo.EFP_sism" data-unit="pesoVol"></div>
         </div>
         <p class="hint">El método "EFP sísmico" reinterpreta el parámetro como un peso de fluido equivalente adicional en kg/m³ (el prompt original daba un valor en unidades imperiales incompatibles con esta app).</p>
       </div>
@@ -730,8 +859,8 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>4. Excentricidad</h3>
         <p class="sub">Ref.: NAVFAC DM-7.02. Cumple si la resultante cae dentro del tercio central (e ≤ B/6).</p>
         <div class="form-grid">
-          <div class="field"><label>Excentricidad, e [m]</label><input id="out-e" disabled></div>
-          <div class="field"><label>Límite tercio central, B/6 [m]</label><input id="out-B6" disabled></div>
+          <div class="field"><label>Excentricidad, e</label><input id="out-e" disabled></div>
+          <div class="field"><label>Límite tercio central, B/6</label><input id="out-B6" disabled></div>
         </div>
         <div id="badge-ecc"></div>
       </div>
@@ -752,6 +881,59 @@ table.results tr.row-warn td{background:var(--warning-bg);}
           <thead><tr><th>Revisión</th><th>Valor calc.</th><th>Mínimo req.</th><th>Estado</th></tr></thead>
           <tbody id="resumenGeoBody"></tbody>
         </table>
+      </div>
+
+      <div class="card">
+        <h3>Memoria de cálculo</h3>
+        <p class="sub">Todos los valores intermedios en un solo lugar (los mismos números ya mostrados en las pestañas Cargas / Presiones laterales / Revisiones geotécnicas, consolidados aquí para no ir y venir entre pestañas).</p>
+
+        <h4>1. Pesos y fuerza vertical resultante</h4>
+        <div class="form-grid">
+          <div class="field"><label>Peso del fuste, Ws</label><input id="res-Ws" disabled></div>
+          <div class="field"><label>Peso de la zapata, Wf</label><input id="res-Wf" disabled></div>
+          <div class="field"><label>Peso del relleno sobre el talón, Wr</label><input id="res-Wr" disabled></div>
+          <div class="field"><label>Peso del suelo sobre la puntera, Wp</label><input id="res-Wp" disabled></div>
+          <div class="field"><label>Componente vertical del empuje, Pa,v</label><input id="res-Pav" disabled></div>
+          <div class="field"><label>Fuerza vertical total, N = ΣV</label><input id="res-N" disabled></div>
+        </div>
+
+        <h4>2. Presiones laterales</h4>
+        <div class="form-grid">
+          <div class="field"><label>Coeficiente activo, Ka</label><input id="res-Ka" disabled></div>
+          <div class="field"><label>Fuerza activa, Pa</label><input id="res-Pa" disabled></div>
+          <div class="field"><label>Componente horizontal, Pa,h</label><input id="res-Pah" disabled></div>
+          <div class="field"><label>Empuje por sobrecarga, Pq,h</label><input id="res-Pqh" disabled></div>
+          <div class="field"><label>Empuje hidrostático, Pw,h</label><input id="res-Pwh" disabled></div>
+          <div class="field"><label>Coeficiente pasivo, Kp</label><input id="res-Kp" disabled></div>
+          <div class="field"><label>Fuerza pasiva, Pp</label><input id="res-Pp" disabled></div>
+          <div class="field"><label>K_AE (sismo Mononobe-Okabe)</label><input id="res-KAE" disabled></div>
+          <div class="field"><label>Incremento sísmico, ΔPAE,h</label><input id="res-DeltaPAE" disabled></div>
+        </div>
+
+        <h4>3. Volteo</h4>
+        <div class="form-grid">
+          <div class="field"><label>Momento resistente, ΣMr</label><input id="res-Mr" disabled></div>
+          <div class="field"><label>Momento de volteo, ΣMo</label><input id="res-Mov" disabled></div>
+          <div class="field"><label>FS volteo</label><input id="res-FSvolteo" disabled></div>
+        </div>
+
+        <h4>4. Deslizamiento</h4>
+        <div class="form-grid">
+          <div class="field"><label>Fuerza horizontal total, ΣFh</label><input id="res-Fh" disabled></div>
+          <div class="field"><label>Resistencia total, R</label><input id="res-R" disabled></div>
+          <div class="field"><label>FS deslizamiento</label><input id="res-FSdesliz" disabled></div>
+        </div>
+
+        <h4>5. Capacidad portante y excentricidad</h4>
+        <div class="form-grid">
+          <div class="field"><label>Excentricidad, e</label><input id="res-e" disabled></div>
+          <div class="field"><label>Límite tercio central, B/6</label><input id="res-B6" disabled></div>
+          <div class="field"><label>Distribución de presión</label><input id="res-distrib" disabled></div>
+          <div class="field"><label>q máx (puntera)</label><input id="res-qmax" disabled></div>
+          <div class="field"><label>q mín (talón)</label><input id="res-qmin" disabled></div>
+          <div class="field"><label>q último, Terzaghi (informativo)</label><input id="res-qult" disabled></div>
+          <div class="field"><label>FS capacidad de carga</label><input id="res-FScarga" disabled></div>
+        </div>
       </div>
       <p class="future-note">Diagrama de presiones y de M/V (Plotly), diseño estructural ACI 318-19, vista 3D, exportación a Word y análisis de sensibilidad se agregan en fases posteriores.</p>
     </section>
@@ -779,6 +961,77 @@ table.results tr.row-warn td{background:var(--warning-bg);}
     </section>
 
   </main>
+</div>
+
+<!-- Barra de resultados fija (estilo GeoCim): veredicto global + checks con
+     barra de utilización, visible en cualquier pestaña de la app. -->
+<div id="resultsBar">
+  <div class="rb-verdict" id="rbVerdict">
+    <div>
+      <div class="rb-lbl">Verificación global</div>
+      <div class="rb-state" id="rbState">✓ CUMPLE</div>
+    </div>
+    <div class="rb-big" id="rbUtil">—</div>
+  </div>
+  <div class="rb-checks" id="rbChecks"></div>
+  <div class="rb-actions">
+    <button class="btn-ghost" id="btnVerMemoria">Ver memoria de cálculo</button>
+  </div>
+</div>
+
+<!-- Modal Agregar/Editar estrato del relleno (estilo GeoCim) -->
+<div id="strat-modal" class="sm-overlay" style="display:none">
+  <div class="sm-card">
+    <div class="sm-hd">
+      <span id="sm-title" class="sm-hd-title">Agregar estrato</span>
+      <button class="sm-hd-close" id="btnSmClose">✕</button>
+    </div>
+    <div class="sm-body">
+      <div>
+        <div class="sm-sec">Nombre del suelo</div>
+        <input id="sm-nm" type="text" class="sm-input" placeholder="Ej. Arcilla café compacta">
+      </div>
+      <div>
+        <div class="sm-sec">Profundidad hasta</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div class="inwrap" style="width:90px;">
+            <input id="sm-to" type="number" step="0.1" min="0" style="border:0; padding:7px 8px; font-family:var(--font-mono); font-size:12px; outline:none; width:100%; background:transparent; color:var(--text);">
+          </div>
+          <span id="sm-to-unit" style="font-size:11px; color:var(--muted); font-family:var(--font-mono);">m</span>
+        </div>
+      </div>
+      <div>
+        <div class="sm-sec">Tipo de suelo</div>
+        <div class="hatch-grid" id="sm-hatch-grid"></div>
+      </div>
+      <div>
+        <div class="sm-sec">Color</div>
+        <div class="color-palette" id="sm-palette"></div>
+        <input id="sm-color" type="color" value="#e8d880" style="display:none">
+      </div>
+      <div>
+        <div class="sm-sec">Propiedades mecánicas</div>
+        <div class="soil-grid">
+          <div>
+            <div class="soil-grid-lbl" id="sm-g-lbl">γ (kg/m³)</div>
+            <div class="soil-mini-in"><input id="sm-g" type="number" step="10" min="0"></div>
+          </div>
+          <div>
+            <div class="soil-grid-lbl" id="sm-c-lbl">c (kg/m²)</div>
+            <div class="soil-mini-in"><input id="sm-c" type="number" step="10" min="0"></div>
+          </div>
+          <div>
+            <div class="soil-grid-lbl">φ (°)</div>
+            <div class="soil-mini-in"><input id="sm-phi" type="number" step="1" min="0" max="50"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sm-ft">
+      <button class="btn-sec" id="btnSmCancel">Cancelar</button>
+      <button class="btn-pri" id="btnSmConfirm">Confirmar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Three.js r128 + OrbitControls embebidos offline (mismo patron que Hoja FEM/TSA) -->
@@ -1852,41 +2105,117 @@ const STORAGE_KEY = "murosContencion.v1";
 const toRad = d => d * Math.PI / 180;
 const fmt = (n, dec) => (n===null || n===undefined || !isFinite(n)) ? "—" : n.toFixed(dec===undefined?2:dec);
 
-/* Sistema de unidades para los RESULTADOS (Técnico kgf, valor por defecto,
-   o SI). El motor de cálculo interno sigue siempre en kgf/m (sistema
-   técnico, ya verificado a mano contra Python) — esto es solo una
-   conversión en la capa de despliegue. Por seguridad (evitar errores de
-   conversión de ida y vuelta), el sistema de unidades SOLO afecta los
-   campos de RESULTADOS (de solo lectura); los campos editables (γ, qs,
-   QADM, etc.) siempre se ingresan en kgf-técnico, sin importar el toggle.
-   Persistido en localStorage igual que el tema. */
-let sistemaUnidades = "tec"; // "tec" | "SI"
-const KGF_A_KN = 9.80665/1000;   // 1 kgf = 0.00980665 kN (aplica a kgf, kgf/m, kgf/m³, kgf·m, etc.)
-const TFM2_A_KPA = 9.80665;      // 1 tf/m² = 9.80665 kPa
+/* Sistema de unidades por categoría (Bloque ampliado, 2026-08-10). El
+   motor de cálculo interno SIEMPRE trabaja en kgf-técnico (kg, kg/m,
+   kg/m², kg/m³, kg·m/m, kg/cm² — ya verificado a mano contra Python);
+   esto es solo la capa de conversión para mostrar/capturar valores en la
+   unidad que el usuario elija por categoría (pestaña Proyecto → Unidades).
+   A diferencia del viejo toggle binario kgf/SI, cada categoría tiene su
+   propio selector independiente (`state.unidades.<categoria>`) con varias
+   opciones (técnico ampliado, SI, imperial) — así el usuario puede, por
+   ejemplo, ver longitudes en ft y presiones en kPa al mismo tiempo.
+   Factores expresados como "1 unidad-base -> cuántas unidades-destino". */
+const UNIT_DEFS = {
+  longitud: { // base: m
+    m:  {f:1,          label:"m"},
+    cm: {f:100,         label:"cm"},
+    ft: {f:3.28084,     label:"ft"},
+    in: {f:39.3701,     label:"in"},
+  },
+  pesoVol: { // base: kg/m³ (pesos unitarios de suelo, concreto, EFP)
+    kgm3: {f:1,             label:"kg/m³"},
+    tnm3: {f:0.001,         label:"Tn/m³"},
+    knm3: {f:0.00980665,    label:"kN/m³"},
+    pcf:  {f:0.0624280,     label:"lb/ft³"},
+  },
+  fuerza: { // base: kg/m (fuerza lineal por metro de muro: Pa, Pp, Fh, R, pesos, P_cerco)
+    kgm:   {f:1,            label:"kg/m"},
+    tnm:   {f:0.001,        label:"Tn/m"},
+    knm:   {f:0.00980665,   label:"kN/m"},
+    lbft:  {f:0.671970,     label:"lb/ft"},
+    kipft: {f:0.000671970,  label:"kip/ft"},
+  },
+  presion: { // base: kg/m² (cohesión, sobrecarga, capacidad admisible, q suelo)
+    kgm2:  {f:1,             label:"kg/m²"},
+    kgcm2: {f:0.0001,        label:"kg/cm²"},
+    tnm2:  {f:0.001,         label:"Tn/m²"},
+    kpa:   {f:0.00980665,    label:"kPa"},
+    mpa:   {f:0.00000980665, label:"MPa"},
+    psf:   {f:0.204816,      label:"psf"},
+    ksf:   {f:0.000204816,   label:"ksf"},
+  },
+  momento: { // base: kg·m/m (momento por metro de muro: Mr, Mov)
+    kgmm:    {f:1,           label:"kg·m/m"},
+    tnmm:    {f:0.001,       label:"Tn·m/m"},
+    knmm:    {f:0.00980665,  label:"kN·m/m"},
+    lbftft:  {f:2.20462,     label:"lb·ft/ft"},
+    kipftft: {f:0.00220462,  label:"kip·ft/ft"},
+  },
+  material: { // base: kg/cm² (f'c, fy)
+    kgcm2: {f:1,          label:"kg/cm²"},
+    mpa:   {f:0.0980665,  label:"MPa"},
+    psi:   {f:14.2233,    label:"psi"},
+    ksi:   {f:0.0142233,  label:"ksi"},
+  },
+};
+function unitFactor(cat){ return UNIT_DEFS[cat][state.unidades[cat]].f; }
+function unitLabel(cat){ return UNIT_DEFS[cat][state.unidades[cat]].label; }
+function toDisplay(cat, baseVal){ return baseVal * unitFactor(cat); }
+function toBase(cat, dispVal){ return dispVal / unitFactor(cat); }
+function fmtCat(cat, baseVal, dec){
+  if(baseVal===null || baseVal===undefined || !isFinite(baseVal)) return "—";
+  return fmt(toDisplay(cat, baseVal), dec===undefined?2:dec) + " " + unitLabel(cat);
+}
+// Envolturas con el nombre histórico, usadas en toda la app para no tener
+// que cambiar cada punto de llamada — ahora delegan en la categoría.
+function fmtFuerza(kgf, dec){ return fmtCat("fuerza", kgf, dec); }
+function fmtMomento(kgfm, dec){ return fmtCat("momento", kgfm, dec); }
+function fmtPresionSuelo(kgfm2, dec){ return fmtCat("presion", kgfm2, dec); }
+function fmtLong(m, dec){ return fmtCat("longitud", m, dec); }
 
-// Fuerza lineal o puntual (valor interno en kgf o kgf/m) -> "kg/m" (técnico) o "kN/m" (SI).
-function fmtFuerza(kgf, dec){
-  if(sistemaUnidades==="SI") return fmt(kgf*KGF_A_KN, dec===undefined?2:dec) + " kN/m";
-  return fmt(kgf, dec===undefined?0:dec) + " kg/m";
+/* Texturas y paleta de color para el modal de estratos del relleno —
+   portadas literalmente de GeoCim (C:\Users\cespi\Downloads\GeoCim\index.html,
+   HATCH_DEFS/COLOR_PALETTE/hatchPatternSVG) para mantener la misma
+   identidad visual entre ambas apps. */
+const HATCH_DEFS=[
+  {nm:'Limo',            color:'#b0c4d8'},
+  {nm:'Limo arenoso',    color:'#c4cfa0'},
+  {nm:'Limo gravoso',    color:'#98aab8'},
+  {nm:'Arcilla',         color:'#c8a090'},
+  {nm:'Arcilla arenosa', color:'#d4b888'},
+  {nm:'Arcilla gravosa', color:'#b89870'},
+  {nm:'Arena',           color:'#e8d880'},
+  {nm:'Arena limosa',    color:'#d8cc78'},
+  {nm:'Arena arcillosa', color:'#c8b870'},
+  {nm:'Grava',           color:'#c0a870'},
+  {nm:'Grava limosa',    color:'#a89870'},
+  {nm:'Grava arcillosa', color:'#90806a'},
+];
+const COLOR_PALETTE=[
+  '#b0c4d8','#98aab8','#c4cfa0','#8fa870',
+  '#c8a090','#d4b888','#b89870','#c09080',
+  '#e8d880','#d8cc78','#c8b870','#f0e090',
+  '#c0a870','#a89870','#90806a','#785848',
+  '#7090a8','#a8b880','#b8a060','#d0b890',
+];
+function hatchPatternSVG(id,hatch,color){
+  const c=color||'#cccccc', K='rgba(0,0,0,0.14)', h=hatch||1;
+  switch(h){
+    case 1: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="12" height="6"><rect width="12" height="6" fill="${c}"/><line x1="0" y1="3" x2="12" y2="3" stroke="${K}" stroke-width="1"/></pattern>`;
+    case 2: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="12" height="10"><rect width="12" height="10" fill="${c}"/><line x1="0" y1="3" x2="12" y2="3" stroke="${K}" stroke-width="1"/><circle cx="6" cy="7.5" r="1.4" fill="${K}"/></pattern>`;
+    case 3: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="18" height="14"><rect width="18" height="14" fill="${c}"/><line x1="0" y1="3" x2="18" y2="3" stroke="${K}" stroke-width="1"/><ellipse cx="9" cy="9.5" rx="4.5" ry="3" fill="none" stroke="${K}" stroke-width="1"/></pattern>`;
+    case 4: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="${c}"/><line x1="-1" y1="1" x2="1" y2="-1" stroke="${K}" stroke-width="1"/><line x1="0" y1="8" x2="8" y2="0" stroke="${K}" stroke-width="1"/><line x1="7" y1="9" x2="9" y2="7" stroke="${K}" stroke-width="1"/></pattern>`;
+    case 5: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="10" height="10"><rect width="10" height="10" fill="${c}"/><line x1="0" y1="10" x2="10" y2="0" stroke="${K}" stroke-width="1"/><circle cx="3" cy="3" r="1.3" fill="${K}"/></pattern>`;
+    case 6: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="16" height="16"><rect width="16" height="16" fill="${c}"/><line x1="0" y1="16" x2="16" y2="0" stroke="${K}" stroke-width="1"/><ellipse cx="5" cy="5" rx="3.5" ry="2.2" fill="none" stroke="${K}" stroke-width="1"/></pattern>`;
+    case 7: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="8" height="8"><rect width="8" height="8" fill="${c}"/><circle cx="2" cy="2" r="1.2" fill="${K}"/><circle cx="6" cy="6" r="1.2" fill="${K}"/></pattern>`;
+    case 8: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="12" height="10"><rect width="12" height="10" fill="${c}"/><line x1="0" y1="5" x2="12" y2="5" stroke="${K}" stroke-width="0.8"/><circle cx="2" cy="2" r="1.1" fill="${K}"/><circle cx="8" cy="8" r="1.1" fill="${K}"/></pattern>`;
+    case 9: return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="10" height="10"><rect width="10" height="10" fill="${c}"/><line x1="0" y1="10" x2="10" y2="0" stroke="${K}" stroke-width="0.8"/><circle cx="2" cy="2" r="1.1" fill="${K}"/><circle cx="7" cy="7" r="1.1" fill="${K}"/></pattern>`;
+    case 10:return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="22" height="14"><rect width="22" height="14" fill="${c}"/><ellipse cx="6" cy="7" rx="5" ry="3" fill="none" stroke="${K}" stroke-width="1.2"/><ellipse cx="17" cy="7" rx="4.5" ry="2.8" fill="none" stroke="${K}" stroke-width="1.2"/></pattern>`;
+    case 11:return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="22" height="16"><rect width="22" height="16" fill="${c}"/><line x1="0" y1="3" x2="22" y2="3" stroke="${K}" stroke-width="0.8"/><ellipse cx="6" cy="10.5" rx="4.5" ry="3" fill="none" stroke="${K}" stroke-width="1.2"/><ellipse cx="17" cy="10.5" rx="4" ry="2.8" fill="none" stroke="${K}" stroke-width="1.2"/></pattern>`;
+    case 12:return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="22" height="16"><rect width="22" height="16" fill="${c}"/><line x1="0" y1="16" x2="16" y2="0" stroke="${K}" stroke-width="0.8"/><line x1="6" y1="16" x2="22" y2="0" stroke="${K}" stroke-width="0.8"/><ellipse cx="11" cy="10" rx="4.5" ry="3" fill="none" stroke="${K}" stroke-width="1.2"/></pattern>`;
+    default:return`<pattern id="${id}" patternUnits="userSpaceOnUse" width="12" height="6"><rect width="12" height="6" fill="${c}"/></pattern>`;
+  }
 }
-// Momento por metro de muro (valor interno en kgf·m/m) -> "kg·m/m" o "kN·m/m".
-function fmtMomento(kgfm, dec){
-  if(sistemaUnidades==="SI") return fmt(kgfm*KGF_A_KN, dec===undefined?2:dec) + " kN·m/m";
-  return fmt(kgfm, dec===undefined?0:dec) + " kg·m/m";
-}
-// Presión de contacto (valor interno en kgf/m²) -> "t/m²" (técnico) o "kPa" (SI).
-function fmtPresionSuelo(kgfm2, dec){
-  if(sistemaUnidades==="SI") return fmt(kgfm2/1000*TFM2_A_KPA, dec===undefined?1:dec) + " kPa";
-  return fmt(kgfm2/1000, dec===undefined?2:dec) + " t/m²";
-}
-
-// Factores kgf-técnico -> SI para los campos EDITABLES marcados con
-// data-unit (bindAll/syncInputsFromState los usan para mostrar y volver a
-// guardar en kgf-técnico de forma transparente al motor de cálculo):
-//   F: kgf, kgf/m, kgf/m², kgf/m³, kgf·m  -> kN, kN/m, kPa, kN/m³, kN·m
-//   Q: tf/m² (QADM)                        -> kPa
-//   S: kgf/cm² (f'c, fy)                   -> MPa
-const UNIT_FACTORS = { F: KGF_A_KN, Q: TFM2_A_KPA, S: 9.80665/100 };
 
 function debounce(fn, ms){
   let t = null;
@@ -1922,17 +2251,36 @@ function defaultState(){
       H:3.00, ts:0.30, tc:0.20, incl:0.00,
       Bf:2.10, tf:0.35, toe:0.40, heel:null,
       keyEnabled:false, keyW:0.20, keyD:0.30, keyPos:"base_stem",
-      Hr:3.00, beta:0.00, alpha:0.00, Df:0.80
+      beta:0.00, alpha:0.00, Df:0.80
     },
     suelo: {
-      gamma_r:1800, phi_r:30, c_r:0, delta_r:null, Ks:0.5,
-      gamma_f:1900, phi_f:28, c_f:0, QADM:10, FS_qadm:3, mu:null,
+      // Relleno estratificado (2026-08-10, estilo GeoCim): lista de
+      // estratos con profundidad acumulada from/to (no espesor suelto),
+      // nombre/textura/color para el modal "Agregar estrato"; si la suma
+      // no alcanza H se extiende el último, si se pasa se recorta (ver
+      // resolverCapas()). Con un solo estrato (el caso por default) el
+      // comportamiento es idéntico al de antes, sin importar "to" —
+      // siempre cubre H.
+      capasRelleno: [ { nm:"Estrato 1", hatch:7, color:"#e8d880", from:0, to:3.00, gamma:1800, phi:30, c:0 } ],
+      delta_r:null, Ks:0.5,
+      // QADM en kgf/m² (antes se guardaba directo en tf/m², caso especial
+      // que ya no aplica ahora que "presion" es una categoría más del
+      // sistema de unidades — 10000 kgf/m² = 10 t/m², mismo valor visible
+      // por default que antes).
+      gamma_f:1900, phi_f:28, c_f:0, QADM:10000, FS_qadm:3, mu:null,
+      // k2 (Bloque 8.6, ecuación 8.11 del libro de Das): factor de reducción
+      // de la cohesión de fundación en el deslizamiento (B·k2·c_f). Vacío =
+      // 2/3, mismo criterio que ya usa "mu" (vacío = tan(2/3·φf), o sea k1).
+      k2:null,
       waterEnabled:false, Hw:0, gamma_w:1000,
-      pasivoEnabled:true, gamma_p:1800, phi_p:28
+      // c_p (cohesión de la zona pasiva frente a la puntera): antes la
+      // presión pasiva solo tenía el término friccionante (0.5·Kp·γp·Df²);
+      // ahora también suma 2·c_p·√Kp·Df (ecuación 8.9 del libro).
+      pasivoEnabled:true, gamma_p:1800, phi_p:28, c_p:0
     },
     materiales: { fc:210, fy:4200, gc:2400, recub:7.5, phiF:0.90, phiV:0.75 },
     cargas: {
-      qsEnabled:true, qs:500, qsPreset:"normal",
+      qsEnabled:false, qs:500, qsPreset:"normal",
       qvEnabled:false, qv:1200, wv:2.40,
       torreEnabled:false, Pu_torre:0, Mu_torre:0, Vu_torre:0, dist_torre:0,
       cercoEnabled:false, P_cerco:50, h_cerco:2.0
@@ -1947,7 +2295,12 @@ function defaultState(){
       varZapataInf:"#5", varZapataSup:"#4", sepZapataInf:15, sepZapataSup:30,
       varTemp:"#3", sepTemp:30
     },
-    FS: { volteo_estatico:2.0, volteo_sismico:1.5, desliz_estatico:1.5, desliz_sismico:1.1, capacidad_carga:3.0, eccentricidad:"B/6" }
+    FS: { volteo_estatico:2.0, volteo_sismico:1.5, desliz_estatico:1.5, desliz_sismico:1.1, capacidad_carga:3.0, eccentricidad:"B/6" },
+    // Unidades de despliegue por categoría (pestaña Proyecto → Unidades).
+    // El motor de cálculo SIEMPRE trabaja en kgf-técnico/metros — ver
+    // UNIT_DEFS. Los valores por default reproducen exactamente lo que
+    // mostraba la app antes de este selector granular.
+    unidades: { longitud:"m", pesoVol:"kgm3", fuerza:"kgm", presion:"tnm2", momento:"kgmm", material:"kgcm2" }
   };
 }
 
@@ -1960,6 +2313,37 @@ function mergeState(def, loaded){
       for(const k in out){ if(k in loaded) out[k] = mergeState(out[k], loaded[k]); }
     }
     return out;
+  }
+  return loaded;
+}
+
+// Migración (2026-08-10, con un segundo paso agregado el mismo día al
+// portar el modal "Agregar estrato" de GeoCim): hay dos formatos viejos
+// posibles para suelo.capasRelleno según de cuándo sea el proyecto/
+// localStorage guardado:
+//  1. Sin capasRelleno en absoluto (gamma_r/phi_r/c_r sueltos, de antes
+//     del relleno estratificado) — se sintetiza un único estrato.
+//  2. capasRelleno con espesor "h" pero sin from/to/nombre/textura (el
+//     formato intermedio de la tabla editable, antes del modal estilo
+//     GeoCim) — se convierte h→from/to acumulado y se agrega nombre y
+//     textura por default.
+// En ambos casos el objetivo es no perder los valores ya capturados al
+// abrir un .gcon viejo o restaurar el localStorage de una sesión previa.
+function migrarSueloViejo(loaded){
+  if(!loaded || !loaded.suelo) return loaded;
+  const s = loaded.suelo;
+  if(!s.capasRelleno && s.gamma_r !== undefined){
+    s.capasRelleno = [{
+      nm:"Estrato 1", hatch:7, color:"#e8d880", from:0,
+      to: (loaded.geom && loaded.geom.H) || 3.00,
+      gamma: s.gamma_r, phi: s.phi_r, c: s.c_r || 0
+    }];
+  }else if(s.capasRelleno && s.capasRelleno.length && s.capasRelleno[0].to === undefined){
+    let acc = 0;
+    s.capasRelleno = s.capasRelleno.map((c,i)=>{
+      const from = acc; acc += c.h;
+      return { nm:`Estrato ${i+1}`, hatch:7, color:"#e8d880", from, to:acc, gamma:c.gamma, phi:c.phi, c:c.c };
+    });
   }
   return loaded;
 }
@@ -2018,7 +2402,7 @@ async function guardarProyecto(){
 async function cargarProyectoDesdeArchivo(file){
   try{
     const loaded = JSON.parse(await file.text());
-    state = mergeState(defaultState(), loaded);
+    state = mergeState(defaultState(), migrarSueloViejo(loaded));
     renderAllFull();
   }catch(err){
     alert("No se pudo leer el archivo: " + err.message);
@@ -2083,80 +2467,194 @@ function coulombKa(phi, delta, beta, theta){
   return (isFinite(Ka) && Ka > 0) ? Ka : rankineKa(phi, beta);
 }
 
+/* Resuelve la lista de estratos del relleno (suelo.capasRelleno, cada uno
+   con profundidad acumulada from/to — estilo GeoCim) contra una altura
+   objetivo (Bloque de relleno estratificado, 2026-08-10): si la suma de
+   espesores no alcanza, el ÚLTIMO estrato se extiende; si se pasa, se
+   recorta el sobrante. Nunca devuelve una lista vacía. Devuelve espesor
+   ("h") ya resuelto en vez de from/to (el resto del motor de cálculo solo
+   usa gamma/phi/c/h), pero conserva nm/hatch/color para que el dibujo 2D
+   pueda pintar cada estrato con su propia textura sin recalcular nada. */
+function resolverCapas(capas, Hobjetivo){
+  const out = [];
+  let acc = 0;
+  for(const capa of capas){
+    if(acc >= Hobjetivo - 1e-9) break;
+    const espesor = capa.to - capa.from;
+    const h = Math.min(espesor, Hobjetivo - acc);
+    if(h > 1e-9){ out.push({ nm:capa.nm, hatch:capa.hatch, color:capa.color, gamma:capa.gamma, phi:capa.phi, c:capa.c, h }); acc += h; }
+  }
+  if(out.length === 0) return [{ nm:capas[0].nm, hatch:capas[0].hatch, color:capas[0].color, h:Hobjetivo, gamma:capas[0].gamma, phi:capas[0].phi, c:capas[0].c }];
+  const falta = Hobjetivo - acc;
+  if(falta > 1e-9) out[out.length-1].h += falta;
+  return out;
+}
+
+/* Altura real del relleno sobre la zapata (2026-08-10, reemplaza al
+   antiguo campo editable geom.Hr): es la suma de espesores que el
+   usuario capturó en suelo.capasRelleno, tope máximo geom.H. Si el
+   usuario captura MENOS que H, esa altura menor se queda tal cual —ya no
+   se estira para forzar que cubra todo H— y tanto el dibujo (el fuste
+   queda con un tramo expuesto arriba, sin relleno) como el cálculo
+   (Pa/Pq_h/ΔPAE/Wr solo actúan sobre esa altura real) usan este valor.
+   Si captura MÁS que H, se recorta a H (comportamiento que ya existía). */
+function alturaRellenoEfectiva(suelo, H){
+  const capas = suelo.capasRelleno;
+  const suma = capas.length ? capas[capas.length-1].to - capas[0].from : 0;
+  return Math.min(Math.max(suma, 0), H);
+}
+
 /* Presiones laterales — Rankine/Coulomb/At-rest/Fluido equivalente
    (Bloque 4) + incremento sísmico Mononobe-Okabe/EFP sísmico. Entrada:
-   state completo. Salida en kg/m (fuerzas) y adimensional (Ka,Kp). */
+   state completo. Salida en kg/m (fuerzas) y adimensional (Ka,Kp).
+
+   Relleno estratificado (2026-08-10): Rankine/Coulomb/At-rest integran
+   Pa capa por capa — cada estrato usa su propio Ka (según su φ) sobre el
+   esfuerzo vertical acumulado, y el diagrama de presión de cada capa se
+   descompone en rectángulo (presión constante = la del tope de la capa)
+   + triángulo (el incremento hasta la presión en la base), sumando fuerza
+   y momento respecto a la BASE del muro para obtener el brazo real de la
+   resultante ("arm", en m — reemplaza el H/3 fijo válido solo para un
+   único estrato homogéneo). Con un solo estrato que cubra toda H esta
+   fórmula se reduce exactamente al caso ya verificado (rectángulo de área
+   0 + triángulo con brazo H/3), así que no cambia ningún resultado previo.
+   Fluido equivalente NO se estratifica (EFP ya es un único valor
+   "equivalente" por definición). El incremento sísmico Mononobe-Okabe
+   tampoco: usa la φ del PRIMER estrato y el peso volumétrico PROMEDIO
+   ponderado del relleno como referencia única — generalizar el sismo por
+   estrato excede el alcance de esta fase. La cohesión de cada estrato
+   (capa.c) se captura pero no se usa en Pa, igual que suelo.c_r antes de
+   este cambio (sigue sin integrarse a ningún método). */
 function calcularPresiones(state){
   const { suelo, geom, cargas, sismo } = state;
-  const H = geom.H;
-  const phi = toRad(suelo.phi_r);
+  // H, de aquí en adelante en esta función, es la altura REAL del relleno
+  // (alturaRellenoEfectiva), no la del fuste (geom.H) — si el usuario no
+  // llena los estratos hasta la corona, el empuje/sobrecarga/sismo solo
+  // actúan sobre lo que sí hay relleno (el resto del fuste queda expuesto,
+  // sin presión de suelo encima).
+  const H = alturaRellenoEfectiva(suelo, geom.H);
   const beta = toRad(geom.beta);
   const theta = Math.PI/2 - toRad(geom.alpha || 0);
-  const delta = toRad((suelo.delta_r!=null && suelo.delta_r!=="") ? suelo.delta_r : suelo.phi_r/2);
   const metodo = state.metodo_presion;
+  const capas = resolverCapas(suelo.capasRelleno, H);
+  const gamma_avg = H > 1e-9 ? capas.reduce((s,c)=>s+c.gamma*c.h, 0) / H : 0;
 
-  let Ka, Pa, Pa_h, Pa_v;
-  if(metodo === "Coulomb"){
-    Ka = coulombKa(phi, delta, beta, theta);
-    Pa = 0.5*Ka*suelo.gamma_r*H*H;
-    Pa_h = Pa*Math.cos(delta);
-    Pa_v = Pa*Math.sin(delta);
-  }else if(metodo === "At-rest"){
-    Ka = (suelo.Ks!=null && suelo.Ks!=="") ? suelo.Ks : (1 - Math.sin(phi));
-    Pa = 0.5*Ka*suelo.gamma_r*H*H;
-    Pa_h = Pa; Pa_v = 0;
-  }else if(metodo === "Fluido_equivalente"){
-    Pa = 0.5*state.EFP*H*H;
+  // H' (Bloque 8.5, Ejemplo 8.1 del libro de Das): el empuje activo de
+  // Rankine/Coulomb se integra sobre el plano vertical que pasa por el
+  // talón, desde el FONDO de la zapata hasta donde ese plano cruza la
+  // superficie del talud — no solo sobre la altura del relleno (H). Se
+  // arma extendiendo la lista de capas resueltas con dos tramos
+  // ficticios (mismas propiedades del estrato más cercano, ya que no hay
+  // un estrato real definido ahí): el talud sobre la corona (si beta>0,
+  // usa el PRIMER estrato) y el espesor de la zapata (usa el ÚLTIMO
+  // estrato). H sigue siendo la altura real del relleno (para Wr); Hprime
+  // es la altura total de integración de Pa/Pq_h/ΔPAE. Con tf=0 y beta=0
+  // esta extensión desaparece y Hprime=H (no cambia nada del caso simple).
+  const heelLen = calcGeometria(geom).heel;
+  const slopeRiseHeel = geom.beta > 0 ? heelLen * Math.tan(beta) : 0;
+  const Hprime = geom.tf + H + slopeRiseHeel;
+  const capasExt = [];
+  if(slopeRiseHeel > 1e-9) capasExt.push({ gamma:capas[0].gamma, phi:capas[0].phi, c:capas[0].c, h:slopeRiseHeel });
+  for(const c of capas) capasExt.push(c);
+  if(geom.tf > 1e-9) capasExt.push({ gamma:capas[capas.length-1].gamma, phi:capas[capas.length-1].phi, c:capas[capas.length-1].c, h:geom.tf });
+
+  function deltaDeCapa(phi_deg){
+    return toRad((suelo.delta_r!=null && suelo.delta_r!=="") ? suelo.delta_r : phi_deg/2);
+  }
+  function kaDeCapa(phi_deg){
+    const phi = toRad(phi_deg);
+    if(metodo === "Coulomb") return coulombKa(phi, deltaDeCapa(phi_deg), beta, theta);
+    if(metodo === "At-rest") return (suelo.Ks!=null && suelo.Ks!=="") ? suelo.Ks : (1 - Math.sin(phi));
+    return rankineKa(phi, beta); // Rankine (default)
+  }
+
+  let Ka, Pa, Pa_h, Pa_v, arm;
+  if(metodo === "Fluido_equivalente"){
+    Pa = 0.5*state.EFP*Hprime*Hprime;
     Ka = null; // el método EFP no usa un coeficiente Ka (Bloque 4, Método 4)
     Pa_h = Pa; Pa_v = 0;
-  }else{ // Rankine (default). delta=0 (pared lisa); con beta, la resultante
-         // actúa paralela a la pendiente del relleno (Rankine generalizado).
-    Ka = rankineKa(phi, beta);
-    Pa = 0.5*Ka*suelo.gamma_r*H*H;
-    Pa_h = Pa*Math.cos(beta);
-    Pa_v = Pa*Math.sin(beta);
+    arm = Hprime/3;
+  }else{
+    // arm queda medido desde el FONDO de la zapata (no desde el tope),
+    // porque capasExt ya suma tf y el talud — Mov ya no debe sumarle tf
+    // de nuevo (ver calcularGeotecnia).
+    let zAcc = 0, sigmaV = 0, Fa = 0, Ma = 0, KaPrimera = null;
+    for(const capa of capasExt){
+      const Ka_i = kaDeCapa(capa.phi);
+      if(KaPrimera === null) KaPrimera = Ka_i;
+      const sigmaTop = Ka_i * sigmaV;
+      sigmaV += capa.gamma * capa.h;
+      const sigmaBot = Ka_i * sigmaV;
+      const yTop = Hprime - zAcc, yBot = Hprime - (zAcc + capa.h);
+      const areaRect = sigmaTop * capa.h;
+      const areaTri = 0.5 * (sigmaBot - sigmaTop) * capa.h;
+      Fa += areaRect + areaTri;
+      Ma += areaRect*((yTop+yBot)/2) + areaTri*(yBot + capa.h/3);
+      zAcc += capa.h;
+    }
+    Ka = KaPrimera;
+    Pa = Fa;
+    arm = Fa > 1e-9 ? Ma/Fa : Hprime/3;
+    if(metodo === "Coulomb"){
+      const delta1 = deltaDeCapa(capas[0].phi);
+      Pa_h = Pa*Math.cos(delta1); Pa_v = Pa*Math.sin(delta1);
+    }else if(metodo === "At-rest"){
+      Pa_h = Pa; Pa_v = 0;
+    }else{ // Rankine: con beta, la resultante actúa paralela a la pendiente
+      Pa_h = Pa*Math.cos(beta); Pa_v = Pa*Math.sin(beta);
+    }
   }
 
   let Pq_h = 0;
-  if(cargas.qsEnabled){ Pq_h = (Ka!=null ? Ka : state.EFP/suelo.gamma_r) * cargas.qs * H; }
+  if(cargas.qsEnabled){ Pq_h = (Ka!=null ? Ka : state.EFP/gamma_avg) * cargas.qs * Hprime; }
 
   let Pw_h = 0;
   if(suelo.waterEnabled){ Pw_h = 0.5 * suelo.gamma_w * Math.pow(suelo.Hw, 2); }
 
+  // Presión pasiva (ecuación 8.9, Das): término friccionante + término de
+  // cohesión 2·c_p·√Kp·Df (antes solo se calculaba el primero).
   let Kp = 0, Pp = 0;
   if(suelo.pasivoEnabled){
     const phiP = toRad(suelo.phi_p);
     Kp = Math.pow(Math.tan(Math.PI/4 + phiP/2), 2);
-    Pp = 0.5 * Kp * suelo.gamma_p * Math.pow(geom.Df, 2);
+    Pp = 0.5 * Kp * suelo.gamma_p * Math.pow(geom.Df, 2) + 2*(suelo.c_p||0)*Math.sqrt(Kp)*geom.Df;
   }
 
   // Incremento sísmico (Bloque 4): solo si sismo.enabled. Mononobe-Okabe
-  // reutiliza la forma de Coulomb evaluando phi→(phi-psi), theta→(theta-psi);
-  // el incremento dinámico DeltaPAE actúa a 0.6H (Seed & Whitman, 1970).
-  // El método "EFP sísmico" del prompt original usa un valor por default en
-  // unidades imperiales (7 pcf/ft) incompatible con esta app (100% métrica,
-  // kg/m³) — se reinterpreta sismo.EFP_sism como un incremento de peso de
-  // fluido equivalente en kg/m³ (misma forma que el método Fluido
-  // equivalente), con un valor por default métrico razonable.
+  // reutiliza la forma de Coulomb evaluando phi→(phi-psi), theta→(theta-psi),
+  // con la φ del primer estrato; el incremento dinámico DeltaPAE actúa a
+  // 0.6H (Seed & Whitman, 1970). El método "EFP sísmico" del prompt
+  // original usa un valor por default en unidades imperiales (7 pcf/ft)
+  // incompatible con esta app (100% métrica, kg/m³) — se reinterpreta
+  // sismo.EFP_sism como un incremento de peso de fluido equivalente en
+  // kg/m³ (misma forma que el método Fluido equivalente), con un valor
+  // por default métrico razonable.
   let DeltaPAE_h = 0, KAE = null, psi = 0;
   if(sismo.enabled){
     if(sismo.metodo === "EFP_sismico"){
-      DeltaPAE_h = 0.5 * sismo.EFP_sism * H * H;
+      DeltaPAE_h = 0.5 * sismo.EFP_sism * Hprime * Hprime;
     }else{
+      const phi1 = toRad(capas[0].phi), delta1 = deltaDeCapa(capas[0].phi);
       const kh = sismo.kh, kv = sismo.kv;
       psi = Math.atan(kh / Math.max(1-kv, 1e-6));
-      const sinTerm = Math.sin(phi+delta) * Math.sin(phi-beta-psi);
-      const denomInner = Math.sin(theta-delta-psi) * Math.sin(theta+beta);
+      const sinTerm = Math.sin(phi1+delta1) * Math.sin(phi1-beta-psi);
+      const denomInner = Math.sin(theta-delta1-psi) * Math.sin(theta+beta);
       const sq = Math.sqrt(Math.max(sinTerm/Math.max(denomInner,1e-9), 0));
-      const denom = Math.cos(psi) * Math.pow(Math.sin(theta),2) * Math.sin(theta-delta-psi) * Math.pow(1+sq,2);
-      KAE = Math.pow(Math.sin(phi+theta-psi), 2) / Math.max(denom, 1e-9);
+      const denom = Math.cos(psi) * Math.pow(Math.sin(theta),2) * Math.sin(theta-delta1-psi) * Math.pow(1+sq,2);
+      KAE = Math.pow(Math.sin(phi1+theta-psi), 2) / Math.max(denom, 1e-9);
       if(!isFinite(KAE) || KAE <= 0) KAE = (Ka!=null ? Ka : 0);
-      const KaRef = Ka!=null ? Ka : rankineKa(phi, beta);
-      DeltaPAE_h = 0.5 * Math.max(KAE-KaRef, 0) * suelo.gamma_r * H * H;
+      const KaRef = Ka!=null ? Ka : rankineKa(phi1, beta);
+      DeltaPAE_h = 0.5 * Math.max(KAE-KaRef, 0) * gamma_avg * Hprime * Hprime;
     }
   }
 
-  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, H, DeltaPAE_h, KAE, psi, delta, theta };
+  // H: altura real del relleno (alturaRellenoEfectiva) — calcularGeotecnia
+  // la reutiliza para el peso Wr. Hprime: altura total del plano de
+  // integración de Pa/Pq_h/ΔPAE (incluye tf y el talud sobre la corona) —
+  // calcularGeotecnia la reutiliza para los brazos de esas fuerzas en Mov,
+  // y "arm" ya viene medido desde el fondo de la zapata (no hay que
+  // sumarle tf otra vez).
+  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, H, Hprime, DeltaPAE_h, KAE, psi, arm, theta };
 }
 
 /* Revisiones geotécnicas 1-5 (Bloque 6). Momentos tomados respecto
@@ -2167,11 +2665,19 @@ function calcularGeotecnia(state, pres){
   const { geom, suelo, materiales, cargas } = state;
   const gc = calcGeometria(geom);
   const { heel, areaStem, brazoStem } = gc;
-  const H = geom.H, Bf = geom.Bf, tf = geom.tf, toe = geom.toe, Df = geom.Df, Hr = geom.Hr;
+  const H = geom.H, Bf = geom.Bf, tf = geom.tf, toe = geom.toe, Df = geom.Df;
+  // Altura real del relleno (puede ser menor que H si el usuario no llenó
+  // los estratos hasta la corona — ver alturaRellenoEfectiva()); se
+  // reutiliza pres.H en vez de recalcularla, para no arriesgar que
+  // diverja del valor que ya usó calcularPresiones().
+  const Hrelleno = pres.H;
 
   const Ws = materiales.gc * areaStem;
   const Wf = materiales.gc * Bf * tf;
-  const Wr = suelo.gamma_r * heel * Hr;
+  // Peso del relleno estratificado sobre el talón: suma γᵢ·hᵢ de los
+  // estratos resueltos contra la altura real del relleno.
+  const capasPeso = resolverCapas(suelo.capasRelleno, Hrelleno);
+  const Wr = capasPeso.reduce((s,c)=>s+c.gamma*c.h, 0) * heel;
   const Wp = suelo.gamma_f * toe * Df; // aproximación del prompt original (no resta tf)
   const Pq_v = cargas.qsEnabled ? cargas.qs * heel : 0;
   const Pa_v = pres.Pa_v;
@@ -2190,8 +2696,11 @@ function calcularGeotecnia(state, pres){
   const M_cerco = cargas.cercoEnabled ? cargas.P_cerco * (tf + H + cargas.h_cerco/2) : 0;
 
   const Hw = suelo.waterEnabled ? suelo.Hw : 0;
-  const Mov = pres.Pa_h*(H/3 + tf) + pres.Pq_h*(H/2 + tf) + pres.Pw_h*(Hw/3)
-            + pres.DeltaPAE_h*(0.6*H + tf) + M_cerco;
+  // pres.arm ya viene medido desde el FONDO de la zapata (incluye tf y el
+  // talud, ver Hprime en calcularPresiones) — ya no se le suma tf aquí.
+  // Pq_h/ΔPAE_h usan pres.Hprime por el mismo motivo.
+  const Mov = pres.Pa_h*pres.arm + pres.Pq_h*(pres.Hprime/2) + pres.Pw_h*(Hw/3)
+            + pres.DeltaPAE_h*(0.6*pres.Hprime) + M_cerco;
 
   const FS_volteo = Mov > 1e-6 ? Mr / Mov : Infinity;
 
@@ -2200,13 +2709,17 @@ function calcularGeotecnia(state, pres){
   const phiF = toRad(suelo.phi_f);
   const mu = (suelo.mu !== null && suelo.mu !== undefined && suelo.mu !== "") ? suelo.mu : Math.tan(2/3 * phiF);
   const Fr = mu * N;
+  // Cohesión bajo la zapata (ecuación 8.11, Das): B·k2·c_f, sumada aparte
+  // de la fricción (Fr) y de la pasiva (Pp_h) — antes no se incluía.
+  const k2 = (suelo.k2 !== null && suelo.k2 !== undefined && suelo.k2 !== "") ? suelo.k2 : 2/3;
+  const Fr_cohesion = Bf * k2 * suelo.c_f;
   const Pp_h = suelo.pasivoEnabled ? pres.Pp : 0;
   let Fkey = 0;
   if(geom.keyEnabled){
     const KpF = Math.pow(Math.tan(Math.PI/4 + phiF/2), 2);
     Fkey = KpF * suelo.gamma_f * geom.keyD * (geom.keyD + 2*Df);
   }
-  const R = Fr + Pp_h + Fkey;
+  const R = Fr + Fr_cohesion + Pp_h + Fkey;
   const FS_desliz = Fh > 1e-6 ? R / Fh : Infinity;
 
   // --- Capacidad portante y excentricidad ---
@@ -2225,11 +2738,25 @@ function calcularGeotecnia(state, pres){
     distribucion = "Triangular (talón despegado)";
   }
 
-  // Terzaghi simplificado, solo informativo (sin factores de forma/profundidad)
+  // Capacidad de carga última — Meyerhof/Vesic con factores de profundidad
+  // e inclinación (ecuaciones 8.22-8.24 y Nc/Nq/Nγ de la tabla 3.3, Das),
+  // no el Terzaghi liso de antes. B' = ancho efectivo (Bf-2e); ψ = ángulo
+  // de inclinación de la resultante de carga respecto a la vertical, a
+  // partir de la fuerza horizontal total Fh y la vertical total N.
+  const Bprime = Math.max(Bf - 2*Math.abs(e), 0.01);
   const Nq = Math.exp(Math.PI * Math.tan(phiF)) * Math.pow(Math.tan(Math.PI/4 + phiF/2), 2);
   const Nc = suelo.phi_f > 0.01 ? (Nq - 1) / Math.tan(phiF) : 5.14;
   const Ngamma = 2 * (Nq + 1) * Math.tan(phiF);
-  const qult = suelo.c_f*Nc + suelo.gamma_f*Df*Nq + 0.5*suelo.gamma_f*Bf*Ngamma;
+  const Fqd = 1 + 2*Math.tan(phiF)*Math.pow(1-Math.sin(phiF),2)*(Df/Bprime);
+  const Fcd = suelo.phi_f > 0.01 ? (Fqd - (1-Fqd)/(Nc*Math.tan(phiF))) : (1 + 0.4*(Df/Bprime));
+  const Fgd = 1;
+  const psiCarga = Math.atan((Fh>1e-9?Fh:0) / Math.max(N,1e-9)); // rad
+  const psiCargaDeg = psiCarga * 180/Math.PI;
+  const Fci = Math.pow(Math.max(1 - psiCargaDeg/90, 0), 2);
+  const Fqi = Fci;
+  const Fgi = suelo.phi_f > 0.01 ? Math.pow(Math.max(1 - psiCargaDeg/suelo.phi_f, 0), 2) : 0;
+  const qDf = suelo.gamma_f * Df;
+  const qult = suelo.c_f*Nc*Fcd*Fci + qDf*Nq*Fqd*Fqi + 0.5*suelo.gamma_f*Bprime*Ngamma*Fgd*Fgi;
   const FS_carga = q_max > 1e-6 && isFinite(q_max) ? qult / q_max : Infinity;
 
   let eCategoria;
@@ -2245,7 +2772,9 @@ function calcularGeotecnia(state, pres){
   if(geom.beta > 10) condiciones.push("Talud del relleno β > 10°");
   if(cargas.torreEnabled && cargas.dist_torre < H) condiciones.push("Torre cercana al muro (distancia < H)");
   const requiereGlobal = condiciones.length > 0;
-  const phiR = toRad(suelo.phi_r), betaR = toRad(geom.beta);
+  // Talud infinito simplificado con la φ del estrato superficial (el que
+  // aflora en la cara del talud) — igual que antes, solo informativo.
+  const phiR = toRad(suelo.capasRelleno[0].phi), betaR = toRad(geom.beta);
   const FS_talud_simple = geom.beta > 0.01 ? Math.tan(phiR)/Math.tan(betaR) : null;
 
   return {
@@ -2253,9 +2782,9 @@ function calcularGeotecnia(state, pres){
     Ws, Wf, Wr, Wp, Pq_v, Pa_v, N,
     Fh_cerco, M_cerco,
     Mr, Mov, FS_volteo,
-    Fh, mu, Fr, Pp_h, Fkey, R, FS_desliz,
+    Fh, mu, Fr, Fr_cohesion, Pp_h, Fkey, R, FS_desliz,
     x_r, e, q_max, q_min, distribucion,
-    Nq, Nc, Ngamma, qult, FS_carga,
+    Bprime, Nq, Nc, Ngamma, Fcd, Fqd, Fci, Fqi, Fgi, qult, FS_carga,
     eCategoria, condiciones, requiereGlobal, FS_talud_simple
   };
 }
@@ -2281,7 +2810,10 @@ function dibujarMuro2D(svg, state, r){
   const g = state.geom;
   const gc = calcGeometria(g);
   const heel = gc.heel, xBack = gc.xBack;
-  const toe = g.toe, Bf = g.Bf, tf = g.tf, H = g.H, Hr = g.Hr, Df = g.Df, ts = g.ts, tc = g.tc;
+  const toe = g.toe, Bf = g.Bf, tf = g.tf, H = g.H, Df = g.Df, ts = g.ts, tc = g.tc;
+  // Hr ya no es un campo editable: es la altura real del relleno según lo
+  // que el usuario capturó en los estratos (puede ser menor que H).
+  const Hr = alturaRellenoEfectiva(state.suelo, H);
 
   const extraFront = 1.2, extraBack = 1.0, extraDepth = 1.0, extraTop = 0.35;
   const modelMinX = -extraFront, modelMaxX = Bf + extraBack;
@@ -2396,12 +2928,28 @@ function dibujarMuro2D(svg, state, r){
   line(modelMinX, Df, 0, Df, col("--muted"), {"stroke-dasharray":"5,4"});
   labelBg((modelMinX+0)/2, Df+0.18, "NTN", {"font-size":"10px"});
 
-  // Relleno detrás del muro: el talud (si beta>0) arranca justo en la
-  // corona del muro (xBack, backTopY) y sube en línea recta hasta el borde
-  // derecho del dibujo — sin tramo plano intermedio.
+  // Relleno detrás del muro, estratificado (Bloque 2026-08-10): cada
+  // estrato de suelo.capasRelleno se resuelve contra Hr (misma altura que
+  // ya usa el peso Wr) y se pinta con su propia textura/color — mismas
+  // 12 texturas del modal "Agregar estrato" (hatchPatternSVG). El talud
+  // (si beta>0) solo afecta el borde superior del PRIMER estrato (el que
+  // aflora en superficie); arranca justo en la corona del muro (xBack,
+  // backTopY), igual que antes de estratificar.
   const backTopY = tf + Hr;
-  const backfillPts = [[xBack,tf],[Bf+extraBack, tf],[Bf+extraBack, backTopY+slopeRise],[xBack, backTopY]];
-  poly(backfillPts, col("--fill-fill"), col("--fill-line"));
+  const capasDibujo = resolverCapas(state.suelo.capasRelleno, Hr);
+  let zAccDibujo = 0;
+  capasDibujo.forEach((capa, i)=>{
+    const yTop = backTopY - zAccDibujo;
+    const yBot = backTopY - (zAccDibujo + capa.h);
+    const rightTopY = i===0 ? yTop + slopeRise : yTop;
+    const pid = `capaFillPattern${i}`;
+    defs.insertAdjacentHTML("beforeend", hatchPatternSVG(pid, capa.hatch||7, capa.color||"#e8d880"));
+    poly([[xBack,yTop],[Bf+extraBack,rightTopY],[Bf+extraBack,yBot],[xBack,yBot]], `url(#${pid})`, col("--fill-line"));
+    if(capa.h > 0.35){ // evita saturar de texto los estratos muy delgados
+      labelBg((xBack+Bf+extraBack)/2, (yTop+yBot)/2, `${capa.nm||"Estrato"} · φ=${capa.phi||0}°`, {"font-size":"9px"});
+    }
+    zAccDibujo += capa.h;
+  });
 
   // Zapata y fuste: gris concreto sólido, fijo (no ligado a --panel-2) para
   // que se vea como material sólido en los dos temas — con --panel-2 el
@@ -2420,22 +2968,26 @@ function dibujarMuro2D(svg, state, r){
 
   // ---- Fuerzas ----
   if(uiState.showForces){
-    // Presión activa (triángulo esquemático a lo largo de la cara posterior del fuste)
+    // Presión activa (triángulo esquemático a lo largo de la cara posterior
+    // del fuste) — usa Hr (altura REAL del relleno), no H (altura del
+    // fuste): si el relleno no llega a la corona, el triángulo debe
+    // quedarse en esa cota más baja, igual que el relleno dibujado, para
+    // no verse como si el suelo cubriera todo el fuste cuando no es así.
     const triW = 55; // px, ancho esquemático (no a escala de presión real)
-    const yTop = tf+H, yBase = tf;
+    const yTop = tf+Hr, yBase = tf;
     const xB = X(xBack);
     const paPts = `${xB},${Y(yTop)} ${xB},${Y(yBase)} ${xB+triW},${Y(yBase)}`;
     svg.appendChild(el("polygon",{points:paPts, fill: col("--pa-color"), opacity:0.35, stroke: col("--pa-color")}));
-    labelBg(xBack, tf+H/3, `Pa=${fmtFuerza(r.pres.Pa,2)}`, {fill: col("--pa-color"), "text-anchor":"start", x:xB+triW+4, "font-size":"10px"});
+    labelBg(xBack, tf+Hr/3, `Pa=${fmtFuerza(r.pres.Pa,2)}`, {fill: col("--pa-color"), "text-anchor":"start", x:xB+triW+4, "font-size":"10px"});
 
     // Incremento sísmico (amarillo, Bloque 5): misma cara que Pa, punto de
-    // aplicación real a 0.6H — se usa esa altura para la etiqueta, así
-    // queda naturalmente separada de la de Pa (que está en H/3).
+    // aplicación real a 0.6·Hr — se usa esa altura para la etiqueta, así
+    // queda naturalmente separada de la de Pa (que está en Hr/3).
     if(state.sismo.enabled && r.pres.DeltaPAE_h > 0){
       const triWs = 30;
       const sismoPts = `${xB},${Y(yTop)} ${xB},${Y(yBase)} ${xB+triWs},${Y(yBase)}`;
       svg.appendChild(el("polygon",{points:sismoPts, fill:"#fbc02d", opacity:0.28, stroke:"#fbc02d"}));
-      labelBg(xBack, tf+0.6*H, `ΔPAE=${fmtFuerza(r.pres.DeltaPAE_h,2)}`, {fill:"#c99a1f", "text-anchor":"start", x:xB+triWs+4, "font-size":"10px"});
+      labelBg(xBack, tf+0.6*Hr, `ΔPAE=${fmtFuerza(r.pres.DeltaPAE_h,2)}`, {fill:"#c99a1f", "text-anchor":"start", x:xB+triWs+4, "font-size":"10px"});
     }
 
     // Cerco perimetral (morado): línea vertical sobre la corona hasta la
@@ -2451,7 +3003,7 @@ function dibujarMuro2D(svg, state, r){
       const qsThick = 0.12; // espesor esquemático de la franja, en metros de modelo
       const qsPts = [[xBack,backTopY],[Bf+extraBack,backTopY+slopeRise],[Bf+extraBack,backTopY+slopeRise+qsThick],[xBack,backTopY+qsThick]];
       poly(qsPts, col("--pq-color"), col("--pq-color"), {opacity:0.5});
-      labelBg((xBack+Bf+extraBack)/2, backTopY+slopeRise/2+qsThick, `qs=${fmt(state.cargas.qs,0)} kg/m²`, {fill: col("--pq-color"), dy:-8, "font-size":"10px"});
+      labelBg((xBack+Bf+extraBack)/2, backTopY+slopeRise/2+qsThick, `qs=${fmtPresionSuelo(state.cargas.qs,2)}`, {fill: col("--pq-color"), dy:-8, "font-size":"10px"});
     }
 
     // Presión pasiva (triángulo esquemático frente a la cara de la puntera, x=0)
@@ -2480,32 +3032,32 @@ function dibujarMuro2D(svg, state, r){
     // H: carril vertical más externo, a la izquierda de todo — la línea de
     // proyección llega hasta xBack (cara posterior del fuste, constante en
     // toda su altura).
-    dimV(tf, tf+H, modelMinX+0.1, `H=${fmt(H,2)} m`, xBack);
+    dimV(tf, tf+H, modelMinX+0.1, `H=${fmtLong(H,2)}`, xBack);
     // Df: carril vertical propio, separada de la de H — proyecta hasta x=0
     // (cara frontal de la zapata/puntera). Ambas quedan sobre el relleno de
     // suelo (que ahora cubre todo el ancho sin huecos); el fondo opaco de
     // la etiqueta (labelBg) es lo que las mantiene legibles sobre el color.
-    dimV(0, Df, modelMinX+0.55, `Df=${fmt(Df,2)} m`, 0);
+    dimV(0, Df, modelMinX+0.55, `Df=${fmtLong(Df,2)}`, 0);
     // tf: más separada del borde derecho de la zapata para que la línea de
     // cota y sus marcas se distingan bien (antes quedaba casi pegada al
     // borde y no se veía).
-    dimV(0, tf, Bf+0.4, `tf=${fmt(tf,2)} m`, Bf);
+    dimV(0, tf, Bf+0.4, `tf=${fmtLong(tf,2)}`, Bf);
 
     // toe / ts / heel: misma fila (misma altura de línea) — el tramo
     // central (toe→xBack) es exactamente el espesor del fuste en la base.
     // La etiqueta de "ts" se escalona más arriba que las de toe/heel (son
     // segmentos angostos y contiguos; a la misma altura de texto chocaban).
-    dimH(0, toe, -0.35, `toe=${fmt(toe,2)}`, 0);
-    dimH(toe, xBack, -0.35, `ts=${fmt(ts,2)}`, 0, -16);
-    dimH(xBack, Bf, -0.35, `heel=${fmt(heel,2)}`, 0);
+    dimH(0, toe, -0.35, `toe=${fmtLong(toe,2)}`, 0);
+    dimH(toe, xBack, -0.35, `ts=${fmtLong(ts,2)}`, 0, -16);
+    dimH(xBack, Bf, -0.35, `heel=${fmtLong(heel,2)}`, 0);
 
     // Bf: fila externa (cota general), más abajo todavía — proyecta hasta y=0.
-    dimH(0, Bf, -0.75, `Bf=${fmt(Bf,2)} m`, 0);
+    dimH(0, Bf, -0.75, `Bf=${fmtLong(Bf,2)}`, 0);
 
     // tc: espesor del fuste en la corona, cota horizontal arriba del muro
     // (única cota que vive por encima del fuste) — proyecta hacia abajo
     // hasta la corona (tf+H).
-    dimH(xBack-tc, xBack, tf+H+0.3, `tc=${fmt(tc,2)}`, tf+H);
+    dimH(xBack-tc, xBack, tf+H+0.3, `tc=${fmtLong(tc,2)}`, tf+H);
   }
 
   if(gc.heel < 0){
@@ -2565,7 +3117,8 @@ function actualizarModelo3D(state){
   const g = state.geom;
   const gc = calcGeometria(g);
   const xBack = gc.xBack;
-  const toe=g.toe, Bf=g.Bf, tf=g.tf, H=g.H, Hr=g.Hr, Df=g.Df, tc=g.tc;
+  const toe=g.toe, Bf=g.Bf, tf=g.tf, H=g.H, Df=g.Df, tc=g.tc;
+  const Hr = alturaRellenoEfectiva(state.suelo, H); // altura real del relleno, ver 2D
   const L = 6; // largo de muro [m] — fijo en esta fase (no editable todavía)
 
   if(!actualizarModelo3D.mats){
@@ -2653,6 +3206,188 @@ function badgeHTML(ok, textOk, textBad, warn){
   return ok ? `<span class="badge badge-ok">✅ ${textOk}</span>` : `<span class="badge badge-bad">❌ ${textBad}</span>`;
 }
 
+// Lista de estratos del relleno (pestaña Suelo y materiales, estilo
+// GeoCim): una tarjeta compacta por estrato (textura + nombre + editar/
+// eliminar + resumen from-to/γ/c/φ). El alta/edición ocurre en el modal
+// #strat-modal (openStratModal/confirmStratModal), no con inputs en línea
+// — por eso aquí se puede reconstruir todo el HTML en cada render sin
+// riesgo de perder el foco de un input a medio teclear.
+//
+// El resumen muestra el rango EFECTIVO (ya resuelto contra H, vía
+// resolverCapas — la misma función que usan el cálculo y el dibujo), no
+// el from/to tal cual se tecleó: si es el único estrato y H es mayor que
+// lo capturado, se ve extendido hasta H (con nota "extendido"); si un
+// estrato queda total o parcialmente fuera de H, se marca como tal. Sin
+// esto, la tarjeta podía decir "0–3 m" mientras el dibujo y el cálculo
+// ya lo estaban usando estirado a "0–6 m" — inconsistencia real que
+// reportó el usuario.
+function renderCapasRelleno(){
+  const capas = state.suelo.capasRelleno;
+  const Hrelleno = alturaRellenoEfectiva(state.suelo, state.geom.H);
+  const resueltas = resolverCapas(capas, Hrelleno);
+  const list = document.getElementById("capasRellenoList");
+  let accEfectivo = 0;
+  list.innerHTML = capas.map((capa,i)=>{
+    const pid = `ecp${i}`;
+    const pat = hatchPatternSVG(pid, capa.hatch||7, capa.color||"#e8d880");
+    const delBtn = capas.length>1
+      ? `<button type="button" class="ec-del" data-capa-del="${i}" title="Eliminar estrato">✕</button>`
+      : "";
+    let rangoTxt;
+    if(i < resueltas.length){
+      const effFrom = accEfectivo, effTo = accEfectivo + resueltas[i].h;
+      accEfectivo = effTo;
+      const nominal = capa.to - capa.from;
+      const recortado = resueltas[i].h < nominal - 0.01;
+      rangoTxt = `${fmtLong(effFrom,2)} – ${fmtLong(effTo,2)}` + (recortado ? " (recortado)" : "");
+    }else{
+      rangoTxt = `no llega a esta profundidad (fuera de H)`;
+    }
+    return `<div class="estrato-card">
+      <div class="estrato-card-hd">
+        <svg class="ec-swatch" viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><defs>${pat}</defs><rect width="28" height="20" fill="url(#${pid})"/></svg>
+        <span class="ec-nm">${capa.nm || "Estrato"}</span>
+        <button type="button" data-capa-edit="${i}" title="Editar">✏</button>
+        ${delBtn}
+      </div>
+      <div class="estrato-card-sub">${rangoTxt} · γ=${fmtCat("pesoVol",capa.gamma,1)} · c=${fmtCat("presion",capa.c,0)} · φ=${capa.phi||0}°</div>
+    </div>`;
+  }).join("");
+
+  const sumaH = capas.length ? capas[capas.length-1].to - capas[0].from : 0;
+  const diff = sumaH - state.geom.H;
+  let nota = `Suma de espesores capturada: ${fmtLong(sumaH,2)} · altura del fuste H: ${fmtLong(state.geom.H,2)}`;
+  if(diff < -0.01) nota += " — el relleno no llega a la corona; el tramo superior del fuste queda expuesto (sin presión de suelo).";
+  else if(diff > 0.01) nota += " — se recorta el sobrante.";
+  document.getElementById("capasRellenoResumen").textContent = nota;
+}
+
+/* ---- Modal "Agregar/Editar estrato" (portado de GeoCim) ---- */
+let _sm = { editIdx:-1, hatch:7, from:0 };
+
+function addEstrato(){
+  const capas = state.suelo.capasRelleno;
+  const last = capas[capas.length-1];
+  openStratModal(-1, { nm:"", hatch:7, color:HATCH_DEFS[6].color, from:last.to, to:last.to+2.0, gamma:0, phi:0, c:0 });
+}
+function editEstrato(i){
+  openStratModal(i, { ...state.suelo.capasRelleno[i] });
+}
+function removeEstrato(i){
+  const capas = state.suelo.capasRelleno;
+  if(capas.length <= 1) return;
+  const fromVal = capas[i].from;
+  capas.splice(i, 1);
+  if(i < capas.length) capas[i].from = fromVal;
+  renderAll();
+}
+function selectHatch(idx){
+  _sm.hatch = idx;
+  document.querySelectorAll(".hc").forEach((c,i)=>c.classList.toggle("sel", i+1===idx));
+  const color = HATCH_DEFS[idx-1].color;
+  document.getElementById("sm-color").value = color;
+  _highlightPalette(color);
+}
+function openStratModal(idx, data){
+  _sm.editIdx = idx; _sm.hatch = data.hatch || 7; _sm.from = data.from || 0;
+  document.getElementById("sm-title").textContent = idx<0 ? "Agregar estrato" : "Editar estrato";
+  document.getElementById("sm-nm").value = data.nm || "";
+  document.getElementById("sm-to").value = fmt(toDisplay("longitud", data.to!=null ? data.to : (_sm.from+2)), 2);
+  document.getElementById("sm-to-unit").textContent = unitLabel("longitud");
+  const initColor = data.color || HATCH_DEFS[6].color;
+  document.getElementById("sm-color").value = initColor;
+  document.getElementById("sm-g").value = fmt(toDisplay("pesoVol", data.gamma||0), 2);
+  document.getElementById("sm-g-lbl").textContent = `γ (${unitLabel("pesoVol")})`;
+  document.getElementById("sm-c").value = fmt(toDisplay("presion", data.c||0), 2);
+  document.getElementById("sm-c-lbl").textContent = `c (${unitLabel("presion")})`;
+  document.getElementById("sm-phi").value = data.phi || 0;
+  document.querySelectorAll(".hc").forEach((c,i)=>c.classList.toggle("sel", i+1===_sm.hatch));
+  _highlightPalette(initColor);
+  document.getElementById("strat-modal").style.display = "flex";
+}
+function closeStratModal(){
+  document.getElementById("strat-modal").style.display = "none";
+}
+function confirmStratModal(){
+  const capas = state.suelo.capasRelleno;
+  const nm = document.getElementById("sm-nm").value.trim() || "Estrato";
+  const toVal = toBase("longitud", parseFloat(document.getElementById("sm-to").value) || 0);
+  const color = document.getElementById("sm-color").value;
+  const gamma = toBase("pesoVol", parseFloat(document.getElementById("sm-g").value) || 0);
+  const c = toBase("presion", parseFloat(document.getElementById("sm-c").value) || 0);
+  const phi = parseFloat(document.getElementById("sm-phi").value) || 0;
+  const from = _sm.from;
+  const entry = { nm, hatch:_sm.hatch, color, from, to:Math.max(from+0.1, toVal), gamma, phi, c };
+  if(_sm.editIdx < 0){
+    capas.push(entry);
+  }else{
+    entry.from = capas[_sm.editIdx].from;
+    capas[_sm.editIdx] = entry;
+    if(_sm.editIdx+1 < capas.length) capas[_sm.editIdx+1].from = entry.to;
+  }
+  closeStratModal();
+  renderAll();
+}
+function _updateHatchPreview(color){
+  const card = document.getElementById(`hc${_sm.hatch}`);
+  if(!card) return;
+  const rect = card.querySelector("pattern rect");
+  if(rect) rect.setAttribute("fill", color);
+}
+function _pickPalette(color){
+  document.getElementById("sm-color").value = color;
+  _highlightPalette(color);
+  _updateHatchPreview(color);
+}
+function _onCustomColor(color){
+  _highlightPalette(color, true);
+  _updateHatchPreview(color);
+}
+function _highlightPalette(color, isCustom){
+  const inPalette = COLOR_PALETTE.includes(color) && !isCustom;
+  document.querySelectorAll("#sm-palette .cp-sw").forEach(sw=>{
+    sw.classList.toggle("sel", sw.dataset.color===color && !isCustom);
+  });
+  const cu = document.getElementById("sm-cp-custom");
+  if(cu) cu.classList.toggle("sel", !inPalette);
+}
+// Construye una sola vez la grilla de texturas y la paleta de color del
+// modal (no depende del estado, así que no se reconstruye en cada render).
+function initStratModal(){
+  const grid = document.getElementById("sm-hatch-grid");
+  HATCH_DEFS.forEach((def,i)=>{
+    const idx = i+1, pid = `smh${idx}`;
+    const pat = hatchPatternSVG(pid, idx, def.color);
+    const card = document.createElement("div");
+    card.className = "hc"; card.id = `hc${idx}`;
+    card.addEventListener("click", ()=>selectHatch(idx));
+    card.innerHTML = `<svg class="hc-svg" viewBox="0 0 60 44" xmlns="http://www.w3.org/2000/svg"><defs>${pat}</defs><rect width="60" height="44" fill="url(#${pid})"/></svg><div class="hc-nm">${def.nm}</div>`;
+    grid.appendChild(card);
+  });
+  const pal = document.getElementById("sm-palette");
+  COLOR_PALETTE.forEach(color=>{
+    const sw = document.createElement("div");
+    sw.className = "cp-sw"; sw.style.background = color; sw.dataset.color = color; sw.title = color;
+    sw.addEventListener("click", ()=>_pickPalette(color));
+    pal.appendChild(sw);
+  });
+  const cu = document.createElement("div");
+  cu.className = "cp-custom"; cu.id = "sm-cp-custom"; cu.textContent = "+"; cu.title = "Color personalizado";
+  cu.addEventListener("click", ()=>document.getElementById("sm-color").click());
+  pal.appendChild(cu);
+
+  // Cierre/confirmación del modal y color personalizado: por convención de
+  // esta app todo va con addEventListener (no onclick inline) porque el
+  // script vive dentro de un IIFE y esas funciones no son globales.
+  document.getElementById("strat-modal").addEventListener("click", e=>{
+    if(e.target.id === "strat-modal") closeStratModal();
+  });
+  document.getElementById("btnSmClose").addEventListener("click", closeStratModal);
+  document.getElementById("btnSmCancel").addEventListener("click", closeStratModal);
+  document.getElementById("btnSmConfirm").addEventListener("click", confirmStratModal);
+  document.getElementById("sm-color").addEventListener("input", e=>_onCustomColor(e.target.value));
+}
+
 function renderCargasOutputs(r){
   document.getElementById("out-Ws").value = fmtFuerza(r.geo.Ws);
   document.getElementById("out-Wf").value = fmtFuerza(r.geo.Wf);
@@ -2695,23 +3430,22 @@ function renderRevisiones(r){
   const okDesliz = geo.FS_desliz >= umbralDesliz;
   document.getElementById("badge-desliz").innerHTML = badgeHTML(okDesliz, `CUMPLE (≥ ${umbralDesliz}${sufijo})`, `NO CUMPLE (req. ≥ ${umbralDesliz}${sufijo})`);
 
-  // q_max/q_min comparan siempre contra QADM en t/m² (el campo editable
-  // nunca cambia de unidades) — solo el TEXTO del umbral en el badge se
-  // muestra convertido para que no choque visualmente con el valor de q_max.
-  const qmax_t = geo.q_max/1000, qmin_t = geo.q_min/1000;
-  document.getElementById("out-qmax").value = isFinite(qmax_t) ? fmtPresionSuelo(geo.q_max) : "∞";
+  // q_max/q_min y QADM están en la misma base interna (kgf/m²) desde que
+  // QADM se unificó a la categoría "presion" — se comparan directo, sin
+  // factores especiales; solo el TEXTO se muestra en la unidad elegida.
+  document.getElementById("out-qmax").value = isFinite(geo.q_max) ? fmtPresionSuelo(geo.q_max) : "∞";
   document.getElementById("out-qmin").value = fmtPresionSuelo(geo.q_min);
   document.getElementById("out-distrib").value = geo.distribucion;
   document.getElementById("out-qult").value = fmtPresionSuelo(geo.qult);
   document.getElementById("out-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,2) : "∞";
-  const okCarga = qmax_t <= state.suelo.QADM && qmin_t >= 0;
-  const qadmTxt = sistemaUnidades==="SI" ? fmt(state.suelo.QADM*TFM2_A_KPA,0)+" kPa" : fmt(state.suelo.QADM,1)+" t/m²";
+  const okCarga = geo.q_max <= state.suelo.QADM && geo.q_min >= 0;
+  const qadmTxt = fmtPresionSuelo(state.suelo.QADM);
   document.getElementById("badge-carga").innerHTML = badgeHTML(okCarga, `CUMPLE (q_max ≤ ${qadmTxt})`, `NO CUMPLE (q_max > ${qadmTxt})`);
 
   const B6 = state.geom.Bf/6;
-  document.getElementById("out-e").value = fmt(geo.e,3);
-  document.getElementById("out-B6").value = fmt(B6,3);
-  const eccHTML = geo.eCategoria==="ok" ? badgeHTML(true,`CUMPLE (e ≤ B/6=${fmt(B6,3)})`,"") :
+  document.getElementById("out-e").value = fmtLong(geo.e,3);
+  document.getElementById("out-B6").value = fmtLong(B6,3);
+  const eccHTML = geo.eCategoria==="ok" ? badgeHTML(true,`CUMPLE (e ≤ B/6=${fmtLong(B6,3)})`,"") :
                   geo.eCategoria==="warn" ? badgeHTML(false,"", `Cerca del borde (B/6 < e ≤ B/4)`, true) :
                   badgeHTML(false,"",`NO CUMPLE (e > B/4, talón despegado)`);
   document.getElementById("badge-ecc").innerHTML = eccHTML;
@@ -2748,7 +3482,6 @@ function renderSummaryCards(r, checks){
         : `<div class="summary-card ok"><span class="icon">✅</span><div><strong>Todas las revisiones geotécnicas implementadas en esta fase cumplen.</strong></div></div>`);
   document.getElementById("summaryCardGeo").innerHTML = html;
   document.getElementById("summaryCardResultados").innerHTML = html;
-  document.getElementById("summaryCardViewer").innerHTML = html;
 
   const FS = state.FS;
   const sismico = state.sismo.enabled;
@@ -2757,9 +3490,9 @@ function renderSummaryCards(r, checks){
   const rows = [
     { nombre:`FS Volteo (${sismico?"sísmico":"estático"})`, valor: isFinite(r.geo.FS_volteo)?fmt(r.geo.FS_volteo,2):"∞", min:`≥ ${umbralVolteo}`, ok: checks.okVolteo },
     { nombre:`FS Deslizamiento (${sismico?"sísmico":"estático"})`, valor: isFinite(r.geo.FS_desliz)?fmt(r.geo.FS_desliz,2):"∞", min:`≥ ${umbralDesliz}`, ok: checks.okDesliz },
-    { nombre:"q máx", valor: fmtPresionSuelo(r.geo.q_max), min:`≤ ${sistemaUnidades==="SI"?fmt(state.suelo.QADM*TFM2_A_KPA,0)+" kPa":fmt(state.suelo.QADM,1)+" t/m²"}`, ok: (r.geo.q_max/1000)<=state.suelo.QADM },
+    { nombre:"q máx", valor: fmtPresionSuelo(r.geo.q_max), min:`≤ ${fmtPresionSuelo(state.suelo.QADM)}`, ok: r.geo.q_max<=state.suelo.QADM },
     { nombre:"q mín", valor: fmtPresionSuelo(r.geo.q_min), min:"≥ 0", ok: r.geo.q_min>=0 },
-    { nombre:"Excentricidad e", valor: fmt(r.geo.e,3)+" m", min:`≤ B/6 = ${fmt(state.geom.Bf/6,3)} m`, ok: r.geo.eCategoria!=="bad", warn: r.geo.eCategoria==="warn" }
+    { nombre:"Excentricidad e", valor: fmtLong(r.geo.e,3), min:`≤ B/6 = ${fmtLong(state.geom.Bf/6,3)}`, ok: r.geo.eCategoria!=="bad", warn: r.geo.eCategoria==="warn" }
   ];
   document.getElementById("resumenGeoBody").innerHTML = rows.map(row=>{
     const cls = row.warn ? "row-warn" : (row.ok ? "row-ok" : "row-bad");
@@ -2768,10 +3501,61 @@ function renderSummaryCards(r, checks){
   }).join("");
 }
 
+// Colores de la barra/util, idéntico criterio que GeoCim (verde ≤0.85,
+// ámbar ≤1.0, rojo >1.0).
+function colorScaleGeo(u){
+  if(u <= 0.85) return { bar:"#4fd08a", txt:"#4fd08a" };
+  if(u <= 1.0)  return { bar:"#e3b341", txt:"#e3b341" };
+  return { bar:"#ff7a6f", txt:"#ff7a6f" };
+}
+
+// Barra de resultados fija (estilo GeoCim, pestaña Proyecto → CLAUDE.md):
+// convierte cada revisión (que aquí usa FS, capacidad/demanda, "más alto
+// mejor") a una "utilización" demanda/capacidad ("más bajo mejor", igual
+// convención que GeoCim) para poder reusar su misma barra de color y
+// umbrales. No reemplaza los badges CUMPLE/NO CUMPLE de cada pestaña,
+// solo da una vista rápida siempre visible.
+function renderResultsBar(r, checks){
+  const geo = r.geo, FS = state.FS;
+  const sismico = state.sismo.enabled;
+  const umbralVolteo = sismico ? FS.volteo_sismico : FS.volteo_estatico;
+  const umbralDesliz = sismico ? FS.desliz_sismico : FS.desliz_estatico;
+  const B6 = state.geom.Bf/6;
+
+  const items = [
+    { t:"Volteo", v: isFinite(geo.FS_volteo) ? "FS " + fmt(geo.FS_volteo,2) : "FS ∞",
+      util: isFinite(geo.FS_volteo) ? umbralVolteo/geo.FS_volteo : 0 },
+    { t:"Deslizamiento", v: isFinite(geo.FS_desliz) ? "FS " + fmt(geo.FS_desliz,2) : "FS ∞",
+      util: isFinite(geo.FS_desliz) ? umbralDesliz/geo.FS_desliz : 0 },
+    { t:"Capacidad de carga", v: fmtPresionSuelo(geo.q_max),
+      util: state.suelo.QADM > 1e-6 ? geo.q_max/state.suelo.QADM : 0 },
+    { t:"Excentricidad", v: fmtLong(geo.e,3),
+      util: B6 > 1e-6 ? Math.abs(geo.e)/B6 : 0 },
+  ];
+
+  document.getElementById("rbChecks").innerHTML = items.map(c=>{
+    const u = Math.max(0, Math.min(1.3, c.util)), cs = colorScaleGeo(c.util);
+    return `<div class="rb-check">
+      <span class="ct">${c.t}</span>
+      <span class="cv">${c.v}</span>
+      <span class="bar"><i style="width:${Math.min(100, u/1.3*100)}%; background:${cs.bar}"></i></span>
+      <span class="util" style="color:${cs.txt}">util ${c.util.toFixed(2)}</span>
+    </div>`;
+  }).join("");
+
+  const govern = Math.max(...items.map(c=>c.util));
+  const v = document.getElementById("rbVerdict");
+  document.getElementById("rbUtil").textContent = isFinite(govern) ? govern.toFixed(2) : "—";
+  v.className = "rb-verdict " + (checks.anyBad ? "fail" : "ok");
+  document.getElementById("rbState").textContent = checks.anyBad ? "✗ NO CUMPLE" : "✓ CUMPLE";
+}
+
 function renderGeomWarning(){
   const gc = calcGeometria(state.geom);
   const box = document.getElementById("geomWarning");
-  document.getElementById("in-heel").value = fmt(gc.heel,2);
+  document.getElementById("in-heel").value = fmt(toDisplay("longitud", gc.heel),2);
+  const Hr = alturaRellenoEfectiva(state.suelo, state.geom.H);
+  document.getElementById("in-Hr").value = fmt(toDisplay("longitud", Hr),2);
   if(gc.heel < 0){
     box.style.display = "block";
     box.textContent = "⚠ toe + ts supera a Bf: el talón (heel) resulta negativo. Ajuste las dimensiones.";
@@ -2791,14 +3575,57 @@ function renderProjectTitle(){
 function renderAll(){
   const r = calcularTodo();
   renderGeomWarning();
+  syncMethodButtons(); // refleja sismo.enabled/metodo_presion tras cualquier cambio, no solo al cargar
+  renderCapasRelleno();
   renderCargasOutputs(r);
   renderPresionesOutputs(r);
   const checks = renderRevisiones(r);
   renderSummaryCards(r, checks);
+  renderResultsBar(r, checks);
+  renderResultadosDetalle(r);
   renderProjectTitle();
   dibujarMuro2D(document.getElementById("wall2d"), state, r);
   if(uiState.viewMode === "3d") actualizarModelo3D(state);
   saveToStorage();
+}
+
+// Pestaña "Resultados" → tarjeta "Memoria de cálculo": consolida en un
+// solo lugar todos los valores intermedios que ya se muestran repartidos
+// en Cargas / Presiones laterales / Revisiones geotécnicas.
+function renderResultadosDetalle(r){
+  const { geo, pres } = r;
+  document.getElementById("res-Ws").value = fmtFuerza(geo.Ws);
+  document.getElementById("res-Wf").value = fmtFuerza(geo.Wf);
+  document.getElementById("res-Wr").value = fmtFuerza(geo.Wr);
+  document.getElementById("res-Wp").value = fmtFuerza(geo.Wp);
+  document.getElementById("res-Pav").value = fmtFuerza(geo.Pa_v);
+  document.getElementById("res-N").value = fmtFuerza(geo.N);
+
+  document.getElementById("res-Ka").value = fmt(pres.Ka,4);
+  document.getElementById("res-Pa").value = fmtFuerza(pres.Pa);
+  document.getElementById("res-Pah").value = fmtFuerza(pres.Pa_h);
+  document.getElementById("res-Pqh").value = fmtFuerza(pres.Pq_h);
+  document.getElementById("res-Pwh").value = fmtFuerza(pres.Pw_h);
+  document.getElementById("res-Kp").value = state.suelo.pasivoEnabled ? fmt(pres.Kp,4) : "—";
+  document.getElementById("res-Pp").value = state.suelo.pasivoEnabled ? fmtFuerza(pres.Pp) : "—";
+  document.getElementById("res-KAE").value = state.sismo.enabled ? fmt(pres.KAE,4) : "—";
+  document.getElementById("res-DeltaPAE").value = state.sismo.enabled ? fmtFuerza(pres.DeltaPAE_h) : "—";
+
+  document.getElementById("res-Mr").value = fmtMomento(geo.Mr);
+  document.getElementById("res-Mov").value = fmtMomento(geo.Mov);
+  document.getElementById("res-FSvolteo").value = isFinite(geo.FS_volteo) ? fmt(geo.FS_volteo,2) : "∞";
+
+  document.getElementById("res-Fh").value = fmtFuerza(geo.Fh);
+  document.getElementById("res-R").value = fmtFuerza(geo.R);
+  document.getElementById("res-FSdesliz").value = isFinite(geo.FS_desliz) ? fmt(geo.FS_desliz,2) : "∞";
+
+  document.getElementById("res-e").value = fmtLong(geo.e,3);
+  document.getElementById("res-B6").value = fmtLong(state.geom.Bf/6,3);
+  document.getElementById("res-distrib").value = geo.distribucion;
+  document.getElementById("res-qmax").value = isFinite(geo.q_max) ? fmtPresionSuelo(geo.q_max) : "∞";
+  document.getElementById("res-qmin").value = fmtPresionSuelo(geo.q_min);
+  document.getElementById("res-qult").value = fmtPresionSuelo(geo.qult);
+  document.getElementById("res-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,2) : "∞";
 }
 
 function syncInputsFromState(){
@@ -2807,10 +3634,11 @@ function syncInputsFromState(){
     let val = getPath(state, path);
     if(el.type === "checkbox"){ el.checked = !!val; }
     else if(document.activeElement !== el){
-      // Campos marcados con data-unit: el estado SIEMPRE guarda kgf-técnico;
-      // en modo SI se muestra convertido (ver UNIT_FACTORS).
-      if(val!==null && val!==undefined && val!=="" && el.dataset.unit && sistemaUnidades==="SI"){
-        val = Math.round(val*UNIT_FACTORS[el.dataset.unit]*1000)/1000;
+      // Campos marcados con data-unit="<categoria>": el estado SIEMPRE
+      // guarda la unidad base kgf-técnico/metros; aquí se muestra convertido
+      // a la unidad elegida para esa categoría (ver UNIT_DEFS).
+      if(val!==null && val!==undefined && val!=="" && el.dataset.unit){
+        val = Math.round(toDisplay(el.dataset.unit, val)*1e5)/1e5;
       }
       el.value = (val===null||val===undefined) ? "" : val;
     }
@@ -2820,10 +3648,11 @@ function syncInputsFromState(){
   syncUnitLabels();
 }
 
-// Etiquetas "[kg/m³]"/"[kN/m³]" etc. junto a cada campo con data-unit.
+// Etiquetas "[kg/m³]"/"[kN/m³]"/"[lb/ft³]" etc. junto a cada campo con
+// data-unit — cada .unit-tag declara su categoría en data-cat.
 function syncUnitLabels(){
   document.querySelectorAll(".unit-tag").forEach(el=>{
-    el.textContent = sistemaUnidades==="SI" ? el.dataset.si : el.dataset.tec;
+    el.textContent = "[" + unitLabel(el.dataset.cat) + "]";
   });
 }
 
@@ -2836,6 +3665,7 @@ function syncMethodButtons(){
   });
   document.querySelectorAll("#sismoMetodoRibbon .ribbon-choice").forEach(btn=>{
     btn.classList.toggle("active", btn.dataset.sismometodo === state.sismo.metodo);
+    btn.classList.toggle("disabled", !state.sismo.enabled);
   });
   // Muestra solo los campos que aplican al método de presión / sismo activo.
   const show = (id, cond) => { const el = document.getElementById(id); if(el) el.style.display = cond ? "" : "none"; };
@@ -2844,6 +3674,7 @@ function syncMethodButtons(){
   show("fieldAlpha", m==="Coulomb");
   show("fieldKs", m==="At-rest");
   show("fieldEFP", m==="Fluido_equivalente");
+  show("cardSismo", state.sismo.enabled);
   show("fieldKh", state.sismo.metodo==="Mononobe-Okabe");
   show("fieldKv", state.sismo.metodo==="Mononobe-Okabe");
   show("fieldEFPsism", state.sismo.metodo==="EFP_sismico");
@@ -2868,13 +3699,17 @@ function bindAll(){
       if(el.type==="checkbox") val = el.checked;
       else if(el.type==="number"){
         val = el.value===""? null : parseFloat(el.value);
-        // Si el campo tiene data-unit y estamos en modo SI, lo que el
-        // usuario tecleó está en SI — se vuelve a kgf-técnico antes de
-        // guardarlo (el estado y el motor de cálculo son SIEMPRE kgf).
-        if(val!==null && el.dataset.unit && sistemaUnidades==="SI") val = val / UNIT_FACTORS[el.dataset.unit];
+        // Si el campo tiene data-unit="<categoria>", lo que el usuario
+        // tecleó está en esa unidad — se vuelve a la unidad base antes de
+        // guardarlo (el estado y el motor de cálculo son SIEMPRE
+        // kgf-técnico/metros, ver UNIT_DEFS).
+        if(val!==null && el.dataset.unit) val = toBase(el.dataset.unit, val);
       }
       else val = el.value;
       setPath(state, path, val);
+      // Los selects de unidades.* (pestaña Proyecto) no solo recalculan:
+      // también hay que reconvertir a pantalla todos los campos data-unit.
+      if(path.startsWith("unidades.")) syncInputsFromState();
       scheduleRecalc();
     });
   });
@@ -2889,10 +3724,27 @@ function bindAll(){
   });
   document.querySelectorAll("#sismoMetodoRibbon .ribbon-choice").forEach(btn=>{
     btn.addEventListener("click", ()=>{
+      if(!state.sismo.enabled) return; // M-O/EFP sísmico solo eligen método con el sismo activo
       state.sismo.metodo = btn.dataset.sismometodo;
       syncMethodButtons();
       scheduleRecalc();
     });
+  });
+
+  // Lista de estratos del relleno (delegado: las tarjetas se regeneran en
+  // renderCapasRelleno(), así que editar/eliminar van en el contenedor fijo).
+  document.getElementById("capasRellenoList").addEventListener("click", e=>{
+    const editBtn = e.target.closest("[data-capa-edit]");
+    if(editBtn){ editEstrato(parseInt(editBtn.dataset.capaEdit, 10)); return; }
+    const delBtn = e.target.closest("[data-capa-del]");
+    if(delBtn){ removeEstrato(parseInt(delBtn.dataset.capaDel, 10)); }
+  });
+  document.getElementById("btnAddCapa").addEventListener("click", addEstrato);
+
+  // Botón de la barra de resultados: salta directo a la pestaña Resultados.
+  document.getElementById("btnVerMemoria").addEventListener("click", ()=>{
+    document.querySelector('.ribbon-tab[data-tab="resultados"]').click();
+    window.scrollTo({top:0, behavior:"smooth"});
   });
 
   // Rueda del mouse sobre un campo numérico enfocado: +/-0.1 por "tick",
@@ -2936,7 +3788,6 @@ function bindAll(){
 
   // Topbar
   document.getElementById("btnTheme").addEventListener("click", toggleTheme);
-  document.getElementById("btnUnidades").addEventListener("click", toggleUnidades);
   document.getElementById("btnSaveProject").addEventListener("click", guardarProyecto);
   document.getElementById("btnOpenProject").addEventListener("click", abrirProyecto);
   document.getElementById("fileOpenProject").addEventListener("change", e=>{
@@ -2948,17 +3799,6 @@ function bindAll(){
       state = defaultState();
       renderAllFull();
     }
-  });
-
-  // Restaurar banner
-  document.getElementById("btnRestore").addEventListener("click", ()=>{
-    const loaded = loadFromStorage();
-    if(loaded) state = mergeState(defaultState(), loaded);
-    document.getElementById("restoreBanner").style.display = "none";
-    renderAllFull();
-  });
-  document.getElementById("btnDiscardRestore").addEventListener("click", ()=>{
-    document.getElementById("restoreBanner").style.display = "none";
   });
 
   // Pestañas del ribbon: cada clic cambia el panel de datos activo (.tab-panel)
@@ -3013,38 +3853,15 @@ function initTheme(){
 }
 
 /* ================================================================
-   9b. SISTEMA DE UNIDADES DE LOS RESULTADOS (kgf-técnico / SI)
-   ================================================================ */
-function applyUnidades(sistema){
-  sistemaUnidades = sistema;
-  const btn = document.getElementById("btnUnidades");
-  btn.textContent = sistema==="SI" ? "SI" : "kgf";
-  btn.title = sistema==="SI"
-    ? "Resultados en SI (kN, kPa) — clic para volver a kgf-técnico. Los campos editables siguen en kgf-técnico."
-    : "Resultados en kgf-técnico — clic para cambiar a SI (kN, kPa). Los campos editables siguen en kgf-técnico.";
-  localStorage.setItem("murosContencion.unidades", sistema);
-}
-function toggleUnidades(){
-  applyUnidades(sistemaUnidades==="SI" ? "tec" : "SI");
-  syncInputsFromState(); // refresca también los campos EDITABLES con data-unit
-  renderAll();
-}
-function initUnidades(){
-  applyUnidades(localStorage.getItem("murosContencion.unidades") || "tec");
-}
-
-/* ================================================================
    10. INICIALIZACIÓN
    ================================================================ */
 function init(){
   initTheme();
-  initUnidades();
+  initStratModal();
   bindAll();
 
   const saved = loadFromStorage();
-  if(saved){
-    document.getElementById("restoreBanner").style.display = "flex";
-  }
+  if(saved) state = mergeState(defaultState(), migrarSueloViejo(saved));
   renderAllFull();
 }
 
