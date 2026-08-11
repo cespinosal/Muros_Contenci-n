@@ -241,6 +241,7 @@ body{padding-bottom:var(--results-bar-h);}
 }
 .field input:focus, .field select:focus{border-color:var(--accent);}
 .field .hint{font-size:11px; color:var(--subtle);}
+.field label[data-calc]{cursor:help; border-bottom:1px dotted var(--subtle); display:inline-block;}
 .field.invalid input{border-color:var(--danger-border); background:var(--danger-bg);}
 .info-box{background:var(--brand-tint); border:1px solid var(--accent-border); border-radius:var(--radius-md); padding:10px 14px; font-size:12.5px; color:var(--text); margin:10px 0;}
 .warn-box{background:var(--warning-bg); border:1px solid var(--warning-border); color:var(--warning-fg); border-radius:var(--radius-md); padding:10px 14px; font-size:12.5px; margin:10px 0;}
@@ -706,7 +707,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cardNAF">
         <h3>Nivel freático</h3>
         <p class="sub">Activar/desactivar desde la pestaña Suelo y materiales del ribbon (arriba).</p>
         <div class="form-grid">
@@ -729,7 +730,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
 
     <!-- ============ TAB: CARGAS ============ -->
     <section class="tab-panel" id="tab-cargas">
-      <div class="card">
+      <div class="card" id="cardSobrecarga">
         <h3>Sobrecarga de operación</h3>
         <p class="sub">Activar y elegir el nivel desde la pestaña Cargas del ribbon (arriba).</p>
         <div class="form-grid">
@@ -742,10 +743,11 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>Peso propio (calculado)</h3>
         <p class="sub">Se calcula automáticamente a partir de la geometría y γc. Valores de referencia:</p>
         <div class="form-grid">
-          <div class="field"><label>Peso del fuste, Ws</label><input id="out-Ws" disabled></div>
-          <div class="field"><label>Peso de la zapata, Wf</label><input id="out-Wf" disabled></div>
-          <div class="field"><label>Peso del relleno sobre el talón, Wr</label><input id="out-Wr" disabled></div>
-          <div class="field"><label>Peso del suelo sobre la puntera, Wp</label><input id="out-Wp" disabled></div>
+          <div class="field"><label data-calc="Ws">Peso del fuste, Ws</label><input id="out-Ws" disabled></div>
+          <div class="field"><label data-calc="Wf">Peso de la zapata, Wf</label><input id="out-Wf" disabled></div>
+          <div class="field"><label data-calc="Wr">Peso del relleno sobre el talón, Wr</label><input id="out-Wr" disabled></div>
+          <div class="field" id="fieldWtriOut"><label data-calc="Wtri">Peso del triángulo de relleno sobre el talud, Wtri</label><input id="out-Wtri" disabled></div>
+          <div class="field"><label data-calc="Wp">Peso del suelo sobre la puntera, Wp</label><input id="out-Wp" disabled></div>
         </div>
       </div>
 
@@ -803,15 +805,15 @@ table.results tr.row-warn td{background:var(--warning-bg);}
       <div class="card">
         <h3>Resultados de presiones</h3>
         <div class="form-grid">
-          <div class="field"><label>Coeficiente activo, Ka</label><input id="out-Ka" disabled></div>
-          <div class="field"><label>Fuerza activa, Pa</label><input id="out-Pa" disabled></div>
-          <div class="field"><label>Componente horizontal, Pa,h</label><input id="out-Pah" disabled></div>
-          <div class="field"><label>Empuje por sobrecarga, Pq,h</label><input id="out-Pqh" disabled></div>
-          <div class="field"><label>Empuje hidrostático, Pw,h</label><input id="out-Pwh" disabled></div>
-          <div class="field"><label>Coeficiente pasivo, Kp</label><input id="out-Kp" disabled></div>
-          <div class="field"><label>Fuerza pasiva, Pp</label><input id="out-Pp" disabled></div>
-          <div class="field"><label>K_AE (sismo Mononobe-Okabe)</label><input id="out-KAE" disabled></div>
-          <div class="field"><label>Incremento sísmico, ΔPAE,h</label><input id="out-DeltaPAE" disabled></div>
+          <div class="field"><label data-calc="Ka">Coeficiente activo, Ka</label><input id="out-Ka" disabled></div>
+          <div class="field"><label data-calc="Pa">Fuerza activa, Pa</label><input id="out-Pa" disabled></div>
+          <div class="field"><label data-calc="Pah">Componente horizontal, Pa,h</label><input id="out-Pah" disabled></div>
+          <div class="field"><label data-calc="Pqh">Empuje por sobrecarga, Pq,h</label><input id="out-Pqh" disabled></div>
+          <div class="field"><label data-calc="Pwh">Empuje hidrostático, Pw,h</label><input id="out-Pwh" disabled></div>
+          <div class="field"><label data-calc="Kp">Coeficiente pasivo, Kp</label><input id="out-Kp" disabled></div>
+          <div class="field"><label data-calc="Pp">Fuerza pasiva, Pp</label><input id="out-Pp" disabled></div>
+          <div class="field"><label data-calc="KAE">K_AE (sismo Mononobe-Okabe)</label><input id="out-KAE" disabled></div>
+          <div class="field"><label data-calc="DeltaPAE">Incremento sísmico, ΔPAE,h</label><input id="out-DeltaPAE" disabled></div>
         </div>
       </div>
     </section>
@@ -889,25 +891,26 @@ table.results tr.row-warn td{background:var(--warning-bg);}
 
         <h4>1. Pesos y fuerza vertical resultante</h4>
         <div class="form-grid">
-          <div class="field"><label>Peso del fuste, Ws</label><input id="res-Ws" disabled></div>
-          <div class="field"><label>Peso de la zapata, Wf</label><input id="res-Wf" disabled></div>
-          <div class="field"><label>Peso del relleno sobre el talón, Wr</label><input id="res-Wr" disabled></div>
-          <div class="field"><label>Peso del suelo sobre la puntera, Wp</label><input id="res-Wp" disabled></div>
+          <div class="field"><label data-calc="Ws">Peso del fuste, Ws</label><input id="res-Ws" disabled></div>
+          <div class="field"><label data-calc="Wf">Peso de la zapata, Wf</label><input id="res-Wf" disabled></div>
+          <div class="field"><label data-calc="Wr">Peso del relleno sobre el talón, Wr</label><input id="res-Wr" disabled></div>
+          <div class="field" id="fieldWtriRes"><label data-calc="Wtri">Peso del triángulo de relleno sobre el talud, Wtri</label><input id="res-Wtri" disabled></div>
+          <div class="field"><label data-calc="Wp">Peso del suelo sobre la puntera, Wp</label><input id="res-Wp" disabled></div>
           <div class="field"><label>Componente vertical del empuje, Pa,v</label><input id="res-Pav" disabled></div>
           <div class="field"><label>Fuerza vertical total, N = ΣV</label><input id="res-N" disabled></div>
         </div>
 
         <h4>2. Presiones laterales</h4>
         <div class="form-grid">
-          <div class="field"><label>Coeficiente activo, Ka</label><input id="res-Ka" disabled></div>
-          <div class="field"><label>Fuerza activa, Pa</label><input id="res-Pa" disabled></div>
-          <div class="field"><label>Componente horizontal, Pa,h</label><input id="res-Pah" disabled></div>
-          <div class="field"><label>Empuje por sobrecarga, Pq,h</label><input id="res-Pqh" disabled></div>
-          <div class="field"><label>Empuje hidrostático, Pw,h</label><input id="res-Pwh" disabled></div>
-          <div class="field"><label>Coeficiente pasivo, Kp</label><input id="res-Kp" disabled></div>
-          <div class="field"><label>Fuerza pasiva, Pp</label><input id="res-Pp" disabled></div>
-          <div class="field"><label>K_AE (sismo Mononobe-Okabe)</label><input id="res-KAE" disabled></div>
-          <div class="field"><label>Incremento sísmico, ΔPAE,h</label><input id="res-DeltaPAE" disabled></div>
+          <div class="field"><label data-calc="Ka">Coeficiente activo, Ka</label><input id="res-Ka" disabled></div>
+          <div class="field"><label data-calc="Pa">Fuerza activa, Pa</label><input id="res-Pa" disabled></div>
+          <div class="field"><label data-calc="Pah">Componente horizontal, Pa,h</label><input id="res-Pah" disabled></div>
+          <div class="field"><label data-calc="Pqh">Empuje por sobrecarga, Pq,h</label><input id="res-Pqh" disabled></div>
+          <div class="field"><label data-calc="Pwh">Empuje hidrostático, Pw,h</label><input id="res-Pwh" disabled></div>
+          <div class="field"><label data-calc="Kp">Coeficiente pasivo, Kp</label><input id="res-Kp" disabled></div>
+          <div class="field"><label data-calc="Pp">Fuerza pasiva, Pp</label><input id="res-Pp" disabled></div>
+          <div class="field"><label data-calc="KAE">K_AE (sismo Mononobe-Okabe)</label><input id="res-KAE" disabled></div>
+          <div class="field"><label data-calc="DeltaPAE">Incremento sísmico, ΔPAE,h</label><input id="res-DeltaPAE" disabled></div>
         </div>
 
         <h4>3. Volteo</h4>
@@ -992,12 +995,12 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <input id="sm-nm" type="text" class="sm-input" placeholder="Ej. Arcilla café compacta">
       </div>
       <div>
-        <div class="sm-sec">Profundidad hasta</div>
+        <div class="sm-sec">Espesor del estrato</div>
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="inwrap" style="width:90px;">
-            <input id="sm-to" type="number" step="0.1" min="0" style="border:0; padding:7px 8px; font-family:var(--font-mono); font-size:12px; outline:none; width:100%; background:transparent; color:var(--text);">
+            <input id="sm-espesor" type="number" step="0.1" min="0.1" style="border:0; padding:7px 8px; font-family:var(--font-mono); font-size:12px; outline:none; width:100%; background:transparent; color:var(--text);">
           </div>
-          <span id="sm-to-unit" style="font-size:11px; color:var(--muted); font-family:var(--font-mono);">m</span>
+          <span id="sm-espesor-unit" style="font-size:11px; color:var(--muted); font-family:var(--font-mono);">m</span>
         </div>
       </div>
       <div>
@@ -2103,6 +2106,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
    ================================================================ */
 const STORAGE_KEY = "murosContencion.v1";
 const toRad = d => d * Math.PI / 180;
+const toDeg = r => r * 180 / Math.PI;
 const fmt = (n, dec) => (n===null || n===undefined || !isFinite(n)) ? "—" : n.toFixed(dec===undefined?2:dec);
 
 /* Sistema de unidades por categoría (Bloque ampliado, 2026-08-10). El
@@ -2254,14 +2258,18 @@ function defaultState(){
       beta:0.00, alpha:0.00, Df:0.80
     },
     suelo: {
-      // Relleno estratificado (2026-08-10, estilo GeoCim): lista de
-      // estratos con profundidad acumulada from/to (no espesor suelto),
-      // nombre/textura/color para el modal "Agregar estrato"; si la suma
-      // no alcanza H se extiende el último, si se pasa se recorta (ver
-      // resolverCapas()). Con un solo estrato (el caso por default) el
-      // comportamiento es idéntico al de antes, sin importar "to" —
-      // siempre cubre H.
-      capasRelleno: [ { nm:"Estrato 1", hatch:7, color:"#e8d880", from:0, to:3.00, gamma:1800, phi:30, c:0 } ],
+      // Relleno estratificado (2026-08-10, estilo GeoCim; espesor+orden
+      // de abajo hacia arriba agregado el mismo día): lista de estratos
+      // con ESPESOR propio (no profundidad acumulada). El arreglo va "de
+      // arriba hacia abajo" (índice 0 = el estrato más cercano a la
+      // corona) pero "Agregar estrato" siempre EMPUJA uno nuevo al FINAL
+      // del arreglo, en la base (0 a su espesor) — los que ya existían se
+      // recorren hacia arriba automáticamente (ver resolverCapas(), que
+      // deriva from/to acumulando espesores desde el ÚLTIMO índice hacia
+      // el primero). Si la suma se pasa de H se recorta el sobrante desde
+      // arriba (ver resolverCapas()). Con un solo estrato (el caso por
+      // default) el comportamiento es idéntico al de antes.
+      capasRelleno: [ { nm:"Estrato 1", hatch:7, color:"#e8d880", espesor:3.00, gamma:1800, phi:30, c:0 } ],
       delta_r:null, Ks:0.5,
       // QADM en kgf/m² (antes se guardaba directo en tf/m², caso especial
       // que ya no aplica ahora que "presion" es una categoría más del
@@ -2333,17 +2341,25 @@ function migrarSueloViejo(loaded){
   if(!loaded || !loaded.suelo) return loaded;
   const s = loaded.suelo;
   if(!s.capasRelleno && s.gamma_r !== undefined){
+    // Formato plano viejo (un solo gamma_r/phi_r/c_r, sin capas): se
+    // sintetiza un único estrato con ese espesor = H.
     s.capasRelleno = [{
-      nm:"Estrato 1", hatch:7, color:"#e8d880", from:0,
-      to: (loaded.geom && loaded.geom.H) || 3.00,
+      nm:"Estrato 1", hatch:7, color:"#e8d880",
+      espesor: (loaded.geom && loaded.geom.H) || 3.00,
       gamma: s.gamma_r, phi: s.phi_r, c: s.c_r || 0
     }];
-  }else if(s.capasRelleno && s.capasRelleno.length && s.capasRelleno[0].to === undefined){
-    let acc = 0;
-    s.capasRelleno = s.capasRelleno.map((c,i)=>{
-      const from = acc; acc += c.h;
-      return { nm:`Estrato ${i+1}`, hatch:7, color:"#e8d880", from, to:acc, gamma:c.gamma, phi:c.phi, c:c.c };
-    });
+  }else if(s.capasRelleno && s.capasRelleno.length && s.capasRelleno[0].espesor === undefined && s.capasRelleno[0].to === undefined){
+    // Formato intermedio viejo (cada capa solo traía "h", sin from/to): el
+    // espesor ya es exactamente ese valor; el orden del arreglo (índice 0 =
+    // el más cercano a la corona) es el mismo en ambos formatos.
+    s.capasRelleno = s.capasRelleno.map((c,i)=>({ nm:c.nm||`Estrato ${i+1}`, hatch:c.hatch||7, color:c.color||"#e8d880", espesor:c.h, gamma:c.gamma, phi:c.phi, c:c.c }));
+  }else if(s.capasRelleno && s.capasRelleno.length && s.capasRelleno[0].espesor === undefined && s.capasRelleno[0].to !== undefined){
+    // Formato from/to (modal estilo GeoCim, usado antes de pasar a
+    // espesor + apilado desde abajo — 2026-08-10): el espesor de cada capa
+    // es simplemente to-from; el orden del arreglo (índice 0 = el más
+    // cercano a la corona) no cambia entre los dos formatos, solo cambia
+    // cómo se deriva la posición vertical (ver derivarPosicionesCapas).
+    s.capasRelleno = s.capasRelleno.map(c=>({ nm:c.nm, hatch:c.hatch, color:c.color, espesor: c.to - c.from, gamma:c.gamma, phi:c.phi, c:c.c }));
   }
   return loaded;
 }
@@ -2467,26 +2483,56 @@ function coulombKa(phi, delta, beta, theta){
   return (isFinite(Ka) && Ka > 0) ? Ka : rankineKa(phi, beta);
 }
 
-/* Resuelve la lista de estratos del relleno (suelo.capasRelleno, cada uno
-   con profundidad acumulada from/to — estilo GeoCim) contra una altura
-   objetivo (Bloque de relleno estratificado, 2026-08-10): si la suma de
-   espesores no alcanza, el ÚLTIMO estrato se extiende; si se pasa, se
-   recorta el sobrante. Nunca devuelve una lista vacía. Devuelve espesor
-   ("h") ya resuelto en vez de from/to (el resto del motor de cálculo solo
-   usa gamma/phi/c/h), pero conserva nm/hatch/color para que el dibujo 2D
-   pueda pintar cada estrato con su propia textura sin recalcular nada. */
-function resolverCapas(capas, Hobjetivo){
-  const out = [];
+/* Deriva from/to (posición vertical, 0 = base/zapata) de cada estrato a
+   partir de su espesor (Bloque de relleno estratificado, 2026-08-10,
+   actualizado el mismo día para que "Agregar estrato" apile de abajo
+   hacia arriba). El arreglo `suelo.capasRelleno` va "de arriba hacia
+   abajo" (índice 0 = el estrato más cercano a la corona), pero cada
+   estrato NUEVO se agrega al FINAL del arreglo (en la base) — por eso
+   las posiciones se acumulan empezando por el ÚLTIMO índice (el que está
+   pegado a la zapata, from=0) y subiendo hacia el índice 0. Ejemplo: con
+   dos estratos de espesor 3 cada uno, el primero (índice 0, "Estrato 1")
+   queda en 3–6 y el segundo (índice 1, "Estrato 2", agregado después)
+   queda en 0–3 — exactamente donde estaba antes el primero, que se
+   recorrió hacia arriba al agregar el nuevo debajo. */
+function derivarPosicionesCapas(capas){
+  const out = new Array(capas.length);
   let acc = 0;
-  for(const capa of capas){
-    if(acc >= Hobjetivo - 1e-9) break;
-    const espesor = capa.to - capa.from;
-    const h = Math.min(espesor, Hobjetivo - acc);
-    if(h > 1e-9){ out.push({ nm:capa.nm, hatch:capa.hatch, color:capa.color, gamma:capa.gamma, phi:capa.phi, c:capa.c, h }); acc += h; }
+  for(let i = capas.length-1; i >= 0; i--){
+    const capa = capas[i];
+    out[i] = { nm:capa.nm, hatch:capa.hatch, color:capa.color, gamma:capa.gamma, phi:capa.phi, c:capa.c, from:acc, to:acc+capa.espesor };
+    acc += capa.espesor;
   }
-  if(out.length === 0) return [{ nm:capas[0].nm, hatch:capas[0].hatch, color:capas[0].color, h:Hobjetivo, gamma:capas[0].gamma, phi:capas[0].phi, c:capas[0].c }];
-  const falta = Hobjetivo - acc;
-  if(falta > 1e-9) out[out.length-1].h += falta;
+  return out;
+}
+
+/* Resuelve la lista de estratos del relleno (suelo.capasRelleno, cada uno
+   con espesor propio — ver derivarPosicionesCapas) contra una altura
+   objetivo, recortando cada estrato a la ventana [0, Hobjetivo] en la
+   coordenada "desde la zapata" que ya calculó derivarPosicionesCapas. Esto
+   (en vez de ir acumulando presupuesto en orden de arreglo) es lo que
+   garantiza que el recorte, cuando la suma de espesores > Hobjetivo, quite
+   el sobrante de ARRIBA (lo que quedaría por encima de la corona) y
+   conserve completo lo que está pegado a la zapata — sin importar en qué
+   posición del arreglo esté cada estrato. Devuelve la lista en el mismo
+   orden que capasRelleno (índice 0 = el de más arriba que sobreviva el
+   recorte), con espesor ("h") ya resuelto en vez de from/to (el resto del
+   motor de cálculo solo usa gamma/phi/c/h), conservando nm/hatch/color
+   para que el dibujo 2D pinte cada estrato con su propia textura. Nunca
+   devuelve una lista vacía. */
+function resolverCapas(capasRelleno, Hobjetivo){
+  const conPosicion = derivarPosicionesCapas(capasRelleno);
+  const out = [];
+  for(const capa of conPosicion){
+    const from = Math.min(capa.from, Hobjetivo);
+    const to = Math.min(capa.to, Hobjetivo);
+    const h = to - from;
+    if(h > 1e-9) out.push({ nm:capa.nm, hatch:capa.hatch, color:capa.color, gamma:capa.gamma, phi:capa.phi, c:capa.c, h });
+  }
+  if(out.length === 0){
+    const ultimo = capasRelleno[capasRelleno.length-1];
+    return [{ nm:ultimo.nm, hatch:ultimo.hatch, color:ultimo.color, h:Math.max(Hobjetivo,0), gamma:ultimo.gamma, phi:ultimo.phi, c:ultimo.c }];
+  }
   return out;
 }
 
@@ -2500,7 +2546,7 @@ function resolverCapas(capas, Hobjetivo){
    Si captura MÁS que H, se recorta a H (comportamiento que ya existía). */
 function alturaRellenoEfectiva(suelo, H){
   const capas = suelo.capasRelleno;
-  const suma = capas.length ? capas[capas.length-1].to - capas[0].from : 0;
+  const suma = capas.reduce((s,c)=>s+c.espesor, 0);
   return Math.min(Math.max(suma, 0), H);
 }
 
@@ -2588,9 +2634,15 @@ function calcularPresiones(state){
       const yTop = Hprime - zAcc, yBot = Hprime - (zAcc + capa.h);
       const areaRect = sigmaTop * capa.h;
       const areaTri = 0.5 * (sigmaBot - sigmaTop) * capa.h;
-      Fa += areaRect + areaTri;
+      const Fi = areaRect + areaTri;
+      Fa += Fi;
       Ma += areaRect*((yTop+yBot)/2) + areaTri*(yBot + capa.h/3);
       zAcc += capa.h;
+      // Se guarda info por segmento (2026-08-10) SOLO para poder mostrar el
+      // desglose real en el hover de fórmulas (formulaPa) sin recalcular
+      // nada por separado — no afecta Fa/Ma/Pa, que ya quedaron calculados
+      // arriba en esta misma iteración.
+      capa.Ka_i = Ka_i; capa.sigmaTop = sigmaTop; capa.sigmaBot = sigmaBot; capa.Fi = Fi;
     }
     Ka = KaPrimera;
     Pa = Fa;
@@ -2654,7 +2706,14 @@ function calcularPresiones(state){
   // calcularGeotecnia la reutiliza para los brazos de esas fuerzas en Mov,
   // y "arm" ya viene medido desde el fondo de la zapata (no hay que
   // sumarle tf otra vez).
-  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, H, Hprime, DeltaPAE_h, KAE, psi, arm, theta };
+  // segments/gamma_avg: expuestos solo para que el hover de fórmulas
+  // (formulaPa/Pqh/DeltaPAE, ver bloque de resaltado más abajo) pueda
+  // mostrar el desglose real segmento por segmento sin recalcular nada —
+  // segments es el mismo capasExt ya usado arriba (con Ka_i/sigmaTop/
+  // sigmaBot/Fi anotados por segmento), null en Fluido_equivalente porque
+  // ese método no segmenta (fórmula cerrada directa).
+  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, H, Hprime, DeltaPAE_h, KAE, psi, arm, theta,
+    segments: metodo === "Fluido_equivalente" ? null : capasExt, gamma_avg };
 }
 
 /* Revisiones geotécnicas 1-5 (Bloque 6). Momentos tomados respecto
@@ -2679,12 +2738,34 @@ function calcularGeotecnia(state, pres){
   const capasPeso = resolverCapas(suelo.capasRelleno, Hrelleno);
   const Wr = capasPeso.reduce((s,c)=>s+c.gamma*c.h, 0) * heel;
   const Wp = suelo.gamma_f * toe * Df; // aproximación del prompt original (no resta tf)
+
+  // Triángulo de suelo sobre el talud, por encima de la corona (2026-08-10,
+  // zona ⑤ de la fig. 8.12 de Das — hasta ahora faltaba, quedaba anotado
+  // como mejora pendiente). Solo existe si beta>0 Y el relleno realmente
+  // llega hasta la corona (Hrelleno===H; si el relleno no alcanza H, hay un
+  // tramo de fuste expuesto y no hay talud que dibujar, ver
+  // alturaRellenoEfectiva()). Es un triángulo con base=heel (de xBack a Bf)
+  // y altura=heel·tan(beta) en el borde Bf — la misma geometría que ya usa
+  // Hprime para integrar Pa (heel·tan(beta) es el tercer tramo, H3 del
+  // libro). Usa el peso volumétrico del PRIMER estrato (capasPeso[0]), el
+  // mismo criterio que ya usa el resto de la app para "el estrato que
+  // aflora en la corona" (capasExt en calcularPresiones, el dibujo del
+  // talud). Brazo del triángulo respecto al toe: el centroide de un
+  // triángulo con vértices en (xBack,·), (Bf,·), (Bf,·) — es decir angosto
+  // en xBack y ancho en Bf — cae en Bf-heel/3 (más cerca de Bf que el
+  // centroide de un rectángulo, que cae en Bf-heel/2).
+  const betaR = toRad(geom.beta);
+  const hayTalud = geom.beta > 0.01 && Hrelleno >= H - 1e-6;
+  const gammaTop = capasPeso.length ? capasPeso[0].gamma : (suelo.capasRelleno[0] ? suelo.capasRelleno[0].gamma : 0);
+  const Wtri = hayTalud ? gammaTop * 0.5 * heel*heel * Math.tan(betaR) : 0;
+  const brazoTri = Bf - heel/3;
+
   const Pq_v = cargas.qsEnabled ? cargas.qs * heel : 0;
   const Pa_v = pres.Pa_v;
 
-  const N = Ws + Wf + Wr + Wp + Pq_v + Pa_v;
+  const N = Ws + Wf + Wr + Wp + Wtri + Pq_v + Pa_v;
 
-  const Mr = Ws*brazoStem + Wf*(Bf/2) + Wr*(Bf - heel/2) + Wp*(toe/2) + Pq_v*(Bf - heel/2) + Pa_v*Bf;
+  const Mr = Ws*brazoStem + Wf*(Bf/2) + Wr*(Bf - heel/2) + Wtri*brazoTri + Wp*(toe/2) + Pq_v*(Bf - heel/2) + Pa_v*Bf;
 
   // Cerco perimetral (Bloque 17): carga horizontal de viento sobre el
   // cerco anclado en la corona, actuando a media altura del cerco por
@@ -2774,12 +2855,12 @@ function calcularGeotecnia(state, pres){
   const requiereGlobal = condiciones.length > 0;
   // Talud infinito simplificado con la φ del estrato superficial (el que
   // aflora en la cara del talud) — igual que antes, solo informativo.
-  const phiR = toRad(suelo.capasRelleno[0].phi), betaR = toRad(geom.beta);
+  const phiR = toRad(suelo.capasRelleno[0].phi); // betaR ya se calculó arriba, para el triángulo de talud (Wtri)
   const FS_talud_simple = geom.beta > 0.01 ? Math.tan(phiR)/Math.tan(betaR) : null;
 
   return {
     heel, areaStem, brazoStem,
-    Ws, Wf, Wr, Wp, Pq_v, Pa_v, N,
+    Ws, Wf, Wr, Wp, Wtri, brazoTri, hayTalud, capasPeso, Pq_v, Pa_v, N,
     Fh_cerco, M_cerco,
     Mr, Mov, FS_volteo,
     Fh, mu, Fr, Fr_cohesion, Pp_h, Fkey, R, FS_desliz,
@@ -2845,6 +2926,13 @@ function dibujarMuro2D(svg, state, r){
   const X = xm => offX + (xm - modelMinX)*scale;
   const Y = ym => viewH - offY - (ym - modelMinY)*scale;
 
+  // Se guarda la transformación de ESTE render (X/Y son closures ligadas a la
+  // escala/offset actuales) para que el resaltado en el canvas real
+  // (mostrarResaltadoCanvas, disparado por hover sobre las etiquetas Ws/Wf/
+  // Wr/Wtri/Wp) pueda dibujar exactamente en las mismas coordenadas que el
+  // muro recién dibujado, sin duplicar el cálculo de escala/offset.
+  lastWallTransform = { X, Y, viewW, viewH, toe, Bf, tf, H, Df, tc, heel, xBack, beta: g.beta };
+
   function el(tag, attrs){
     const e = document.createElementNS(NS, tag);
     for(const k in attrs) e.setAttribute(k, attrs[k]);
@@ -2870,6 +2958,27 @@ function dibujarMuro2D(svg, state, r){
     // getBBox() es local (sin rotar): si el texto trae "transform" (p.ej. las
     // cotas verticales, rotadas -90°), el fondo debe rotar exactamente igual
     // para no quedar como un rectángulo horizontal fuera de lugar.
+    if(extra && extra.transform) bg.setAttribute("transform", extra.transform);
+    svg.insertBefore(bg, t);
+    return t;
+  }
+  // Variante multilínea (un dato por renglón): un <tspan> por línea, con dy
+  // acumulado para que el bloque quede centrado verticalmente sobre (xm,ym)
+  // igual que el texto de una sola línea.
+  function textLines(xm,ym,lines,extra){
+    const t = el("text", Object.assign({x:X(xm), y:Y(ym), class:"dim-text", "text-anchor":"middle"}, extra||{}));
+    const lineH = 1.15;
+    lines.forEach((ln,i)=>{
+      const tspan = el("tspan", {x:X(xm), dy: i===0 ? `${-(lines.length-1)*lineH/2}em` : `${lineH}em`});
+      tspan.textContent = ln;
+      t.appendChild(tspan);
+    });
+    svg.appendChild(t); return t;
+  }
+  function labelBgLines(xm,ym,lines,extra){
+    const t = textLines(xm,ym,lines,extra);
+    const bb = t.getBBox();
+    const bg = el("rect",{x:bb.x-3, y:bb.y-1.5, width:bb.width+6, height:bb.height+3, fill:col("--panel"), opacity:0.82, rx:2});
     if(extra && extra.transform) bg.setAttribute("transform", extra.transform);
     svg.insertBefore(bg, t);
     return t;
@@ -2946,7 +3055,7 @@ function dibujarMuro2D(svg, state, r){
     defs.insertAdjacentHTML("beforeend", hatchPatternSVG(pid, capa.hatch||7, capa.color||"#e8d880"));
     poly([[xBack,yTop],[Bf+extraBack,rightTopY],[Bf+extraBack,yBot],[xBack,yBot]], `url(#${pid})`, col("--fill-line"));
     if(capa.h > 0.35){ // evita saturar de texto los estratos muy delgados
-      labelBg((xBack+Bf+extraBack)/2, (yTop+yBot)/2, `${capa.nm||"Estrato"} · φ=${capa.phi||0}°`, {"font-size":"9px"});
+      labelBgLines((xBack+Bf+extraBack)/2, (yTop+yBot)/2, [capa.nm||"Estrato", `γ=${fmtCat("pesoVol",capa.gamma,1)}`, `c=${fmtCat("presion",capa.c,0)}`, `φ=${capa.phi||0}°`], {"font-size":"9px"});
     }
     zAccDibujo += capa.h;
   });
@@ -3213,35 +3322,34 @@ function badgeHTML(ok, textOk, textBad, warn){
 // — por eso aquí se puede reconstruir todo el HTML en cada render sin
 // riesgo de perder el foco de un input a medio teclear.
 //
-// El resumen muestra el rango EFECTIVO (ya resuelto contra H, vía
-// resolverCapas — la misma función que usan el cálculo y el dibujo), no
-// el from/to tal cual se tecleó: si es el único estrato y H es mayor que
-// lo capturado, se ve extendido hasta H (con nota "extendido"); si un
-// estrato queda total o parcialmente fuera de H, se marca como tal. Sin
-// esto, la tarjeta podía decir "0–3 m" mientras el dibujo y el cálculo
-// ya lo estaban usando estirado a "0–6 m" — inconsistencia real que
-// reportó el usuario.
+// El resumen muestra el rango EFECTIVO de cada estrato (posición derivada
+// vía derivarPosicionesCapas — el usuario solo teclea el espesor, no una
+// posición — recortada a la ventana [0,H] igual que resolverCapas, la
+// misma función que usan el cálculo y el dibujo): si un estrato queda
+// total o parcialmente por encima de la corona (H), se marca como
+// recortado o como "fuera de H". Sin esto, la tarjeta podía mostrar una
+// posición distinta a la que realmente usan el dibujo y el cálculo —
+// inconsistencia real que reportó el usuario.
 function renderCapasRelleno(){
   const capas = state.suelo.capasRelleno;
   const Hrelleno = alturaRellenoEfectiva(state.suelo, state.geom.H);
-  const resueltas = resolverCapas(capas, Hrelleno);
+  const conPosicion = derivarPosicionesCapas(capas); // mismo orden que capas; from/to nominales sin recortar
   const list = document.getElementById("capasRellenoList");
-  let accEfectivo = 0;
   list.innerHTML = capas.map((capa,i)=>{
     const pid = `ecp${i}`;
     const pat = hatchPatternSVG(pid, capa.hatch||7, capa.color||"#e8d880");
     const delBtn = capas.length>1
       ? `<button type="button" class="ec-del" data-capa-del="${i}" title="Eliminar estrato">✕</button>`
       : "";
+    const pos = conPosicion[i];
+    const effFrom = Math.min(pos.from, Hrelleno), effTo = Math.min(pos.to, Hrelleno);
+    const effH = Math.max(effTo - effFrom, 0);
     let rangoTxt;
-    if(i < resueltas.length){
-      const effFrom = accEfectivo, effTo = accEfectivo + resueltas[i].h;
-      accEfectivo = effTo;
-      const nominal = capa.to - capa.from;
-      const recortado = resueltas[i].h < nominal - 0.01;
+    if(effH > 1e-9){
+      const recortado = effH < capa.espesor - 0.01;
       rangoTxt = `${fmtLong(effFrom,2)} – ${fmtLong(effTo,2)}` + (recortado ? " (recortado)" : "");
     }else{
-      rangoTxt = `no llega a esta profundidad (fuera de H)`;
+      rangoTxt = `no llega a esta altura (fuera de H)`;
     }
     return `<div class="estrato-card">
       <div class="estrato-card-hd">
@@ -3254,21 +3362,22 @@ function renderCapasRelleno(){
     </div>`;
   }).join("");
 
-  const sumaH = capas.length ? capas[capas.length-1].to - capas[0].from : 0;
+  const sumaH = capas.reduce((s,c)=>s+c.espesor, 0);
   const diff = sumaH - state.geom.H;
   let nota = `Suma de espesores capturada: ${fmtLong(sumaH,2)} · altura del fuste H: ${fmtLong(state.geom.H,2)}`;
   if(diff < -0.01) nota += " — el relleno no llega a la corona; el tramo superior del fuste queda expuesto (sin presión de suelo).";
-  else if(diff > 0.01) nota += " — se recorta el sobrante.";
+  else if(diff > 0.01) nota += " — se recorta el sobrante (la parte que quedaría por encima de la corona).";
   document.getElementById("capasRellenoResumen").textContent = nota;
 }
 
 /* ---- Modal "Agregar/Editar estrato" (portado de GeoCim) ---- */
-let _sm = { editIdx:-1, hatch:7, from:0 };
+let _sm = { editIdx:-1, hatch:7 };
 
+// Agregar SIEMPRE apila un estrato nuevo al final del arreglo, es decir
+// en la BASE (ver derivarPosicionesCapas) — los que ya existían se
+// recorren hacia arriba solos, no hay que tocarlos.
 function addEstrato(){
-  const capas = state.suelo.capasRelleno;
-  const last = capas[capas.length-1];
-  openStratModal(-1, { nm:"", hatch:7, color:HATCH_DEFS[6].color, from:last.to, to:last.to+2.0, gamma:0, phi:0, c:0 });
+  openStratModal(-1, { nm:"", hatch:7, color:HATCH_DEFS[6].color, espesor:2.0, gamma:0, phi:0, c:0 });
 }
 function editEstrato(i){
   openStratModal(i, { ...state.suelo.capasRelleno[i] });
@@ -3276,9 +3385,7 @@ function editEstrato(i){
 function removeEstrato(i){
   const capas = state.suelo.capasRelleno;
   if(capas.length <= 1) return;
-  const fromVal = capas[i].from;
-  capas.splice(i, 1);
-  if(i < capas.length) capas[i].from = fromVal;
+  capas.splice(i, 1); // los demás se reacomodan solos (derivarPosicionesCapas)
   renderAll();
 }
 function selectHatch(idx){
@@ -3289,11 +3396,11 @@ function selectHatch(idx){
   _highlightPalette(color);
 }
 function openStratModal(idx, data){
-  _sm.editIdx = idx; _sm.hatch = data.hatch || 7; _sm.from = data.from || 0;
+  _sm.editIdx = idx; _sm.hatch = data.hatch || 7;
   document.getElementById("sm-title").textContent = idx<0 ? "Agregar estrato" : "Editar estrato";
   document.getElementById("sm-nm").value = data.nm || "";
-  document.getElementById("sm-to").value = fmt(toDisplay("longitud", data.to!=null ? data.to : (_sm.from+2)), 2);
-  document.getElementById("sm-to-unit").textContent = unitLabel("longitud");
+  document.getElementById("sm-espesor").value = fmt(toDisplay("longitud", data.espesor!=null ? data.espesor : 2), 2);
+  document.getElementById("sm-espesor-unit").textContent = unitLabel("longitud");
   const initColor = data.color || HATCH_DEFS[6].color;
   document.getElementById("sm-color").value = initColor;
   document.getElementById("sm-g").value = fmt(toDisplay("pesoVol", data.gamma||0), 2);
@@ -3311,20 +3418,14 @@ function closeStratModal(){
 function confirmStratModal(){
   const capas = state.suelo.capasRelleno;
   const nm = document.getElementById("sm-nm").value.trim() || "Estrato";
-  const toVal = toBase("longitud", parseFloat(document.getElementById("sm-to").value) || 0);
+  const espesorVal = Math.max(0.1, toBase("longitud", parseFloat(document.getElementById("sm-espesor").value) || 0));
   const color = document.getElementById("sm-color").value;
   const gamma = toBase("pesoVol", parseFloat(document.getElementById("sm-g").value) || 0);
   const c = toBase("presion", parseFloat(document.getElementById("sm-c").value) || 0);
   const phi = parseFloat(document.getElementById("sm-phi").value) || 0;
-  const from = _sm.from;
-  const entry = { nm, hatch:_sm.hatch, color, from, to:Math.max(from+0.1, toVal), gamma, phi, c };
-  if(_sm.editIdx < 0){
-    capas.push(entry);
-  }else{
-    entry.from = capas[_sm.editIdx].from;
-    capas[_sm.editIdx] = entry;
-    if(_sm.editIdx+1 < capas.length) capas[_sm.editIdx+1].from = entry.to;
-  }
+  const entry = { nm, hatch:_sm.hatch, color, espesor:espesorVal, gamma, phi, c };
+  if(_sm.editIdx < 0) capas.push(entry); // nuevo: siempre al final (la base)
+  else capas[_sm.editIdx] = entry;
   closeStratModal();
   renderAll();
 }
@@ -3388,10 +3489,331 @@ function initStratModal(){
   document.getElementById("sm-color").addEventListener("input", e=>_onCustomColor(e.target.value));
 }
 
+// Área en la unidad de longitud elegida por el usuario, elevada al
+// cuadrado (toDisplay()/unitFactor() son lineales — un área necesita el
+// factor de conversión al cuadrado, no el mismo factor que un largo).
+function fmtArea(m2, dec){
+  return fmt(m2 * Math.pow(unitFactor("longitud"),2), dec===undefined?3:dec) + " " + unitLabel("longitud") + "²";
+}
+
+// Fórmulas con valores sustituidos para los 5 pesos (Bloque de pesos,
+// 2026-08-10, a pedido del usuario "muestra los cálculos de Ws, Wf, Wr y
+// Wp"): cada factor se muestra en la unidad de SU PROPIA categoría (γ en
+// pesoVol, longitudes en longitud), no una conversión conjunta — así el
+// texto queda correcto sin importar qué combinación de unidades haya
+// elegido el usuario por categoría. Cada función devuelve un ARREGLO de
+// renglones (no un solo string): la mayoría es un renglón único, pero
+// `formulaWs` necesita dos — el usuario notó que el área del fuste (A_fuste)
+// aparecía como un número ya resuelto sin mostrar de dónde salía ("Muestras
+// 3.6m2 de manera automática no colocas de dónde salió"), así que ahora el
+// primer renglón desglosa A_fuste con la fórmula de trapecio
+// (H·(ts+tc)/2 — matemáticamente idéntica a como la calcula `calcGeometria`
+// por rectángulo+triángulo, solo que en forma cerrada, más legible) antes de
+// usarla en el peso.
+function formulaWs(geo){
+  const { H, ts, tc } = state.geom;
+  return [
+    `A_fuste = H·(ts+tc)/2 = ${fmtLong(H,2)}·(${fmtLong(ts,2)}+${fmtLong(tc,2)})/2 = ${fmtArea(geo.areaStem)}`,
+    `Ws = γc × A_fuste = ${fmtCat("pesoVol",state.materiales.gc,1)} × ${fmtArea(geo.areaStem)} = ${fmtFuerza(geo.Ws)}`,
+  ];
+}
+function formulaWf(geo){
+  return [`Wf = γc × Bf × tf = ${fmtCat("pesoVol",state.materiales.gc,1)} × ${fmtLong(state.geom.Bf,2)} × ${fmtLong(state.geom.tf,2)} = ${fmtFuerza(geo.Wf)}`];
+}
+function formulaWr(geo){
+  const terms = geo.capasPeso.map(c => `${fmtCat("pesoVol",c.gamma,1)}×${fmtLong(c.h,2)}`).join(" + ");
+  return [`Wr = (Σ γᵢ·hᵢ) × heel = (${terms}) × ${fmtLong(geo.heel,2)} = ${fmtFuerza(geo.Wr)}`];
+}
+function formulaWp(geo){
+  return [`Wp = γf × toe × Df = ${fmtCat("pesoVol",state.suelo.gamma_f,1)} × ${fmtLong(state.geom.toe,2)} × ${fmtLong(state.geom.Df,2)} = ${fmtFuerza(geo.Wp)}`];
+}
+function formulaWtri(geo){
+  if(!geo.hayTalud) return [`Wtri = 0 (solo aplica con talud β>0 y el relleno llegando hasta la corona)`];
+  return [`Wtri = γtop × ½ × heel² × tan(β) = ${fmtCat("pesoVol",geo.capasPeso.length?geo.capasPeso[0].gamma:0,1)} × ½ × ${fmtLong(geo.heel,2)}² × tan(${fmt(state.geom.beta,1)}°) = ${fmtFuerza(geo.Wtri)}`];
+}
+
+// Fórmulas de presiones laterales (2026-08-10, mismo patrón que las de
+// pesos: la mayoría un renglón, pero `formulaPa` desglosa segmento por
+// segmento — igual que se hizo con `Wr` — porque `Pa` NO es un producto
+// simple: se integra sobre `capasExt` (estratos reales + el triángulo del
+// talud + el espesor de zapata como segmentos ficticios, ver
+// calcularPresiones), cada uno con su propio Ka_i según su φ. Los datos por
+// segmento (`Ka_i`, `sigmaTop/Bot`, `Fi`) ya quedaron anotados en
+// `pres.segments` durante el cálculo real — aquí NO se recalculan, solo se
+// leen, para no arriesgar que el texto mostrado diverja del número real.
+function formulaKa(pres){
+  const m = state.metodo_presion;
+  const phi1 = (pres.segments && pres.segments.length) ? pres.segments[0].phi : (state.suelo.capasRelleno[0]?state.suelo.capasRelleno[0].phi:0);
+  if(m === "Fluido_equivalente") return [`Ka = N/A (el método Fluido equivalente no usa Ka, usa EFP directo)`];
+  if(m === "Coulomb"){
+    const delta1 = (state.suelo.delta_r!=null && state.suelo.delta_r!=="") ? Number(state.suelo.delta_r) : phi1/2;
+    return [`Ka (Coulomb, φ=${fmt(phi1,0)}°, δ=${fmt(delta1,1)}°, β=${fmt(state.geom.beta,1)}°, θ=${fmt(90-state.geom.alpha,1)}°) = ${fmt(pres.Ka,4)}`];
+  }
+  if(m === "At-rest"){
+    if(state.suelo.Ks!=null && state.suelo.Ks!=="") return [`Ka = Ks (dado) = ${fmt(pres.Ka,4)}`];
+    return [`Ka = 1 - sin(φ) = 1 - sin(${fmt(phi1,0)}°) = ${fmt(pres.Ka,4)}`];
+  }
+  return [`Ka (Rankine, φ=${fmt(phi1,0)}°, β=${fmt(state.geom.beta,1)}°) = ${fmt(pres.Ka,4)}`];
+}
+function formulaPa(pres){
+  if(state.metodo_presion === "Fluido_equivalente"){
+    return [`Pa = ½ × EFP × H'² = ½ × ${fmtCat("pesoVol",state.EFP,1)} × ${fmtLong(pres.Hprime,2)}² = ${fmtFuerza(pres.Pa)}`];
+  }
+  const segs = pres.segments || [];
+  // Etiqueta de cada segmento: igual condición que usa calcularPresiones
+  // para armar capasExt (talud primero si beta>0, zapata al final si tf>0,
+  // el resto son los estratos reales de en medio) — solo para el texto, no
+  // afecta el número.
+  const hasTaludSeg = state.geom.beta > 0.01;
+  const hasFooterSeg = state.geom.tf > 1e-9;
+  const lines = segs.map((s,i)=>{
+    let tag = "estrato";
+    if(hasTaludSeg && i===0) tag = "talud";
+    else if(hasFooterSeg && i===segs.length-1) tag = "zapata";
+    return `seg. ${tag} (γ=${fmtCat("pesoVol",s.gamma,0)}, φ=${fmt(s.phi,0)}°, h=${fmtLong(s.h,2)}, Ka=${fmt(s.Ka_i,3)}): F=${fmtFuerza(s.Fi)}`;
+  });
+  lines.push(`Pa = ΣF (todos los segmentos) = ${fmtFuerza(pres.Pa)}`);
+  return lines;
+}
+function formulaPah(pres){
+  const m = state.metodo_presion;
+  if(m === "Coulomb"){
+    const phi1 = (pres.segments && pres.segments.length) ? pres.segments[0].phi : 0;
+    const delta1 = (state.suelo.delta_r!=null && state.suelo.delta_r!=="") ? Number(state.suelo.delta_r) : phi1/2;
+    return [`Pa,h = Pa × cos(δ) = ${fmtFuerza(pres.Pa)} × cos(${fmt(delta1,1)}°) = ${fmtFuerza(pres.Pa_h)}`];
+  }
+  if(m === "At-rest" || m === "Fluido_equivalente"){
+    return [`Pa,h = Pa (empuje puramente horizontal en este método) = ${fmtFuerza(pres.Pa_h)}`];
+  }
+  return [`Pa,h = Pa × cos(β) = ${fmtFuerza(pres.Pa)} × cos(${fmt(state.geom.beta,1)}°) = ${fmtFuerza(pres.Pa_h)}`];
+}
+function formulaPqh(pres){
+  if(!state.cargas.qsEnabled) return [`Pq,h = 0 (sobrecarga desactivada)`];
+  const kaTxt = pres.Ka!=null ? fmt(pres.Ka,4) : `(EFP/γprom) = ${fmt(state.EFP/Math.max(pres.gamma_avg,1e-9),4)}`;
+  return [`Pq,h = Ka × qs × H' = ${kaTxt} × ${fmtCat("presion",state.cargas.qs,0)} × ${fmtLong(pres.Hprime,2)} = ${fmtFuerza(pres.Pq_h)}`];
+}
+function formulaPwh(pres){
+  if(!state.suelo.waterEnabled) return [`Pw,h = 0 (nivel freático desactivado)`];
+  return [`Pw,h = ½ × γw × Hw² = ½ × ${fmtCat("pesoVol",state.suelo.gamma_w,1)} × ${fmtLong(state.suelo.Hw,2)}² = ${fmtFuerza(pres.Pw_h)}`];
+}
+function formulaKp(pres){
+  if(!state.suelo.pasivoEnabled) return [`Kp = 0 (resistencia pasiva desactivada)`];
+  return [`Kp = tan²(45° + φp/2) = tan²(45° + ${fmt(state.suelo.phi_p,0)}°/2) = ${fmt(pres.Kp,4)}`];
+}
+function formulaPp(pres){
+  if(!state.suelo.pasivoEnabled) return [`Pp = 0 (resistencia pasiva desactivada)`];
+  return [`Pp = ½·Kp·γp·Df² + 2·cp·√Kp·Df = ½×${fmt(pres.Kp,3)}×${fmtCat("pesoVol",state.suelo.gamma_p,1)}×${fmtLong(state.geom.Df,2)}² + 2×${fmtCat("presion",state.suelo.c_p,0)}×√${fmt(pres.Kp,3)}×${fmtLong(state.geom.Df,2)} = ${fmtFuerza(pres.Pp)}`];
+}
+function formulaKAE(pres){
+  if(!state.sismo.enabled) return [`K_AE = — (sismo desactivado)`];
+  if(state.sismo.metodo === "EFP_sismico") return [`K_AE = N/A (el método "EFP sísmico" no usa K_AE, usa un EFP adicional directo)`];
+  return [`K_AE (Mononobe-Okabe, ψ=atan(kh/(1-kv))=${fmt(toDeg(pres.psi),1)}°) = ${fmt(pres.KAE,4)}`];
+}
+function formulaDeltaPAE(pres){
+  if(!state.sismo.enabled) return [`ΔPAE,h = 0 (sismo desactivado)`];
+  if(state.sismo.metodo === "EFP_sismico"){
+    return [`ΔPAE,h = ½ × EFPsísmico × H'² = ½ × ${fmtCat("pesoVol",state.sismo.EFP_sism,1)} × ${fmtLong(pres.Hprime,2)}² = ${fmtFuerza(pres.DeltaPAE_h)}`];
+  }
+  return [`ΔPAE,h = ½·max(K_AE-Ka,0)·γprom·H'² = ½×max(${fmt(pres.KAE,3)}-${fmt(pres.Ka!=null?pres.Ka:0,3)},0)×${fmtCat("pesoVol",pres.gamma_avg,1)}×${fmtLong(pres.Hprime,2)}² = ${fmtFuerza(pres.DeltaPAE_h)}`];
+}
+
+// Bloque de resaltado + fórmula al pasar el cursor (2026-08-10, a pedido del
+// usuario). Se probaron dos versiones antes de esta: primero la fórmula
+// siempre visible bajo el campo; luego una ventana flotante con la fórmula +
+// un esquema mini del muro. El usuario pidió quitar la ventana flotante y
+// mostrar todo directo en el dibujo REAL del muro (`#wall2d`): las etiquetas
+// <label data-calc="Ws|Wf|Wr|Wtri|Wp"> (Cargas y Resultados), al pasar el
+// cursor, atenúan TODO el canvas con un velo semitransparente y encima
+// dibujan, en las MISMAS coordenadas (X/Y de lastWallTransform, ligadas al
+// último render de dibujarMuro2D — así queda perfectamente alineado con el
+// dibujo real, sin recalcular escala/offset por separado) el polígono de la
+// región que esa variable pesa, más un rótulo con la fórmula sustituida.
+let lastCalcResult = null;
+let lastWallTransform = null; // guardado por dibujarMuro2D, ver comentario ahí
+let hoveredCalcKey = null;
+const CALC_INFO = {
+  Ws: r => formulaWs(r.geo),
+  Wf: r => formulaWf(r.geo),
+  Wr: r => formulaWr(r.geo),
+  Wtri: r => formulaWtri(r.geo),
+  Wp: r => formulaWp(r.geo),
+  Ka: r => formulaKa(r.pres),
+  Pa: r => formulaPa(r.pres),
+  Pah: r => formulaPah(r.pres),
+  Pqh: r => formulaPqh(r.pres),
+  Pwh: r => formulaPwh(r.pres),
+  Kp: r => formulaKp(r.pres),
+  Pp: r => formulaPp(r.pres),
+  KAE: r => formulaKAE(r.pres),
+  DeltaPAE: r => formulaDeltaPAE(r.pres),
+};
+
+// Devuelve un ARREGLO DE POLÍGONOS (no uno solo): la mayoría de las claves
+// necesitan solo uno, pero Ka/Pa/Pah/Pqh resaltan el relleno completo
+// (rectángulo + triángulo del talud si existe, dos formas). Todo en
+// unidades de modelo (m); showCanvasHighlight() transforma con X/Y.
+function highlightRegionPoints(key, t){
+  const { toe, Bf, tf, H, Df, tc, xBack, heel, beta } = t;
+  const talRise = beta > 0.01 ? heel * Math.tan(toRad(beta)) : 0;
+  switch(key){
+    // Wp: solo el tramo de suelo que queda VISIBLE por encima de la zapata
+    // (de tf a Df) — no desde y=0, porque de ahí para abajo es la losa
+    // misma; resaltar hasta 0 pintaba el resalte encima de la zapata, que
+    // el usuario reportó como confuso ("Wp también está dibujando sobre la
+    // losa"). Si Df<=tf no hay tramo visible que resaltar (caso raro).
+    case "Wp": return Df > tf + 1e-6 ? [[[0,tf],[toe,tf],[toe,Df],[0,Df]]] : [];
+    case "Wf": return [[[0,0],[Bf,0],[Bf,tf],[0,tf]]];
+    case "Wr": return [[[xBack,tf],[Bf,tf],[Bf,tf+H],[xBack,tf+H]]];
+    case "Wtri": return talRise > 1e-6 ? [[[xBack,tf+H],[Bf,tf+H],[Bf,tf+H+talRise]]] : [];
+    case "Ws": return [[[toe,tf],[xBack,tf],[xBack,tf+H],[xBack-tc,tf+H]]];
+    // Ka/Pa/Pa,h/Pq,h: resaltan TODA la masa de relleno (la que genera el
+    // empuje activo) — rectángulo hasta H + el triángulo del talud si lo
+    // hay. No es "el área que se pesa" como en Wr (Pa es una fuerza sobre
+    // un plano, no el peso de esta masa), pero es la referencia visual más
+    // clara de "qué suelo está generando este empuje".
+    case "Ka": case "Pa": case "Pah": case "Pqh": {
+      const polys = [[[xBack,tf],[Bf,tf],[Bf,tf+H],[xBack,tf+H]]];
+      if(talRise > 1e-6) polys.push([[xBack,tf+H],[Bf,tf+H],[Bf,tf+H+talRise]]);
+      return polys;
+    }
+    // Pw,h: franja delgada pegada a la cara posterior del fuste, desde el
+    // fondo de la zapata hasta Hw (recortada a la altura del muro solo para
+    // que el dibujo no se salga del lienzo — el cálculo real usa Hw sin
+    // recortar, esto es puramente visual).
+    case "Pwh": {
+      if(!state.suelo.waterEnabled || state.suelo.Hw <= 1e-6) return [];
+      const hw = Math.min(state.suelo.Hw, tf+H+2);
+      return [[[xBack,0],[xBack+0.3,0],[xBack+0.3,hw],[xBack,hw]]];
+    }
+    // Kp/Pp: cuña de suelo pasivo frente a la puntera (zona que resiste el
+    // deslizamiento), de ancho proporcional a Df.
+    case "Kp": case "Pp": {
+      if(!state.suelo.pasivoEnabled) return [];
+      const w = Math.max(Df*0.9, 0.4);
+      return [[[-w,0],[0,0],[0,Df],[-w,Df]]];
+    }
+    // K_AE/ΔPAE: mismo relleno que Ka/Pa (el incremento sísmico actúa sobre
+    // la misma masa).
+    case "KAE": case "DeltaPAE": {
+      if(!state.sismo.enabled) return [];
+      const polys = [[[xBack,tf],[Bf,tf],[Bf,tf+H],[xBack,tf+H]]];
+      if(talRise > 1e-6) polys.push([[xBack,tf+H],[Bf,tf+H],[Bf,tf+H+talRise]]);
+      return polys;
+    }
+  }
+  return [];
+}
+
+// Texto MULTILÍNEA con fondo (mismo patrón que labelBgLines() de
+// dibujarMuro2D, pero esta función vive fuera de ese scope): un renglón por
+// cada string del arreglo `lines` (ver formulaWs — necesita 2, el resto 1),
+// midiendo el bloque completo ya insertado (getBBox) para que el fondo se
+// ajuste al contenido en vez de un ancho/alto fijo.
+function svgTextWithBg(svg, x, y, lines, opts){
+  const NS = "http://www.w3.org/2000/svg";
+  const g = document.createElementNS(NS,"g");
+  g.setAttribute("id", opts.id);
+  svg.appendChild(g);
+  const t = document.createElementNS(NS,"text");
+  t.setAttribute("x", x); t.setAttribute("y", y);
+  t.setAttribute("text-anchor", opts.anchor||"middle");
+  t.setAttribute("font-size", opts.fontSize||12);
+  t.setAttribute("font-family", opts.fontFamily);
+  t.setAttribute("fill", opts.fill);
+  const lineH = (opts.fontSize||12) * 1.4;
+  lines.forEach((ln,i)=>{
+    const tspan = document.createElementNS(NS,"tspan");
+    tspan.setAttribute("x", x);
+    tspan.setAttribute("dy", i===0 ? 0 : lineH);
+    tspan.setAttribute("font-weight", (i===lines.length-1) ? (opts.fontWeight||"600") : "400");
+    tspan.textContent = ln;
+    t.appendChild(tspan);
+  });
+  g.appendChild(t);
+  const bb = t.getBBox();
+  const rect = document.createElementNS(NS,"rect");
+  rect.setAttribute("x", bb.x-8); rect.setAttribute("y", bb.y-6);
+  rect.setAttribute("width", bb.width+16); rect.setAttribute("height", bb.height+12);
+  rect.setAttribute("rx","6");
+  rect.setAttribute("fill", opts.bg);
+  rect.setAttribute("stroke", opts.stroke);
+  rect.setAttribute("stroke-width","1.5");
+  g.insertBefore(rect, t);
+  return g;
+}
+
+function showCanvasHighlight(key){
+  const svg = document.getElementById("wall2d");
+  if(!svg || !lastWallTransform || !lastCalcResult) return;
+  removeCanvasHighlight();
+  const NS = "http://www.w3.org/2000/svg";
+  const { X, Y, viewW, viewH } = lastWallTransform;
+  const css = getComputedStyle(document.documentElement);
+  const HI = "#f5a623"; // color de resalte fijo, contrasta en los dos temas
+
+  const veil = document.createElementNS(NS,"rect");
+  veil.setAttribute("id","wallHighlightVeil");
+  veil.setAttribute("x","0"); veil.setAttribute("y","0");
+  veil.setAttribute("width", viewW); veil.setAttribute("height", viewH);
+  veil.setAttribute("fill", css.getPropertyValue("--canvas").trim() || "#0A1628");
+  veil.setAttribute("opacity","0.85");
+  svg.appendChild(veil);
+
+  const polys = highlightRegionPoints(key, lastWallTransform);
+  polys.forEach(pts=>{
+    const poly = document.createElementNS(NS,"polygon");
+    poly.setAttribute("class","wallHighlightShape");
+    poly.setAttribute("points", pts.map(p=>`${X(p[0])},${Y(p[1])}`).join(" "));
+    poly.setAttribute("fill", HI);
+    poly.setAttribute("fill-opacity","0.65");
+    poly.setAttribute("stroke", HI);
+    poly.setAttribute("stroke-width","2.5");
+    svg.appendChild(poly);
+  });
+
+  // Rótulo con la fórmula, en una caja fija cerca del tope del canvas (no
+  // pegado a la región resaltada: esta puede ser angosta o estar en una
+  // esquina, y el texto de la fórmula no siempre cabría cerca). Puede tener
+  // más de un renglón (ej. formulaWs desglosa A_fuste antes de Ws; formulaPa
+  // desglosa cada segmento de la integración antes del total).
+  const build = CALC_INFO[key];
+  const lines = build ? build(lastCalcResult) : [key];
+  svgTextWithBg(svg, viewW/2, 24, lines, {
+    id: "wallHighlightLabel", fontSize: 12.5,
+    fontFamily: css.getPropertyValue("--font-mono").trim(),
+    fill: css.getPropertyValue("--text").trim(),
+    bg: css.getPropertyValue("--panel").trim(),
+    stroke: HI,
+  });
+}
+function removeCanvasHighlight(){
+  const svg = document.getElementById("wall2d");
+  if(!svg) return;
+  const v = document.getElementById("wallHighlightVeil"); if(v) v.remove();
+  svg.querySelectorAll(".wallHighlightShape").forEach(s=>s.remove());
+  const l = document.getElementById("wallHighlightLabel"); if(l) l.remove();
+}
+
+function initCalcTooltips(){
+  document.querySelectorAll("label[data-calc]").forEach(lbl=>{
+    lbl.addEventListener("mouseenter", ()=>{
+      if(!lastCalcResult) return;
+      const key = lbl.dataset.calc;
+      hoveredCalcKey = key;
+      showCanvasHighlight(key);
+    });
+    lbl.addEventListener("mouseleave", ()=>{
+      hoveredCalcKey = null;
+      removeCanvasHighlight();
+    });
+  });
+}
+
 function renderCargasOutputs(r){
   document.getElementById("out-Ws").value = fmtFuerza(r.geo.Ws);
   document.getElementById("out-Wf").value = fmtFuerza(r.geo.Wf);
   document.getElementById("out-Wr").value = fmtFuerza(r.geo.Wr);
+  document.getElementById("out-Wtri").value = fmtFuerza(r.geo.Wtri);
   document.getElementById("out-Wp").value = fmtFuerza(r.geo.Wp);
 }
 
@@ -3574,6 +3996,7 @@ function renderProjectTitle(){
 
 function renderAll(){
   const r = calcularTodo();
+  lastCalcResult = r; // para los tooltips de fórmula (hover), que no recalculan por su cuenta
   renderGeomWarning();
   syncMethodButtons(); // refleja sismo.enabled/metodo_presion tras cualquier cambio, no solo al cargar
   renderCapasRelleno();
@@ -3585,6 +4008,7 @@ function renderAll(){
   renderResultadosDetalle(r);
   renderProjectTitle();
   dibujarMuro2D(document.getElementById("wall2d"), state, r);
+  if(hoveredCalcKey) showCanvasHighlight(hoveredCalcKey); // dibujarMuro2D limpia el SVG; si el cursor seguía sobre una etiqueta, se reaplica
   if(uiState.viewMode === "3d") actualizarModelo3D(state);
   saveToStorage();
 }
@@ -3597,6 +4021,7 @@ function renderResultadosDetalle(r){
   document.getElementById("res-Ws").value = fmtFuerza(geo.Ws);
   document.getElementById("res-Wf").value = fmtFuerza(geo.Wf);
   document.getElementById("res-Wr").value = fmtFuerza(geo.Wr);
+  document.getElementById("res-Wtri").value = fmtFuerza(geo.Wtri);
   document.getElementById("res-Wp").value = fmtFuerza(geo.Wp);
   document.getElementById("res-Pav").value = fmtFuerza(geo.Pa_v);
   document.getElementById("res-N").value = fmtFuerza(geo.N);
@@ -3675,6 +4100,10 @@ function syncMethodButtons(){
   show("fieldKs", m==="At-rest");
   show("fieldEFP", m==="Fluido_equivalente");
   show("cardSismo", state.sismo.enabled);
+  show("cardSobrecarga", state.cargas.qsEnabled);
+  show("cardNAF", state.suelo.waterEnabled);
+  show("fieldWtriOut", state.geom.beta > 0.01);
+  show("fieldWtriRes", state.geom.beta > 0.01);
   show("fieldKh", state.sismo.metodo==="Mononobe-Okabe");
   show("fieldKv", state.sismo.metodo==="Mononobe-Okabe");
   show("fieldEFPsism", state.sismo.metodo==="EFP_sismico");
@@ -3858,6 +4287,7 @@ function initTheme(){
 function init(){
   initTheme();
   initStratModal();
+  initCalcTooltips();
   bindAll();
 
   const saved = loadFromStorage();

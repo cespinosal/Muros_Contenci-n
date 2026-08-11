@@ -51,22 +51,39 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
      cara frontal con batter si `tc < ts`, descompuesto en rectángulo+triángulo para el centroide).
    - **Relleno estratificado (`suelo.capasRelleno[]`, 2026-08-10, estilo GeoCim)**: el backfill ya
      no es un único `gamma_r/phi_r/c_r` plano, sino una lista de estratos
-     `{nm,hatch,color,from,to,gamma,phi,c}` con profundidad ACUMULADA (`from`/`to`, no espesor
-     suelto) — mismo esquema que el `profile` de GeoCim (`C:\Users\cespi\Downloads\GeoCim\index.html`,
-     de donde se portaron literalmente `HATCH_DEFS`/`COLOR_PALETTE`/`hatchPatternSVG` para las 12
-     texturas de suelo). La UI es una tarjeta compacta por estrato (pestaña Suelo y materiales,
-     `renderCapasRelleno()` → `#capasRellenoList`) con textura+nombre+editar/eliminar, más un modal
-     `#strat-modal` (nombre, profundidad hasta, grilla de texturas, paleta de color, γ/c/φ) para
-     agregar/editar — `addEstrato()`/`editEstrato(i)`/`removeEstrato(i)`/`openStratModal`/
-     `confirmStratModal` reconectan la cadena `from`/`to` igual que GeoCim (al editar o borrar un
-     estrato intermedio, el siguiente hereda el `from` correcto). El modal usa `toDisplay`/`toBase`
-     con las categorías `longitud`/`pesoVol`/`presion` del sistema de unidades — no las suyas propias
-     de GeoCim. **Importante:** el script vive en un IIFE, así que el modal usa `addEventListener`
-     en vez del `onclick`/`oninput` inline que tiene GeoCim (esas funciones no son globales aquí).
-     Solo el RELLENO se estratifica — el suelo de fundación (`gamma_f/phi_f/c_f`) sigue siendo un
-     único material, a propósito. `resolverCapas(capas, Hobjetivo)` deriva el espesor de cada
-     estrato (`to-from`) y normaliza la lista contra una altura objetivo, recortando el sobrante si
-     la suma se pasa — nunca falla ni deja huecos.
+     `{nm,hatch,color,espesor,gamma,phi,c}` — mismo esquema visual que el `profile` de GeoCim
+     (`C:\Users\cespi\Downloads\GeoCim\index.html`, de donde se portaron literalmente
+     `HATCH_DEFS`/`COLOR_PALETTE`/`hatchPatternSVG` para las 12 texturas de suelo). La UI es una
+     tarjeta compacta por estrato (pestaña Suelo y materiales, `renderCapasRelleno()` →
+     `#capasRellenoList`) con textura+nombre+editar/eliminar, más un modal `#strat-modal` (nombre,
+     **espesor** del estrato, grilla de texturas, paleta de color, γ/c/φ) para agregar/editar. El
+     modal usa `toDisplay`/`toBase` con las categorías `longitud`/`pesoVol`/`presion` del sistema de
+     unidades — no las suyas propias de GeoCim. **Importante:** el script vive en un IIFE, así que el
+     modal usa `addEventListener` en vez del `onclick`/`oninput` inline que tiene GeoCim (esas
+     funciones no son globales aquí). Solo el RELLENO se estratifica — el suelo de fundación
+     (`gamma_f/phi_f/c_f`) sigue siendo un único material, a propósito.
+
+     **Apilado de abajo hacia arriba (2026-08-10, mismo día, a pedido explícito del usuario):** cada
+     estrato solo guarda su ESPESOR propio, no una posición. El arreglo `capasRelleno` va "de arriba
+     hacia abajo" en orden de PANTALLA/creación (índice 0 = "Estrato 1" = el más cercano a la
+     corona) — pero `addEstrato()` siempre EMPUJA el estrato nuevo al FINAL del arreglo (`capas.push`),
+     es decir en la BASE, junto a la zapata; los estratos que ya existían no se tocan, simplemente
+     quedan recorridos hacia arriba porque su posición se deriva, no se guarda. Ejemplo verificado
+     (el mismo que dio el usuario): con "Estrato 1" solo (espesor 3) va de 0 a 3; al agregar "Estrato
+     2" (espesor 3) éste se agrega en la base (0 a 3) y "Estrato 1" queda recorrido a 3-6 — sin tocar
+     su registro, solo cambia lo que `derivarPosicionesCapas()` calcula.
+     `derivarPosicionesCapas(capas)` recorre el arreglo EN REVERSA (del último índice, pegado a la
+     zapata con `from=0`, hacia el índice 0) acumulando espesores, y devuelve `from`/`to` (0 = base)
+     por estrato sin mutar `capas`. `resolverCapas(capas, Hobjetivo)` llama a
+     `derivarPosicionesCapas` y luego RECORTA cada estrato a la ventana `[0, Hobjetivo]` en esa
+     coordenada (`from=min(from,Hobjetivo)`, `to=min(to,Hobjetivo)`) — el recorte por rango (no por
+     presupuesto acumulado en orden de arreglo) es lo que garantiza que el sobrante, cuando la suma >
+     Hobjetivo, se quite SIEMPRE de ARRIBA (lo que quedaría por encima de la corona) y se conserve
+     completo lo que está pegado a la zapata, sin importar en qué posición del arreglo esté cada
+     estrato. Devuelve la lista en el mismo orden que `capas` (índice 0 = el de más arriba que
+     sobreviva), con espesor ya resuelto en `h` — nunca falla ni deja huecos. El resto del motor de
+     cálculo (integración de Pa top-down, `dibujarMuro2D`, etc.) no cambió: solo consume `h` en orden
+     de arreglo, igual que antes.
 
      **`alturaRellenoEfectiva(suelo, H)` — altura real del relleno, ya no `geom.Hr` (2026-08-10,
      corrección el mismo día que se agregó el modal, a pedido del usuario):** el viejo campo
@@ -92,19 +109,25 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
      de cada estrato (`capa.c`) se captura pero no se usa (igual que `suelo.c_r` antes); el método
      Fluido equivalente y el incremento sísmico Mononobe-Okabe NO se estratifican (EFP ya es un
      valor único por definición; el sismo usa la φ del PRIMER estrato + el peso volumétrico promedio
-     ponderado del relleno como referencia única). `migrarSueloViejo()` tiene DOS pasos: sintetiza
-     un estrato único a partir de un `gamma_r/phi_r/c_r` plano (formato de antes del relleno
-     estratificado), o convierte `h`→`from`/`to` con nombre/textura por default (formato intermedio
-     de la tabla editable que existió brevemente antes del modal) — para no perder valores al abrir
-     un `.gcon`/localStorage de cualquiera de esas dos versiones previas (ninguno de los dos formatos
-     viejos tenía tampoco el problema de `geom.Hr` porque ese campo simplemente se ignora al fusionar
-     con el nuevo `defaultState()`, que ya no lo declara).
+     ponderado del relleno como referencia única). `migrarSueloViejo()` tiene TRES ramas, para no
+     perder valores al abrir un `.gcon`/localStorage de cualquier versión previa: (1) sintetiza un
+     estrato único con `espesor=H` a partir de un `gamma_r/phi_r/c_r` plano (formato de antes del
+     relleno estratificado); (2) copia `h`→`espesor` tal cual (formato intermedio de la tabla
+     editable que existió brevemente antes del modal — ya traía espesor por capa, en el mismo orden
+     de arreglo que ahora); (3) `to-from`→`espesor` (formato del modal con posición acumulada
+     `from`/`to`, usado un rato el mismo día 2026-08-10 antes de pasar al apilado desde abajo) —
+     el orden del arreglo (índice 0 = el más cercano a la corona) es igual en los tres formatos
+     viejos, así que ninguna rama necesita reordenar, solo calcular el espesor. Ninguno de los
+     formatos viejos tenía tampoco el problema de `geom.Hr` porque ese campo simplemente se ignora
+     al fusionar con el nuevo `defaultState()`, que ya no lo declara.
 
      La tarjeta de cada estrato (`renderCapasRelleno()`) muestra el rango EFECTIVO ya resuelto
-     contra la altura efectiva (vía `resolverCapas`), no el `from`/`to` tal cual se tecleó — con
-     "(recortado)" cuando el total se pasa de H, y "fuera de H" si el estrato queda totalmente
-     excluido por el recorte. Ya no existe un caso "(extendido)": antes, un solo estrato más corto
-     que H se mostraba como "0–3 m" en la tarjeta mientras el dibujo y el cálculo lo estiraban a
+     contra la altura efectiva (vía `derivarPosicionesCapas` + el mismo recorte `[0,Hobjetivo]` que
+     usa `resolverCapas`) — con "(recortado)" cuando el total se pasa de H, y "fuera de H" si el
+     estrato queda totalmente excluido por el recorte (por ejemplo, si se agrega un segundo estrato
+     sin subir H, el primero puede quedar 100% por encima de la corona). Ya no existe un caso
+     "(extendido)": antes, un solo estrato más corto que H se mostraba como "0–3 m" en la tarjeta
+     mientras el dibujo y el cálculo lo estiraban a
      "0–H m" — inconsistencia que reportó el usuario y que llevó primero a corregir el TEXTO de la
      tarjeta, y ese mismo día a retirar el estiramiento por completo (ver párrafo de
      `alturaRellenoEfectiva` arriba).
@@ -216,6 +239,126 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
    dársela como `padding-bottom` al `body` — si se agrega otro elemento `position:fixed` al layout,
    revisar estos dos puntos o el contenido queda tapado/recortado detrás de la barra nueva (bug
    real que pasó al agregar `#resultsBar` en esta misma fecha, corregido el mismo día).
+
+   **6b. Fórmula + resaltado al pasar el cursor, directo en el dibujo REAL del muro (2026-08-10,
+   iteración final tras 3 versiones el mismo día):** los 5 pesos (`Ws/Wf/Wr/Wtri/Wp`) de la card
+   "Peso propio (calculado)" (pestaña Cargas) y "Memoria de cálculo" (pestaña Resultados) —
+   `<label data-calc="Ws|Wf|Wr|Wtri|Wp">` — al pasar el cursor sobre el nombre, atenúan TODO el
+   `#wall2d` real (`initCalcTooltips()`, llamada una vez desde `init()`; los `<label>` son estáticos
+   en el HTML, no hay que rebindear por render). Historia de las 3 versiones probadas el mismo día,
+   cada una a pedido explícito del usuario: (1) fórmula siempre visible bajo el campo (texto plano);
+   (2) el usuario pidió que solo apareciera al hover + "una ventanita donde se vea gráficamente qué
+   está considerando" → ventana flotante `#calcTooltip` con la fórmula + `miniWallSVG()`, un esquema
+   mini autocontenido del muro; (3) el usuario preguntó "¿O lo puedes indicar directo en el canvas?"
+   y después pidió explícitamente "ya no habras las ventanas, pero los cálculos muéstralos en el
+   canvas" → se RETIRÓ `#calcTooltip` y `miniWallSVG()` por completo (HTML/CSS/JS eliminados, no solo
+   deshabilitados) y todo (velo + resaltado + texto de fórmula) se dibuja ahora directo sobre el
+   `#wall2d` real. **Mecánica final (`showCanvasHighlight(key)`):** un `<rect>` `#wallHighlightVeil`
+   semitransparente (`opacity:0.85`, color `--canvas`) cubre todo el viewBox; encima, un
+   `<polygon>` `#wallHighlightShape` en las coordenadas EXACTAS del dibujo real (naranja fijo
+   `#f5a623`, no ligado al tema, para contrastar siempre) marca la región de esa variable; encima de
+   todo, un rótulo `#wallHighlightLabel` (`svgTextWithBg()`, mide el texto ya insertado vía
+   `getBBox()` para que el fondo se ajuste al contenido — necesario porque la fórmula de `Wr` puede
+   tener varios términos y ser mucho más larga que las demás) con la fórmula completa
+   (`formulaWs/Wf/Wr/Wtri/Wp(geo)`, cada factor en la unidad de SU PROPIA categoría vía `fmtCat`),
+   fijo cerca del tope del canvas (no pegado a la región, que puede ser angosta o estar en una
+   esquina). La clave para que el polígono quede perfectamente alineado con el dibujo real
+   (dimensiones, texturas, etc.) es que NO se recalculan escala/offset por separado: `dibujarMuro2D`
+   guarda sus propias closures `X`/`Y` (ligadas al scale/offset de ESE render) más la geometría cruda
+   en `lastWallTransform` (module-level), y `highlightRegionPoints(key, lastWallTransform)` arma el
+   polígono en unidades de modelo (m) que `showCanvasHighlight()` transforma con esas mismas `X`/`Y`.
+   Como `dibujarMuro2D` limpia el SVG por completo en cada render
+   (`while(svg.firstChild) svg.removeChild(...)`), si el cursor sigue sobre una etiqueta cuando algo
+   más dispara un re-render, el resaltado se perdería — por eso `renderAll()` guarda
+   `hoveredCalcKey` (module-level, seteado en `mouseenter`/limpiado en `mouseleave`) y lo reaplica
+   justo después de `dibujarMuro2D()`. `lastCalcResult` (asignado al inicio de cada `renderAll()`) es
+   lo que el handler de hover lee — nada se recalcula al pasar el cursor, solo se lee el último
+   resultado ya calculado.
+
+   **Bug propio + arreglo, región de `Wp` (mismo día):** la primera versión del polígono de `Wp`
+   iba de `y=0` (fondo de zapata) a `y=Df`, calcado literalmente de la fórmula (`γf·toe·Df`, que no
+   resta `tf` — ver aproximación documentada donde se define `Wp` más abajo). Sobre el dibujo REAL
+   eso pintaba el resalte naranja encima de la losa misma, que el usuario reportó como confuso
+   ("Wp también está dibujando sobre la losa"). Se corrigió `highlightRegionPoints()` para que el
+   polígono de `Wp` vaya de `y=tf` (tope de zapata) a `y=Df`, mostrando solo el tramo de suelo que
+   visualmente está SOBRE la losa — el usuario aclaró explícitamente "no simplifiques el cálculo de
+   las áreas": este ajuste es SOLO del polígono que se dibuja/resalta, la fórmula (`formulaWp`) y el
+   valor real de `Wp` en `calcularGeotecnia` siguen usando `toe·Df` completo, sin restar `tf` — no se
+   tocó ni se simplificó ningún cálculo, solo la región que se pinta.
+
+   **`A_fuste` desglosada en `formulaWs` (mismo día):** el usuario reportó "estás simplificando el
+   área del fuste" — se verificó primero con headless Chrome que NO había ningún bug real: el
+   polígono de resaltado de `Ws` coincide pixel-por-pixel con el fuste real dibujado, y su área
+   (shoelace) coincide exactamente con `geo.areaStem` y con la fórmula de trapecio `H·(ts+tc)/2` (se
+   probó con batter real, ts≠tc, para no quedarse en el caso trivial). El problema real, aclarado
+   por el usuario al preguntársele, era otro: el rótulo mostraba `A_fuste` como un número ya resuelto
+   (ej. "0.750 m²") sin mostrar de dónde salía. Por eso las funciones `formulaWs/Wf/Wr/Wtri/Wp`
+   ahora devuelven un ARREGLO de renglones (antes un solo string) — la mayoría sigue siendo un
+   renglón único, pero `formulaWs` devuelve dos: primero `A_fuste = H·(ts+tc)/2 = ... = ...`
+   (fórmula cerrada del trapecio, matemáticamente idéntica a como `calcGeometria` la calcula por
+   rectángulo+triángulo, solo más legible), y luego `Ws = γc × A_fuste = ... = ...` ya usándola.
+   `svgTextWithBg()` (antes de una sola línea) ahora arma un `<tspan>` por renglón con `dy`
+   acumulado, igual que `labelBgLines()` de `dibujarMuro2D` pero fuera de ese scope.
+
+   **Fórmulas de presiones laterales (mismo día, extensión del bloque anterior):** el usuario pidió
+   extender el mismo mecanismo de hover+resaltado a los 9 resultados de la card "Resultados de
+   presiones" (pestaña Cargas) / sección 2 de "Memoria de cálculo" (Resultados): `Ka, Pa, Pa,h, Pq,h,
+   Pw,h, Kp, Pp, K_AE, ΔPAE,h` — mismos `<label data-calc="Ka|Pa|Pah|Pqh|Pwh|Kp|Pp|KAE|DeltaPAE">`,
+   mismo `CALC_INFO`, mismo `showCanvasHighlight()`. La diferencia real frente a los pesos es que
+   `Ka`/`Pa` NO son un producto simple de factores: `Pa` se integra sobre `capasExt` (estratos reales
+   + un tramo ficticio del talud si `beta>0` + un tramo ficticio del espesor de zapata si `tf>0`,
+   cada uno con su propio `Ka_i` según su φ — ver el bloque de H' más arriba). Para no
+   recalcular nada por separado (riesgo de que el texto mostrado diverja del número real, que era
+   justo la preocupación del usuario con `Wp`/`Ws`), se modificó el loop de integración de
+   `calcularPresiones` para anotar `Ka_i`/`sigmaTop`/`sigmaBot`/`Fi` en cada elemento de `capasExt`
+   TAL COMO YA SE CALCULABAN (ninguna fórmula nueva, solo se guardan los valores intermedios que
+   antes se descartaban), y se devuelven en `pres.segments` (más `pres.gamma_avg`, también ya
+   calculado internamente). `formulaPa()` itera `pres.segments` y arma un renglón por segmento
+   (etiquetado "talud"/"zapata"/"estrato" con la MISMA condición que usa `calcularPresiones` para
+   armar `capasExt`) más un renglón final `Pa = ΣF`. `formulaKa()` es distinta por método
+   (`state.metodo_presion`): Rankine general (con β), Coulomb (con δ/θ), At-rest (`Ks` dado o Jaky
+   `1-sin(φ)`), o "N/A" en Fluido equivalente (que no usa `Ka`, usa `EFP` directo — `formulaPa`
+   también tiene su propia rama de fórmula cerrada `½·EFP·H'²` para ese método, sin segmentos).
+   `Kp`/`Pp`, `K_AE`/`ΔPAE,h` y `Pq,h`/`Pw,h` muestran "0"/"—" con una nota cuando el toggle
+   correspondiente (`pasivoEnabled`/`sismo.enabled`/`qsEnabled`/`waterEnabled`) está apagado, en vez
+   de una fórmula con ceros que no dice nada. `highlightRegionPoints()` ahora puede devolver VARIOS
+   polígonos por clave (antes uno) — necesario porque `Ka`/`Pa`/`Pa,h`/`Pq,h`/`K_AE`/`ΔPAE,h`
+   resaltan el relleno completo (rectángulo + el triángulo del talud si existe, dos formas a la
+   vez); `Kp`/`Pp` resaltan una cuña esquemática frente a la puntera (ancho proporcional a `Df`,
+   no es una medida exacta de nada, solo referencia visual); `Pw,h` resalta una franja delgada
+   pegada a la cara posterior desde la zapata hasta `Hw` (recortada visualmente a un máximo
+   razonable si `Hw` es muy grande — SOLO el dibujo, el cálculo real sigue usando `Hw` sin recortar).
+   Verificado con headless Chrome recorriendo los 4 métodos de presión, activando/desactivando cada
+   toggle, y con talud (`beta=10°`, 3 segmentos: talud+estrato+zapata) — todos los números mostrados
+   en los renglones de segmento suman EXACTO al `Pa` ya calculado por el motor real.
+
+   **`Wtri` — triángulo de relleno sobre el talud (2026-08-10):** hasta esta fecha `Wr` solo pesaba
+   el rectángulo de relleno hasta `H` (zona ④ de la fig. 8.12 de Das); el triángulo de suelo que se
+   forma POR ENCIMA de `H` cuando `beta>0` (zona ⑤ del libro) estaba documentado como "mejora
+   pendiente, no pedida" — el usuario pidió agregarlo explícitamente. Es un triángulo con base=heel
+   (de `xBack` a `Bf`) y altura=`heel·tan(beta)` en el borde `Bf` — la MISMA geometría que ya usaba
+   `Hprime` para integrar Pa (el tercer tramo, H3 del libro), ahora también convertida en peso.
+   `Wtri = gammaTop · 0.5 · heel² · tan(beta)`, donde `gammaTop = capasPeso[0].gamma` (el mismo
+   criterio que ya usa el resto de la app para "el estrato que aflora en la corona": `capasExt` en
+   `calcularPresiones`, el dibujo del talud). Solo existe si `beta>0` Y `Hrelleno===H` (el relleno
+   realmente llega hasta la corona — si no llega, hay un tramo de fuste expuesto y no hay talud que
+   dibujar, ver `alturaRellenoEfectiva`); esta condición vive en `geo.hayTalud`. Su brazo respecto al
+   toe NO es el mismo que el de `Wr` (`Bf-heel/2`, centroide de un rectángulo): el triángulo es
+   angosto en `xBack` y ancho en `Bf`, así que su centroide cae en `Bf-heel/3` (`brazoTri`, más cerca
+   de `Bf`). Se suma a `N` y `Mr` como término propio (no se mezcla con `Wr`, para no ensuciar la
+   fórmula ya mostrada de `Wr`). El campo en la UI (`fieldWtriOut`/`fieldWtriRes`) se oculta cuando
+   `geom.beta<=0` vía el mismo `show()` de `syncMethodButtons()` que ya oculta `cardSismo`/
+   `cardSobrecarga` — la condición de visibilidad usa solo `beta>0` (no `hayTalud`) para no
+   parpadear según si el relleno alcanza la corona; con `beta>0` pero relleno corto, el campo queda
+   visible mostrando `0 kg/m` en vez de ocultarse, que es más honesto que escamotear el campo.
+   Verificado con headless Chrome: `beta=0` → `Wtri=0`/campo oculto; `beta=10°` → `Wtri>0`/campo
+   visible, y `N`/`brazoTri` recompuestos a mano desde `geo.*` coinciden exactamente con lo que
+   calcula la app.
+
+   **Peso específico (γ) agregado a la etiqueta de cada estrato en el dibujo 2D (2026-08-10):** la
+   etiqueta multilínea de cada estrato (ver bloque 5 más abajo, `labelBgLines`) ya mostraba
+   nombre/c/φ; el usuario pidió agregar también γ — ahora son 4 líneas: nombre, `γ=`, `c=`, `φ=`.
+
    **7. Render general** (`renderAll`/`renderAllFull`) — único punto
    de recálculo y repintado; cualquier cambio de `state` termina en `scheduleRecalc()`
    (`debounce(renderAll, 100)`). `renderProjectTitle()` autogenera el nombre del QAT superior desde
