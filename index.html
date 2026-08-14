@@ -334,7 +334,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
 #wall3d-wrap{width:100%; height:100%; position:relative;}
 #wall3d{width:100%; height:100%; display:block; cursor:grab;}
 #wall3d:active{cursor:grabbing;}
-.viewer-3d-hint{position:absolute; left:10px; bottom:8px; font-size:11px; color:var(--muted); background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm); padding:3px 8px; pointer-events:none;}
+.viewer-3d-hint{position:absolute; left:10px; top:8px; font-size:11px; color:var(--muted); background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm); padding:3px 8px; pointer-events:none;}
 /* El SVG llena su contenedor (height:100%, no auto) y usa el
    preserveAspectRatio por default ("xMidYMid meet") para encajar completo
    sin recortarse — como object-fit:contain — en vez de desbordar y forzar
@@ -3197,7 +3197,39 @@ function initThree3D(){
   const d2 = new THREE.DirectionalLight(0xffffff, 0.3); d2.position.set(-4,6,-6); scene.add(d2);
   const group = new THREE.Group();
   scene.add(group);
-  three3d = { scene, camera, renderer, controls, group, raf:null };
+
+  // Gizmo de ejes globales (X/Y/Z), fijo en la esquina inferior izquierda del
+  // visor (2026-08-14, a pedido del usuario): siempre visible sin importar
+  // el zoom/paneo de la cámara principal, solo ROTA para reflejar su
+  // orientación actual. Se renderiza aparte, en su propia escena/cámara
+  // ortográfica, dentro de un recorte (scissor) pequeño en la esquina —
+  // técnica estándar para un gizmo de orientación con un solo canvas/
+  // renderer (ver loopThree3D, que hace el segundo render() tras el
+  // principal). WebGL mide viewport/scissor con Y creciendo hacia ARRIBA
+  // desde (0,0), así que un rectángulo chico cerca de (0,0) cae justo en la
+  // esquina inferior izquierda de la pantalla, sin necesidad de invertir Y.
+  const gizmoScene = new THREE.Scene();
+  const gizmoCamera = new THREE.OrthographicCamera(-1.6,1.6,1.6,-1.6,0.1,10);
+  gizmoCamera.position.set(0,0,3);
+  const gizmoAxes = new THREE.AxesHelper(1.15);
+  gizmoScene.add(gizmoAxes);
+  function gizmoLabel(text, color, pos){
+    const c = document.createElement("canvas");
+    c.width = 64; c.height = 64;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = color; ctx.font = "bold 44px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, 32, 34);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(c), depthTest:false }));
+    sprite.position.copy(pos);
+    sprite.scale.set(0.55,0.55,0.55);
+    gizmoScene.add(sprite);
+  }
+  gizmoLabel("X", "#e04b3f", new THREE.Vector3(1.4,0,0));
+  gizmoLabel("Y", "#4caf50", new THREE.Vector3(0,1.4,0));
+  gizmoLabel("Z", "#3f7fe0", new THREE.Vector3(0,0,1.4));
+
+  three3d = { scene, camera, renderer, controls, group, raf:null, gizmoScene, gizmoCamera };
   return three3d;
 }
 
@@ -3259,10 +3291,60 @@ function actualizarModelo3D(state){
   const stemGeo = new THREE.ExtrudeGeometry(shape, { depth:L, bevelEnabled:false });
   t3.group.add(new THREE.Mesh(stemGeo, mats.concreto));
 
-  addBox(xBack, Bf+1.0, tf, tf+Hr, 0,L, mats.relleno); // relleno tras el fuste
-  addBox(-1.2, Bf+1.0, -0.75, 0, -0.5, L+0.5, mats.suelo); // suelo de fundación
-  addBox(-1.2, 0, 0, Df, -0.5, L+0.5, mats.suelo); // suelo frente al muro
-  addBox(Bf, Bf+1.0, 0, tf, -0.5, L+0.5, mats.suelo); // tapa el hueco junto al borde derecho de la zapata (mismo ajuste que en 2D)
+  // Relleno tras el fuste: antes era una caja plana (tope horizontal) sin
+  // importar el talud — el usuario pidió que el 3D también muestre la
+  // elevación por el ángulo β, igual que ya hace el dibujo 2D (mismo
+  // slopeRun/slopeRise que usa dibujarMuro2D: sube desde xBack hasta
+  // Bf+1.0, con β=0 el perfil se queda plano, sin cambiar nada).
+  const slopeRun3D = (Bf+1.0) - xBack;
+  const slopeRise3D = g.beta > 0 ? slopeRun3D * Math.tan(toRad(g.beta)) : 0;
+  const relShape = new THREE.Shape();
+  relShape.moveTo(xBack, tf);
+  relShape.lineTo(xBack, tf+Hr);
+  relShape.lineTo(Bf+1.0, tf+Hr+slopeRise3D);
+  relShape.lineTo(Bf+1.0, tf);
+  relShape.closePath();
+  const relGeo = new THREE.ExtrudeGeometry(relShape, { depth:L, bevelEnabled:false });
+  t3.group.add(new THREE.Mesh(relGeo, mats.relleno));
+
+  // Suelo alrededor del muro: ANTES eran 3 cajas separadas (fundación, frente
+  // al muro, y el parche junto al borde derecho de la zapata) que se veían
+  // como piezas discontinuas — el usuario lo marcó en una captura ("que el
+  // suelo de cimiento no se vea en 2 secciones") — y además faltaba por
+  // completo el tramo que cubre la puntera por arriba (la región de Wp, ver
+  // Bloque 6/formulaWp), que se veía como un hueco. Ahora es UNA sola malla
+  // (perfil 2D extruido a lo largo de Z, mismo patrón que el fuste).
+  //
+  // [Corrección tras la primera versión, mismo día] La primera versión de
+  // este polígono NO recortaba la huella de la zapata (x=[0,Bf], y=[0,tf]) —
+  // subía derecho de 0 a Df en x=[0,toe], confiando en que la zapata opaca
+  // (dibujada aparte) taparía el traslape. Eso causó un bloque gris sólido
+  // encimado justo sobre la puntera (reportado por el usuario con una
+  // captura marcada). Ahora el contorno SÍ rodea la huella de la zapata
+  // explícitamente (baja a tf en x=toe, recorre y=tf hasta x=0, baja a 0):
+  // sube por la izquierda hasta Df, cruza por arriba (mismo nivel Df) hasta
+  // la puntera, baja a tf en x=toe (tope de la zapata), retrocede en y=tf
+  // hasta x=0 (base de la franja de Wp, ya NO baja hasta 0 ahí), baja a 0 en
+  // x=0, cruza por abajo (y=0, bajo la huella completa de la zapata) hasta
+  // Bf, sube a tf, cruza hasta el borde derecho, y cierra por abajo. Ningún
+  // punto de este polígono cae ya dentro de la huella de la zapata —
+  // verificado con prueba punto-en-polígono antes de aplicar el cambio.
+  const soilShape = new THREE.Shape();
+  soilShape.moveTo(-1.2, -0.75);
+  soilShape.lineTo(-1.2, Df);
+  soilShape.lineTo(toe, Df);
+  soilShape.lineTo(toe, tf);
+  soilShape.lineTo(0, tf);
+  soilShape.lineTo(0, 0);
+  soilShape.lineTo(Bf, 0);
+  soilShape.lineTo(Bf, tf);
+  soilShape.lineTo(Bf+1.0, tf);
+  soilShape.lineTo(Bf+1.0, -0.75);
+  soilShape.closePath();
+  const soilGeo = new THREE.ExtrudeGeometry(soilShape, { depth:L+1.0, bevelEnabled:false });
+  const soilMesh = new THREE.Mesh(soilGeo, mats.suelo);
+  soilMesh.position.z = -0.5;
+  t3.group.add(soilMesh);
 
   if(state.suelo.waterEnabled && state.suelo.Hw > 0){
     addBox(-1.2, Bf+1.0, state.suelo.Hw-0.01, state.suelo.Hw, -0.5, L+0.5, mats.agua);
@@ -3271,11 +3353,15 @@ function actualizarModelo3D(state){
   const cx = Bf/2, cy = (tf+H)/2, cz = L/2;
   t3.controls.target.set(cx, cy, cz);
   if(!actualizarModelo3D.camaraLista){
-    // Vista por default confirmada por el usuario: cara del fuste de frente
-    // y grande, con el relleno claramente visible detrás/arriba a la
-    // derecha y la zapata/suelo abajo.
+    // Vista por default (2026-08-14: rotada sobre el eje Y respecto al offset
+    // original, a pedido del usuario — primero 45°, después ajustada a -90°
+    // sobre ese mismo offset original, no acumulada sobre el giro anterior.
+    // El offset X/Z se rota con applyAxisAngle; el offset Y (altura) no
+    // cambia porque una rotación sobre Y no la afecta).
     const dist = Math.max(Bf, H, L)*1.8 + 2;
-    t3.camera.position.set(cx + dist*0.7, cy + dist*0.55, cz + dist*0.9);
+    const offset = new THREE.Vector3(0.7, 0.55, 0.9).multiplyScalar(dist);
+    offset.applyAxisAngle(new THREE.Vector3(0,1,0), -Math.PI/2);
+    t3.camera.position.set(cx + offset.x, cy + offset.y, cz + offset.z);
     actualizarModelo3D.camaraLista = true;
   }
   t3.camera.far = Math.max(Bf,H,L)*20 + 50;
@@ -3287,7 +3373,39 @@ function loopThree3D(){
   if(!three3d || uiState.viewMode !== "3d") return;
   three3d.raf = requestAnimationFrame(loopThree3D);
   three3d.controls.update();
-  three3d.renderer.render(three3d.scene, three3d.camera);
+  const r = three3d.renderer;
+
+  r.setScissorTest(false);
+  r.setViewport(0, 0, r.domElement.width, r.domElement.height);
+  r.render(three3d.scene, three3d.camera);
+
+  // Gizmo de ejes: recorte fijo en px de pantalla (escalado por pixelRatio),
+  // pegado a la esquina inferior izquierda — ver comentario en initThree3D.
+  // El color de limpieza se iguala al fondo de la escena principal (mismo
+  // --canvas) para que el recorte se vea integrado, no como un cuadro negro
+  // aparte encimado en la esquina.
+  const px = r.getPixelRatio();
+  const size = 84 * px, margin = 10 * px;
+  // No basta con copiar la rotación: una cámara ortográfica encuadra según
+  // posición Y rotación juntas, así que si la cámara del gizmo se queda fija
+  // en (0,0,3) y solo gira, el origen deja de estar al centro (o hasta sale
+  // de cuadro) en cuanto la cámara principal mira desde otro ángulo. Se
+  // reposiciona a lo largo de la misma dirección relativa (el vector "atrás"
+  // de la cámara principal, escalado a una distancia fija) para que el
+  // origen quede siempre centrado, igual que un gizmo de orientación normal.
+  const dir = new THREE.Vector3(0,0,1).applyQuaternion(three3d.camera.quaternion);
+  three3d.gizmoCamera.position.copy(dir.multiplyScalar(3));
+  three3d.gizmoCamera.quaternion.copy(three3d.camera.quaternion);
+  r.setScissorTest(true);
+  r.setScissor(margin, margin, size, size);
+  r.setViewport(margin, margin, size, size);
+  const prevClear = new THREE.Color();
+  r.getClearColor(prevClear);
+  const prevAlpha = r.getClearAlpha();
+  r.setClearColor(three3d.scene.background || 0x0A1628, 1);
+  r.render(three3d.gizmoScene, three3d.gizmoCamera);
+  r.setClearColor(prevClear, prevAlpha);
+  r.setScissorTest(false);
 }
 
 function setViewMode(mode){

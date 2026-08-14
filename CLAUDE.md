@@ -215,6 +215,89 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
    **5b. Vista 3D** (`actualizarModelo3D`, Three.js r128 + OrbitControls embebidos offline) — MVP:
    concreto + relleno + suelo + agua, largo de muro fijo en 6 m. Solo se renderiza mientras
    `uiState.viewMode==="3d"`.
+
+   **Suelo alrededor del muro como UNA sola malla, no 3 cajas (2026-08-14):** el usuario mandó una
+   captura del 3D marcando dos problemas: (1) faltaba por completo el tramo de suelo que cubre la
+   puntera por arriba (la región de `Wp`, ver `formulaWp`/`highlightRegionPoints` en el bloque de
+   presiones — en 3D nunca se dibujaba esa franja); (2) el "suelo de cimiento" se veía partido "en 2
+   secciones" (una caja rectangular suelta a la izquierda y otra pieza como cuña, marcada con una X
+   en la captura). Las 3 cajas viejas (`addBox` para "suelo de fundación" y=[-0.75,0] ancho completo,
+   "suelo frente al muro" x=[-1.2,0] y=[0,Df], y el parche "tapa el hueco junto al borde derecho"
+   x=[Bf,Bf+1] y=[0,tf]) se reemplazaron por UNA sola malla (`soilShape`, `THREE.ExtrudeGeometry`,
+   mismo patrón que ya usa el fuste trapezoidal): un perfil 2D que contornea la franja bajo todo,
+   sube hasta `Df` a la izquierda Y sobre la puntera (de `-1.2` a `toe`, un solo tramo horizontal a
+   la misma altura `Df` — esto es lo que cubre `Wp`), baja a `y=0` desde `toe` hasta `Bf`, y vuelve a
+   subir hasta `tf` en la franja derecha. Al ser UNA sola malla no hay costuras entre piezas
+   adyacentes (la causa más probable del efecto "2 secciones": mallas separadas con normales/
+   sombreado ligeramente distintos en la unión, aunque geométricamente coincidieran).
+
+   **[Corrección, mismo día] La primera versión NO recortaba la huella de la zapata:** el primer
+   intento subía derecho de `y=0` a `y=Df` en `x=[0,toe]`, apostando a que la zapata opaca (dibujada
+   aparte) taparía el traslape con el polígono de suelo. El usuario mandó una SEGUNDA captura
+   marcando un bloque gris sólido encimado justo sobre la puntera — el supuesto de "la zapata opaca
+   tapa el traslape" no se sostuvo (probablemente por cómo Three.js ordena el dibujo de mallas
+   `transparent:true` contra mallas opacas, o algo similar; no se investigó la causa exacta porque
+   la solución de fondo era más simple). Se corrigió recorriendo el contorno alrededor de la huella
+   real de la zapata en vez de atravesarla: sube hasta `Df` en `x=toe` pero baja solo hasta `tf`
+   (no hasta 0), retrocede en `y=tf` hasta `x=0` (la base de la franja de `Wp`, apoyada sobre la
+   zapata), y ahí sí baja a `y=0` para seguir bajo toda la huella de la zapata hasta `Bf`. Verificado
+   con prueba punto-en-polígono a mano (un punto dentro de la huella de la zapata da "afuera"; un
+   punto en la franja de `Wp` da "adentro") antes de aplicar el cambio, y con captura de pantalla
+   headless (WebGL vía `--screenshot`, ruta ABSOLUTA — una ruta relativa dio "Acceso denegado" en
+   este entorno) confirmando que el bloque gris ya no aparece. **Lección:** cuando dos mallas
+   (una opaca, una transparente) podrían ocupar el mismo volumen, no asumir que el z-testing normal
+   "simplemente lo resuelve" — recortar el traslape explícitamente en la geometría es más seguro y
+   predecible que depender del orden de dibujo.
+
+   **Gizmo de ejes globales (2026-08-14, pedido directo del usuario):** fijo en la esquina inferior
+   izquierda del visor, siempre visible sin importar zoom/paneo, rota para reflejar la orientación
+   actual de la cámara principal. Técnica estándar de gizmo de orientación con un solo canvas/
+   renderer: una escena+cámara ortográfica aparte (`three3d.gizmoScene`/`gizmoCamera`, creadas en
+   `initThree3D()`, con un `THREE.AxesHelper` + 3 sprites de texto X/Y/Z sobre canvas), renderizada
+   en `loopThree3D()` DESPUÉS de la escena principal, dentro de un recorte pequeño
+   (`setScissor`/`setViewport`, tamaño fijo en px de pantalla × `pixelRatio`, no en unidades de
+   mundo) pegado a `(margin, margin)` — WebGL mide viewport/scissor con Y creciendo hacia ARRIBA
+   desde `(0,0)`, así que eso cae directo en la esquina inferior izquierda sin invertir nada.
+   **Bug propio + arreglo, mismo día:** la primera versión solo copiaba `gizmoCamera.quaternion` del
+   de la cámara principal, dejando la POSICIÓN fija en `(0,0,3)` — con una cámara ortográfica la
+   posición y la rotación definen el encuadre juntas, así que en cuanto la rotación copiada apuntaba
+   hacia otro lado, el origen (y con él, X e Y) quedaban fuera de cuadro; solo Z sobrevivía visible
+   por coincidencia del ángulo. Se verificó proyectando (0,0,0)/(1,0,0)/(0,1,0)/(0,0,1) con
+   `Vector3.project(gizmoCamera)` antes y después del arreglo (antes: origen en NDC x=1.15,
+   fuera del rango visible ±1; después: origen exacto en (0,0)) — no se confió en la sola inspección
+   visual de una captura, que con un plano de fondo negro (ver siguiente bug) era ambigua de por sí.
+   El arreglo: reposicionar la cámara del gizmo a lo largo de esa misma dirección (`(0,0,1)` rotado
+   por el quaternion de la cámara principal, escalado a una distancia fija) en vez de solo rotar en
+   el sitio — el mismo patrón que usa cualquier gizmo de orientación (Blender, etc.). **Segundo bug,
+   mismo hallazgo:** el recorte del gizmo se veía como un cuadro negro opaco encimado en la esquina
+   (el renderer nunca se creó con `alpha:true`, así que el clear por default es negro opaco); se
+   corrigió leyendo el color de limpieza del renderer antes del render del gizmo, poniéndolo
+   temporalmente igual al `--canvas` de la escena principal, y restaurándolo después — así el
+   recorte se ve integrado con el fondo real en vez de una mancha aparte.
+
+   **Elevación del talud también en 3D (mismo día):** el relleno 3D (`addBox` plano, tope horizontal
+   fijo) no reflejaba el ángulo β del talud — el usuario lo pidió explícitamente ("también en el 3D
+   crea la elevación por el ángulo"). Se reemplazó por un `THREE.ExtrudeGeometry` (mismo patrón que
+   el fuste/el suelo unificado) con un perfil de 4 vértices que sube de `tf+Hr` (en `xBack`) a
+   `tf+Hr+slopeRise` (en `Bf+1.0`), usando el MISMO `slopeRun`/`slopeRise` que ya calcula
+   `dibujarMuro2D` para el talud del dibujo 2D (`slopeRun = (Bf+1.0)-xBack`,
+   `slopeRise = beta>0 ? slopeRun·tan(beta) : 0`) — con `beta=0` el perfil queda idéntico al box
+   plano de antes, sin cambiar nada. Verificado leyendo directamente los vértices de la geometría
+   (no por inspección visual de una captura, que a cierto ángulo de cámara no dejaba ver el talud con
+   claridad): con `beta=0` la altura es igual en ambos extremos; con `beta=20°` la altura en
+   `x=Bf+1.0` queda `slopeRun·tan(20°)` por encima de la de `x=xBack`, exacto.
+
+   **Vista por default rotada sobre Y, texto de ayuda reubicado (mismo día):** a pedido del usuario,
+   el offset de la posición inicial de cámara (`(0.7, 0.55, 0.9)·dist`, fijado una sola vez por
+   sesión vía el flag `actualizarModelo3D.camaraLista`) se rota alrededor del eje Y con
+   `Vector3.applyAxisAngle` antes de aplicarse — el offset Y (altura) queda igual porque una
+   rotación sobre Y no le afecta, solo cambia la componente X/Z. Se probaron dos valores el mismo
+   día: primero 45° (a partir del offset original, no acumulado), y después el usuario pidió -90°
+   sobre ESE MISMO offset original — el ángulo actual en el código es **-90°**
+   (`-Math.PI/2`). Si se pide otro ajuste, seguir aplicando sobre el offset original
+   `(0.7, 0.55, 0.9)`, no acumulando sobre el ángulo ya aplicado. El texto `.viewer-3d-hint`
+   ("Arrastra para rotar…") se movió de `bottom:8px` a `top:8px` porque quedaba encimado con el
+   gizmo nuevo en la esquina inferior izquierda.
 6. **Render de tablas/badges** — incluye `renderResultadosDetalle(r)` (pestaña Resultados → card
    "Memoria de cálculo", agregada 2026-08-10): consolida en un solo lugar TODOS los valores
    intermedios (pesos, presiones laterales, Ka/Kp, momentos, Fh/R, q máx/mín, qult, e) que ya se
