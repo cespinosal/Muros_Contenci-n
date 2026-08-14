@@ -2737,7 +2737,24 @@ function calcularGeotecnia(state, pres){
   // estratos resueltos contra la altura real del relleno.
   const capasPeso = resolverCapas(suelo.capasRelleno, Hrelleno);
   const Wr = capasPeso.reduce((s,c)=>s+c.gamma*c.h, 0) * heel;
-  const Wp = suelo.gamma_f * toe * Df; // aproximación del prompt original (no resta tf)
+  // Área real del suelo sobre la puntera (2026-08-14, reemplaza la
+  // aproximación del prompt original γf·toe·Df, que ni restaba tf —
+  // contaba de más, desde el fondo de la zapata, no desde su tope — ni
+  // consideraba el batter del fuste). El usuario pidió revisar esto tras
+  // corregir el mismo hueco en el dibujo 2D, y el error resultó grande y
+  // de signo variable (de -37% a +36% según tf/Df/batter, verificado con
+  // headless Chrome) — no un detalle despreciable. Es el trapecio
+  // (0,tf)-(toe,tf)-(xFrenteEnDfWp,Df)-(0,Df), donde xFrenteEnDfWp es el
+  // punto donde la cara REAL del fuste (la misma recta de (toe,tf) a
+  // (xBack-tc,tf+H), con o sin batter) cruza la altura Df — mismo cálculo
+  // que ya usa dibujarMuro2D para el borde del dibujo corregido, así que
+  // el peso y el dibujo quedan consistentes entre sí. Con ts=tc (sin
+  // batter) esto se reduce a toe·(Df-tf), el rectángulo correcto sin
+  // batter, restando tf como debe ser.
+  const DfEnFranjaWp = Math.max(Math.min(Df, tf + H), tf);
+  const xFrenteEnDfWp = toe + (gc.xBack - geom.tc - toe) * (DfEnFranjaWp - tf) / H;
+  const areaWp = 0.5 * (toe + xFrenteEnDfWp) * (DfEnFranjaWp - tf);
+  const Wp = suelo.gamma_f * areaWp;
 
   // Triángulo de suelo sobre el talud, por encima de la corona (2026-08-10,
   // zona ⑤ de la fig. 8.12 de Das — hasta ahora faltaba, quedaba anotado
@@ -2860,7 +2877,7 @@ function calcularGeotecnia(state, pres){
 
   return {
     heel, areaStem, brazoStem,
-    Ws, Wf, Wr, Wp, Wtri, brazoTri, hayTalud, capasPeso, Pq_v, Pa_v, N,
+    Ws, Wf, Wr, Wp, areaWp, xFrenteEnDfWp, Wtri, brazoTri, hayTalud, capasPeso, Pq_v, Pa_v, N,
     Fh_cerco, M_cerco,
     Mr, Mov, FS_volteo,
     Fh, mu, Fr, Fr_cohesion, Pp_h, Fkey, R, FS_desliz,
@@ -3025,8 +3042,23 @@ function dibujarMuro2D(svg, state, r){
   // del lienzo hasta la puntera, cubre también la parte de arriba de la
   // puntera enterrada (x: 0→toe) y llega a nivel de la zapata (tf) del
   // lado del talón, donde empalma exactamente con el relleno.
+  //
+  // [Corrección 2026-08-14] El borde derecho de la franja sobre la puntera
+  // (de tf a Df) usaba una línea VERTICAL fija en x=toe — correcto solo sin
+  // batter (ts=tc). Con batter (ts≠tc) la cara del fuste se recorre hacia
+  // adentro/afuera según sube, y esa línea vertical deja de coincidir con
+  // el fuste real: queda un hueco triangular sin rellenar (o un traslape,
+  // según el signo del batter) justo donde el muro se inclina — reportado
+  // por el usuario ("el área de Wp... por la parte inclinada del muro").
+  // El cálculo de Wp (γf·toe·Df, aproximación estándar de libro) no cambia,
+  // esto es solo el dibujo: el borde ahora sigue la cara REAL del fuste
+  // (misma recta que su lado frontal, de (toe,tf) a (xBack-tc,tf+H)) hasta
+  // la altura Df — acotada a la altura del fuste por si Df fuera mayor que
+  // tf+H (caso raro).
+  const DfEnFranja = Math.max(Math.min(Df, tf + H), tf);
+  const xFrenteEnDf = toe + (xBack - tc - toe) * (DfEnFranja - tf) / H;
   const soilPts = [
-    [modelMinX, modelMinY], [modelMinX, Df], [toe, Df], [toe, tf],
+    [modelMinX, modelMinY], [modelMinX, Df], [xFrenteEnDf, Df], [toe, tf],
     [modelMaxX, tf], [modelMaxX, modelMinY]
   ];
   poly(soilPts, col("--soil-fill"), col("--soil-line"));
@@ -3643,7 +3675,10 @@ function formulaWr(geo){
   return [`Wr = (Σ γᵢ·hᵢ) × heel = (${terms}) × ${fmtLong(geo.heel,2)} = ${fmtFuerza(geo.Wr)}`];
 }
 function formulaWp(geo){
-  return [`Wp = γf × toe × Df = ${fmtCat("pesoVol",state.suelo.gamma_f,1)} × ${fmtLong(state.geom.toe,2)} × ${fmtLong(state.geom.Df,2)} = ${fmtFuerza(geo.Wp)}`];
+  return [
+    `A_puntera = ½·(toe+x_frente)·(Df-tf) = ½·(${fmtLong(state.geom.toe,2)}+${fmtLong(geo.xFrenteEnDfWp,2)})·(${fmtLong(state.geom.Df,2)}-${fmtLong(state.geom.tf,2)}) = ${fmtArea(geo.areaWp)}`,
+    `Wp = γf × A_puntera = ${fmtCat("pesoVol",state.suelo.gamma_f,1)} × ${fmtArea(geo.areaWp)} = ${fmtFuerza(geo.Wp)}`,
+  ];
 }
 function formulaWtri(geo){
   if(!geo.hayTalud) return [`Wtri = 0 (solo aplica con talud β>0 y el relleno llegando hasta la corona)`];
@@ -3774,12 +3809,22 @@ function highlightRegionPoints(key, t){
   const { toe, Bf, tf, H, Df, tc, xBack, heel, beta } = t;
   const talRise = beta > 0.01 ? heel * Math.tan(toRad(beta)) : 0;
   switch(key){
-    // Wp: solo el tramo de suelo que queda VISIBLE por encima de la zapata
-    // (de tf a Df) — no desde y=0, porque de ahí para abajo es la losa
-    // misma; resaltar hasta 0 pintaba el resalte encima de la zapata, que
-    // el usuario reportó como confuso ("Wp también está dibujando sobre la
-    // losa"). Si Df<=tf no hay tramo visible que resaltar (caso raro).
-    case "Wp": return Df > tf + 1e-6 ? [[[0,tf],[toe,tf],[toe,Df],[0,Df]]] : [];
+    // Wp: el trapecio real de suelo sobre la puntera (de tf a Df, siguiendo
+    // la cara del fuste con o sin batter) — no desde y=0, porque de ahí
+    // para abajo es la losa misma; resaltar hasta 0 pintaba el resalte
+    // encima de la zapata, que el usuario reportó como confuso ("Wp
+    // también está dibujando sobre la losa"). Desde que Wp se calcula con
+    // el área real del trapecio (2026-08-14, ya no γf·toe·Df), este
+    // resaltado usa la MISMA geometría (xFrenteEnDf, el punto donde la
+    // cara real del fuste cruza Df) para quedar consistente con la
+    // fórmula y con el dibujo 2D corregido. Si Df<=tf no hay tramo visible
+    // que resaltar (caso raro).
+    case "Wp": {
+      if(Df <= tf + 1e-6) return [];
+      const DfEnFranja = Math.max(Math.min(Df, tf+H), tf);
+      const xFrenteEnDf = toe + (xBack - tc - toe) * (DfEnFranja - tf) / H;
+      return [[[0,tf],[toe,tf],[xFrenteEnDf,Df],[0,Df]]];
+    }
     case "Wf": return [[[0,0],[Bf,0],[Bf,tf],[0,tf]]];
     case "Wr": return [[[xBack,tf],[Bf,tf],[Bf,tf+H],[xBack,tf+H]]];
     case "Wtri": return talRise > 1e-6 ? [[[xBack,tf+H],[Bf,tf+H],[Bf,tf+H+talRise]]] : [];

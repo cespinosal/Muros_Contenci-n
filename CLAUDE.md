@@ -212,6 +212,41 @@ banners `/* ==== N. NOMBRE ==== */` (buscar `====` para navegar el archivo):
    dibujándose hasta la corona aunque el relleno real fuera más corto, viéndose como si el suelo
    cubriera todo el fuste cuando no era así (el número de Pa ya estaba bien calculado con `Hprime`,
    solo el dibujo del triángulo tenía la altura equivocada).
+
+   **Bug propio + arreglo: el suelo sobre la puntera no seguía la cara inclinada del fuste con
+   batter (2026-08-14):** el polígono `soilPts` (suelo de fundación + franja sobre la puntera, una
+   sola figura sin costuras) usaba una línea VERTICAL fija en `x=toe` como borde derecho de la
+   franja de `tf` a `Df` — correcto solo cuando `ts=tc` (sin batter). El usuario reportó "el área de
+   Wp... parece que está mal, por la parte inclinada del muro"; se verificó primero que el VALOR de
+   `Wp` (entonces `γf·toe·Df`) seguía siendo correcto en todos los casos probados (batter normal, sin
+   batter, batter invertido, Df>H) — el problema inicial no estaba en el número, era el dibujo. Se
+   confirmó visualmente con una captura headless con batter fuerte (ts=0.90, tc=0.25): un hueco
+   triangular sin rellenar (fondo del canvas asomando) entre la línea vertical y la cara real del
+   fuste, que se recorre hacia adentro/afuera al subir. Se corrigió calculando `xFrenteEnDf` (el
+   punto donde la RECTA real del frente del fuste — la misma que va de `(toe,tf)` a
+   `(xBack-tc,tf+H)` — cruza la altura `Df`, acotada a `tf+H` por si `Df` fuera mayor que todo el
+   fuste) y usándolo como el vértice superior de esa franja en vez de `toe` fijo — con `ts=tc` da
+   exactamente `toe` (sin cambios en el caso sin batter, verificado matemáticamente:
+   `xBack-tc-toe = ts-tc = 0`).
+
+   **[Extensión, mismo día] La fórmula de `Wp` también se corrigió, no solo el dibujo:** el usuario
+   pidió explícitamente "revisa el peso y la fórmula también". Se comparó cuantitativamente (5 casos,
+   headless Chrome) el valor de `γf·toe·Df` contra el área REAL del trapecio (la misma
+   `xFrenteEnDf` del fix del dibujo, restando `tf` como corresponde) — la diferencia resultó grande y
+   de signo variable: de **-37% a +36%** según la combinación de `tf`/`Df`/batter (el caso "sin
+   batter" YA tenía ~23% de error por sí solo, porque la fórmula vieja nunca restaba `tf` —
+   contaba de más desde el fondo de la zapata, no desde su tope; el batter solo modula ese error,
+   a veces lo compensa por casualidad, a veces lo agrava). El usuario confirmó actualizar la
+   fórmula. Ahora `calcularGeotecnia` calcula `areaWp = ½·(toe+xFrenteEnDfWp)·(Df-tf)` (trapecio
+   real, con `xFrenteEnDfWp` calculado igual que en `dibujarMuro2D`) y `Wp = γf·areaWp` — devuelve
+   también `areaWp`/`xFrenteEnDfWp` en el objeto `geo` para que `formulaWp()` (ahora 2 renglones,
+   desglosando el área antes del peso) y `highlightRegionPoints()` (el resaltado de `Wp` ahora SÍ
+   seguí la misma geometría trapezoidal, ya no es el rectángulo simple) lean el mismo cálculo sin
+   duplicar nada. Re-verificado contra el Ejemplo 8.1 de Das: FS volteo 2.989 (antes 2.998, libro
+   2.95), deslizamiento 2.744 (antes 2.758, libro 2.70), capacidad de carga **2.918** (antes 2.839,
+   libro 2.98 — mejoró, quedó más cerca del libro que antes). **Why:** confirma que la corrección era
+   la dirección correcta, no solo más "honesta" geométricamente sino también más precisa contra la
+   fuente autoritativa ya usada para verificar toda la app.
    **5b. Vista 3D** (`actualizarModelo3D`, Three.js r128 + OrbitControls embebidos offline) — MVP:
    concreto + relleno + suelo + agua, largo de muro fijo en 6 m. Solo se renderiza mientras
    `uiState.viewMode==="3d"`.
