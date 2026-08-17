@@ -1213,6 +1213,197 @@ y su brazo (`Bf-heel/2`) EXACTAMENTE como ya los usa `Mr` en `calcularGeotecnia`
   seguir el mismo patrón: reusar el valor y brazo YA CALCULADOS en `calcularGeotecnia`, decidir su
   `gammaCat` si no es un peso volumétrico, y agregar una clase de color si aplica.
 
+**Tabla de pesos reusada en Revisiones geotécnicas + tabla nueva de momentos actuantes (mismo día):**
+el usuario pidió "en revisiones geotécnicas agrega la misma tabla, más la tabla para obtener los
+momentos actuantes" — es decir, reusar la tabla de pesos (Mr) que ya vive en el canvas de Cargas, y
+agregar una tabla análoga para el desglose de Mov (momentos volcadores).
+
+- **`pesosTablaHTML(r)` ganó un parámetro opcional `idSuffix`** — la misma tabla ahora se inyecta DOS
+  veces a la vez en el DOM (el `<foreignObject>` de Cargas, con `idSuffix="Canvas"`, y una tarjeta
+  normal en Revisiones, con `idSuffix="Rev"`) — sin el sufijo, ambas copias coexistirían con el mismo
+  `id` (inválido en HTML, aunque inofensivo para CSS). El estilo compacto/una-sola-línea se movió del
+  selector `#tablaPesos` a la clase `.tabla-canvas` (reusada en ambas copias), ya que un selector por
+  id solo alcanza a una de las dos instancias.
+- **`calcularZonasMov(r)` + `movTablaHTML(r)`** (mismo patrón que los pesos): desglosa `Mov` en sus
+  términos exactos de `calcularGeotecnia` (`Pa_h·arm`, `Pq_h·(H'/2)`, `Pw_h·(Hw/3)`,
+  `ΔPAE_h·(0.6·H')`, `P_cerco·(tf+H+h_cerco/2)`) — nunca recalculados aparte. Columnas Zona/Concepto/
+  Fuerza/Brazo/Momento (sin γ/Área/Volumen, a diferencia de la tabla de pesos, porque estas son
+  fuerzas laterales ya calculadas, no `peso=volumen×densidad`). Cada fila solo aparece si esa fuerza
+  está activa Y es distinta de cero (sobrecarga/agua/sismo/cerco son opcionales) — con todo
+  desactivado, la tabla muestra solo la fila de empuje activo, que siempre existe.
+- **Ubicación:** ambas tablas se insertan dentro de la tarjeta "1. Volteo (Overturning)" de Revisiones
+  geotécnicas (`#tablaPesosRevisionesWrap`/`#tablaMovWrap`, poblados desde `renderRevisiones`), justo
+  debajo de los campos Mr/Mov/FS Volteo/badge — es el lugar donde más sentido hacen, ya que
+  desglosan exactamente esos dos números.
+- Verificado con headless Chrome: `ΣM` de la tabla de pesos coincide EXACTO con `out-Mr`, `ΣMov` de
+  la tabla nueva coincide EXACTO con `out-Mov`; cero ids duplicados en el documento completo; con
+  sismo+cerco+sobrecarga activos aparecen las filas correspondientes (agua no aparece porque `Hw=0`
+  por default, comportamiento correcto, no bug); el canvas de Cargas sigue funcionando igual con su
+  propio `idSuffix`; confirmado también con captura de pantalla. **Why:** el usuario quiere ver de
+  dónde sale cada término de la comparación Mr/Mov que decide si el muro cumple volteo, mismo hilo de
+  transparencia de toda la sesión. **How to apply:** si se agrega otra fuerza lateral al motor
+  (además de Pa/Pq/Pw/ΔPAE/cerco), sumarla a `calcularZonasMov` con su fuerza/brazo ya calculados —
+  nunca inventar un brazo nuevo ahí.
+
+**[Corrección, mismo día] Las dos tablas de Revisiones movidas DENTRO del canvas:** el usuario, tras
+ver las tablas en la tarjeta "1. Volteo" del panel lateral, pidió "pero en el canvas" — mismo patrón
+exacto que ya se corrigió antes para la tabla de pesos de Cargas ("pero dentro del canvas"), esta vez
+para las DOS tablas nuevas de Revisiones a la vez.
+
+- **Se quitaron los `<div>` de la tarjeta lateral** (`#tablaPesosRevisionesWrap`/`#tablaMovWrap` y
+  sus `<h4>`) y la inyección correspondiente en `renderRevisiones` — la tarjeta "1. Volteo" volvió a
+  tener solo los campos Mr/Mov/FS/badge.
+- **Nuevo flag `mostrarRevisiones = tabActiva === "revisiones"`** (junto a `mostrarCargas` y los
+  demás), que reusa el MISMO mecanismo de reserva de espacio en píxeles (`reservaTablaPx`, ya
+  generalizado a `(mostrarCargas || mostrarRevisiones)`) — Cargas y Revisiones nunca están activas a
+  la vez, así que comparten el mismo carril reservado sin conflicto.
+- **El bloque que dibuja el `<foreignObject>`** ahora arma su contenido HTML condicionalmente: en
+  Cargas es solo `pesosTablaHTML()`; en Revisiones son las DOS tablas apiladas
+  (`pesosTablaHTML() + <div style="height:14px"> + movTablaHTML()`) dentro del mismo
+  `<foreignObject>` — el alto se sigue midiendo con `scrollHeight` REAL después de insertar (mismo
+  patrón ya establecido), así que crece lo que haga falta para las dos tablas juntas sin cortar nada.
+- **`idSuffix` de cada tabla se volvió más específico** para evitar cualquier ambigüedad al depurar:
+  `"CanvasCargas"` (pesos en Cargas), `"CanvasRevPesos"`/`"CanvasRevMov"` (las dos de Revisiones) —
+  antes era solo `"Canvas"`/`"Rev"`.
+- Verificado con headless Chrome: el `<foreignObject>` en Revisiones contiene las 2 tablas
+  (`tablaPesosCanvasRevPesos`/`tablaMovCanvasRevMov`), cabe en el viewBox, sin traslape con el resto
+  del dibujo (confirmado con `getBBox()` de todos los elementos); la tarjeta lateral ya no tiene los
+  `<div>` viejos; Cargas sigue mostrando su única tabla correctamente; confirmado también con captura
+  de pantalla (las cotas siguen visibles en Revisiones, a diferencia de Cargas/Suelo/Presiones, ya
+  que esa pestaña nunca se agregó a la lista de "cotas off por default"). **Why:** el usuario quiere
+  las tablas de memoria de cálculo integradas al mismo dibujo del muro, no como datos aparte en el
+  formulario — mismo criterio ya aplicado en Cargas. **How to apply:** cualquier tabla nueva que se
+  agregue a otra pestaña con este mismo criterio debe: (1) agregar su propio flag `mostrarX`, (2)
+  sumarlo a la condición de `reservaTablaPx`, (3) sumarlo a la condición del bloque que arma el
+  `<foreignObject>` con un `idSuffix` propio.
+
+**Títulos "Momento Resistente"/"Momento Actuante" (mismo día):** el usuario pidió "Ponle títulos a
+las tablas. Momento Resistente y Momento Actuante" — con las dos tablas apiladas dentro del
+`<foreignObject>` de Revisiones, no había forma de distinguirlas de un vistazo. Se agregó un
+`<div class="tabla-canvas-titulo">` antes de cada una (solo en la rama `mostrarRevisiones` del HTML
+que arma el `<foreignObject>` — en Cargas la tabla de pesos NO lleva título, no lo necesita por
+contexto de esa pestaña). Nueva clase CSS `.tabla-canvas-titulo` (13px, negritas, `var(--text)`,
+4px de margen inferior). El alto del `<foreignObject>` se sigue midiendo con `scrollHeight` real
+después de insertar, así que creció solo para dar cabida a los dos títulos nuevos sin recortar nada
+(no fue necesario tocar ninguna fórmula de alto a mano). Verificado con headless Chrome + captura:
+los dos títulos aparecen exactamente donde corresponde, la tabla de Cargas NO lleva título, cabe en
+el viewBox, sin errores de JS. **Why:** con dos tablas seguidas sin encabezado, no quedaba claro cuál
+era cuál a simple vista. **How to apply:** cualquier tabla nueva que se agregue a este mismo
+`<foreignObject>` con múltiples tablas apiladas debería llevar su propio `<div
+class="tabla-canvas-titulo">` para mantener la misma claridad.
+
+**Tablas de Deslizamiento/Capacidad portante/Excentricidad en el canvas de Revisiones (mismo día):**
+el usuario pidió "haz un apartado similar para las tablas y datos que influyen en las demás
+revisiones" — el mismo patrón de tabla-en-canvas ya usado para Volteo (Momento Resistente/Actuante),
+pero para las otras 3 verificaciones geotécnicas. Antes de implementar se preguntó dónde ponerlas
+(el `<foreignObject>` no hace scroll, a diferencia del panel lateral); el usuario eligió
+explícitamente "Todas en el canvas, apiladas (como Volteo)", aceptando el riesgo de que la pila
+creciera mucho. Se agregaron, en el mismo bloque `mostrarRevisiones` que ya arma el
+`<foreignObject>`: `calcularZonasResistencia`/`resistenciaTablaHTML` (desglose de R: Fricción μ·N +
+Cohesión B·k2·cf + Pp,h si el pasivo está activo + Fkey si la llave de corte está activa — mismos
+valores que ya calcula `calcularGeotecnia`, nunca recalculados aparte); `calcularTerminosQult`/
+`qultTablaHTML` (desglose de qult en sus 3 términos aditivos clásicos — cohesión, sobrecarga, peso
+propio — cada uno como N·Fd·Fi, reusando Nc/Nq/Nγ/Fcd/Fqd/Fci/Fqi/Fgi/Bprime ya expuestos en el
+`return` de `calcularGeotecnia`); `excentricidadTablaHTML` (N, x_r, e).
+
+**No se agregó una tabla "Fuerza Actuante" separada para Deslizamiento**: sería 100% redundante con
+la tabla "Momento Actuante" de arriba, que ya lista cada fuerza horizontal Y su ΣFh en el pie —
+se implementó primero, se detectó la redundancia al medir el alto real, y se eliminó (función
+`fuerzaActuanteTablaHTML` y su uso, ambos borrados por completo, no dejados como código muerto).
+Por el mismo motivo, la tabla de Excentricidad NO repite Mr/Mov/ΣM (ya visibles en las tablas de
+Volteo justo arriba en el mismo canvas) — solo muestra N, x_r y e.
+
+**Bug de especificidad CSS encontrado y corregido el mismo día**: el selector `.tabla-canvas th,
+.tabla-canvas td{padding:...}` tenía especificidad (0,1,1), MENOR que la regla base
+`table.results td{padding:8px 10px}` (0,1,2) — el padding reducido nunca se aplicaba en realidad,
+silenciosamente, desde que existe esta clase (2026-08-16). Se corrigió agregando el selector de
+elemento `table` (`table.tabla-canvas th, table.tabla-canvas td`) para igualar la especificidad y
+ganar por orden de aparición. Un segundo bug relacionado, propio de esta sesión: el primer intento
+de documentar este hallazgo en un comentario CSS citaba literalmente `/* 2D/3D viewer */` (el
+comentario de otro bloque) como referencia — eso cerraba el comentario contenedor a mitad de
+camino, dejando el resto del texto como CSS "vivo" inválido que el navegador ignoraba en su
+recuperación de errores, y de paso tumbaba la regla real que venía después. Confirmado con
+`document.styleSheets`/`cssRules` en vivo (la regla real estaba simplemente ausente del parseo).
+**Lección para cualquier comentario CSS futuro: nunca citar literalmente `/*`/`*/` de otro bloque
+dentro de un comentario — describe la ubicación en prosa en vez de pegar los delimitadores.**
+
+**Presupuesto de alto real, medido con headless Chrome (`--window-size=1700,1000` y
+`--window-size=1900,1080`)**: el panel del visor (`svg.parentElement.clientHeight`) NO es una caja
+arbitraria — es literalmente el alto físico en píxeles reales del panel `.viewer-wrap`
+(`flex:1 1 auto` dentro de `#viewer-pane`, de alto fijo `calc(100vh - header)`, diseñado a propósito
+para NUNCA hacer scroll). Antes de las correcciones de arriba, el stack de 6 tablas medía
+~1100-1550px de alto contra un panel real de solo ~470-650px — un desborde severo incluso en el
+caso base (sin sismo/agua/cerco activos), no solo en el caso extremo advertido al usuario. Tras (1)
+corregir el bug de especificidad, (2) eliminar la tabla redundante de Fuerza Actuante, (3) recortar
+Excentricidad a 3 filas y (4) reducir espaciadores/títulos, el caso base ahora cabe completo en una
+ventana maximizada típica (~1900×1080 → viewH≈647px, contenido≈640px) y se desborda solo
+ligeramente en ventanas más chicas o con varias cargas activas a la vez — justo el riesgo que el
+usuario aceptó explícitamente. **Why:** el usuario decidió "todo apilado en el canvas" conociendo el
+riesgo en términos generales, pero la severidad real (desborde en el caso BASE, no solo el extremo)
+solo se conoció al medir — valía la pena optimizar antes de darlo por terminado. **How to apply:**
+si se agrega otra tabla más a este mismo `<foreignObject>` en el futuro, medir de nuevo con headless
+Chrome a un tamaño de ventana realista antes de asumir que cabe; considerar primero si la información
+ya está visible en otra tabla del mismo stack antes de duplicarla.
+
+**[Corrección real, mismo día] Scroll interno del stack de tablas + se restauró "Fuerza Actuante":**
+a pesar de las optimizaciones del párrafo anterior, el usuario mandó una captura real de su sesión
+("No se ve completo", con un círculo marcando el borde inferior cortado a media fila de la tabla de
+qult) — confirmando que el desborde SÍ ocurre en uso real, no solo en el caso extremo hipotético. En
+vez de seguir exprimiendo tamaños de fuente/padding (con retornos cada vez más chicos y peor
+legibilidad), se cambió de estrategia: el `<div>` dentro del `<foreignObject>` ahora tiene
+`max-height: viewH-2*pad` + `overflow-y:auto` (`overflow-x:hidden`, ya que las columnas son nowrap y
+el ancho SÍ está garantizado por `reservaTablaPx`), y el `<foreignObject>` mismo nunca crece más allá
+de ese máximo (`Math.min(scrollHeight+8, maxTablaAltoPx)`, en vez de siempre `scrollHeight+8` a
+secas). Si el contenido cabe, no cambia nada visualmente (sin scrollbar); si no cabe, aparece una
+barra de scroll angosta DENTRO de esa franja — nunca más se recorta contenido de forma invisible sin
+que el usuario tenga cómo verlo. Verificado con headless Chrome a `--window-size=1400,800`
+(deliberadamente chico): `foreignObject` se limita a 275px, el `<div>` interior mide 586-677px de
+contenido real y queda scrolleable (`overflow-y:auto`, confirmado con `scrollHeight>clientHeight`),
+captura de pantalla confirma la barra de scroll visible y funcional. Con este mecanismo ya no hacía
+falta seguir sacrificando información por espacio, así que a pedido del usuario ("Falta la tabla
+para fuerza horizontal Fh") se restauró `fuerzaActuanteTablaHTML` (que se había quitado horas antes
+por redundante con "Momento Actuante", ver párrafo anterior) — ahora las 6 tablas conviven (Momento
+Resistente, Momento Actuante, Fuerza Actuante, Resistencia al Deslizamiento, Capacidad de Carga
+Última, Excentricidad), apoyadas en el scroll interno en vez de en la compactación agresiva. **Why:**
+el usuario prefiere ver toda la información sin tener que elegir qué se sacrifica por espacio — el
+scroll acotado a esa franja resuelve el problema real (contenido invisible) sin tocar el resto del
+diseño "sin scroll" de la app. **How to apply:** si se agrega otra tabla a este `<foreignObject>` en
+el futuro, no hace falta preocuparse tanto por el presupuesto de alto exacto — el mecanismo de
+scroll ya absorbe el caso en que no quepa; seguir evitando duplicar información que ya esté visible
+en otra tabla del mismo stack solo por buen criterio de UX, no por necesidad de espacio.
+
+**Diagrama de presión de contacto q, bajo la zapata (mismo día):** el usuario pidió "En revisión
+geotécnica coloca el diagrama de presiones q" — mismo lenguaje visual que los diagramas de Pa/Pp/Pq
+ya existentes (trapecio semitransparente + valores en los extremos, mismos helpers `poly`/`labelBg`),
+pero HORIZONTAL (a lo largo de la base de la zapata, x=0 en el toe a x=Bf en el talón, en vez de
+vertical contra el fuste) y dibujado hacia ABAJO de la base (y<0), reservando `qDiagDepth=1.3` m
+adicionales en `modelMinY` solo cuando `mostrarRevisiones`. Usa `geo.q_max`/`geo.q_min`/
+`geo.distribucion`/`geo.x_r`, ya calculados por `calcularGeotecnia`, nunca recalculados aparte. Por
+la convención de esas fórmulas (e=Bf/2-x_r, x_r medido desde el toe, igual que en la tarjeta de
+Volteo: "Momentos respecto a la punta de la puntera"), q_max cae siempre en el toe (x=0, izquierda) y
+q_min en el talón (x=Bf, derecha). Caso "Trapezoidal": cuadrilátero de (0,0)→(0,-q_max·escala)→
+(Bf,-q_min·escala)→(Bf,0). Caso "Triangular (talón despegado)": triángulo hasta `Lef=3·x_r` (mismo
+`Lef` que ya usa `calcularGeotecnia` para ese caso), presión cero de ahí al talón — sin zona de
+contacto. Color propio `#00897b` (teal), no usado por ningún otro diagrama existente (rojo=Pa,
+verde=Pp, naranja=Pq, azul=agua, dorado=sismo, morado=cerco).
+
+**Dos colisiones de etiqueta encontradas y corregidas al verificar con captura real:** (1) los
+valores q_max/q_min se habían anclado primero a la altura variable del propio vértice del trapecio
+— con los valores reales del proyecto de ejemplo, ese vértice cayó justo a y=-0.35, la MISMA altura
+fija donde ya viven las cotas de `toe`/`ts`/`heel` (`dimH(...,-0.35,...)`), y el texto se fundió con
+"heel=1.40 m" (confirmado con captura). Se anclaron en cambio a una altura FIJA cerca del fondo de la
+franja reservada (`-qDiagDepth+0.3`ish), siempre muy por debajo de esa banda de cotas. (2) Con esa
+altura fija, q_max (ancla en x=0, crece a la derecha) y q_min (ancla en x=Bf, crece a la izquierda)
+quedaron a la MISMA altura entre sí y se fundieron entre ellos cuando Bf es angosto (confirmado con
+captura: footing de 2.10 m no daba espacio suficiente). Se separaron también en Y (dos renglones
+distintos, `yQMax`/`yQMin`), no solo por el ancla en X — así nunca dependen de que Bf sea lo bastante
+ancho para el texto de ambos. **Why:** mismo patrón de todo este bloque de trabajo — verificar con
+captura real antes de dar por buena una posición de etiqueta "razonable en teoría". **How to apply:**
+cualquier etiqueta nueva anclada cerca de la base de la zapata (y≈0 a y≈-0.35) debe revisarse contra
+las cotas fijas de toe/ts/heel que ya viven ahí; si dos etiquetas nuevas comparten una franja angosta
+en X, separarlas también en Y en vez de confiar solo en anclas opuestas creciendo en direcciones
+distintas.
+
 ## Roadmap (fases, ver `prompt_original.txt` para el detalle completo de fórmulas)
 
 Estado real al 2026-08-03 — varias cosas se adelantaron fuera de orden a pedido del usuario, además

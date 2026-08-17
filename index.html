@@ -282,12 +282,39 @@ table.results tr.zona-concreto td{background:color-mix(in srgb, var(--concrete-f
 table.results tr.zona-suelo td{background:color-mix(in srgb, var(--soil-fill) 60%, transparent);}
 table.results tr.zona-sobrecarga td{background:color-mix(in srgb, var(--pq-color) 18%, transparent);}
 table.results tfoot td{font-weight:700; border-top:2px solid var(--border-strong); border-bottom:none;}
-/* #tablaPesos (dentro del canvas, ver dibujarMuro2D): texto SIEMPRE en una
+/* .tabla-canvas (pesosTablaHTML/movTablaHTML, reusadas dentro del
+   <foreignObject> del canvas en Cargas Y como tarjeta normal en Revisiones
+   geotécnicas — 2026-08-16, "agrega la misma tabla"): texto SIEMPRE en una
    sola línea, sin ajustarse al ancho de la columna (a pedido del usuario:
    "que todos los textos se vean en una sola fila, no las ajustes a la
-   anchura") — el ancho del <foreignObject> ya se calculó para que quepa
-   sin wrap, ver anchoTablaPx. */
-#tablaPesos th, #tablaPesos td{white-space:nowrap; padding:5px 7px; font-size:11px;}
+   anchura") — el ancho del <foreignObject> en Cargas ya se calculó para
+   que quepa sin wrap, ver anchoTablaPx; en Revisiones la tarjeta ya es lo
+   bastante ancha por sí sola. Clase, no id, porque la misma tabla puede
+   existir dos veces a la vez en el DOM (una por copia). */
+/* Padding vertical reducido a 3px (no 5px) el 2026-08-17: al agregar las
+   tablas de Deslizamiento/Capacidad/Excentricidad (6 tablas apiladas en
+   vez de 2 en Revisiones) el alto total del stack superaba con creces el
+   alto físico real del panel (medido con headless Chrome: ~1100-1400px de
+   contenido contra ~470-570px de panel disponible) — el panel NO hace
+   scroll a propósito (ver el bloque de comentario "2D/3D viewer" arriba),
+   así que cada píxel cuenta. Esto por sí solo no elimina el riesgo de
+   recorte con muchas cargas activas a la vez (el usuario lo aceptó
+   explícitamente: "Todas en el canvas, apiladas (como Volteo)"), pero lo
+   reduce bastante.
+   Bug encontrado el mismo día verificando esto: el selector estaba escrito
+   como ".tabla-canvas th"/"td" (especificidad 0,1,1), MENOR que la regla
+   base "table.results td" de arriba (0,1,2, dos selectores de elemento:
+   table+td). El padding de 3px nunca se aplicaba en realidad (el de 8px de
+   la regla base ganaba siempre, silenciosamente, desde que existe esta
+   clase el 2026-08-16). Se agrega el selector de elemento "table" también
+   aquí para igualar la especificidad y ganar por orden de aparición (esta
+   regla va después de la base en el archivo). */
+table.tabla-canvas th, table.tabla-canvas td{white-space:nowrap; padding:3px 7px; font-size:11px;}
+/* Título arriba de cada tabla dentro del canvas (2026-08-16, a pedido del
+   usuario: "Ponle títulos a las tablas. Momento Resistente y Momento
+   Actuante" — solo se usa en Revisiones geotécnicas, donde conviven varias
+   tablas apiladas y hace falta distinguirlas de un vistazo). */
+.tabla-canvas-titulo{font-size:11px; font-weight:700; color:var(--text); margin-bottom:1px;}
 
 /* ---------- Estratos del relleno (tarjetas + modal, estilo GeoCim) ---------- */
 .estrato-card{border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:6px;}
@@ -3014,6 +3041,12 @@ function dibujarMuro2D(svg, state, r){
   const mostrarQs = tabActiva !== "suelo" && tabActiva !== "geometria";
   const mostrarPresiones = tabActiva === "presiones";
   const mostrarCargas = tabActiva === "cargas";
+  // Tablas de pesos/momentos DENTRO del canvas también en "Revisiones
+  // geotécnicas" (2026-08-16, a pedido del usuario: "pero en el canvas" —
+  // igual que se corrigió antes para Cargas, esta vez para la tabla de
+  // pesos + la nueva de momentos actuantes que se habían puesto primero
+  // en una tarjeta del panel lateral).
+  const mostrarRevisiones = tabActiva === "revisiones";
 
   const g = state.geom;
   const gc = calcGeometria(g);
@@ -3046,7 +3079,15 @@ function dibujarMuro2D(svg, state, r){
   // horizontal desde x=0) siguen necesitando carriles propios, porque las
   // 5 comparten el mismo origen y se anidan.
   const pesoCotaBase = 1.15, pesoCotaStep = 0.55;
-  const modelMinY = mostrarCargas ? -(pesoCotaBase + 4*pesoCotaStep + 0.3) : -extraDepth;
+  // qDiagDepth: espacio reservado ABAJO de la base de la zapata (y<0) para
+  // el diagrama de presión de contacto q, solo en Revisiones geotécnicas
+  // (2026-08-17, a pedido del usuario: "coloca el diagrama de presiones
+  // q") — ver el bloque que lo dibuja más abajo, junto a "Resultante y
+  // tercio central".
+  const qDiagDepth = 1.3;
+  const modelMinY = mostrarCargas ? -(pesoCotaBase + 4*pesoCotaStep + 0.3)
+    : mostrarRevisiones ? -(qDiagDepth + 0.35)
+    : -extraDepth;
   const modelMaxY = Math.max(tf + Hr + extraTop + slopeRise, cercoTopY + 0.3, tf + H + 0.55, r.pres.Hprime + 0.3);
 
   // Diagramas de presión lateral separados del esquema (2026-08-16, a pedido
@@ -3097,8 +3138,11 @@ function dibujarMuro2D(svg, state, r){
   // (`anchoTablaPx+gapTablaPx`) SOLO del lado derecho, restado del ancho
   // disponible para escala/centrado — igual mecanismo que `pad`, pero
   // asimétrico (nunca le quita nada al lado izquierdo).
+  // mostrarRevisiones reusa el MISMO carril reservado (ahí van dos tablas
+  // apiladas — pesos + momentos actuantes — en vez de una sola, ver el
+  // bloque que dibuja el <foreignObject> más abajo).
   const anchoTablaPx = 540, gapTablaPx = 24;
-  const reservaTablaPx = mostrarCargas ? anchoTablaPx + gapTablaPx : 0;
+  const reservaTablaPx = (mostrarCargas || mostrarRevisiones) ? anchoTablaPx + gapTablaPx : 0;
   const scale = Math.min((viewW-2*pad-reservaTablaPx)/modelW, (viewH-2*pad)/modelH);
   const offX = pad + ((viewW-2*pad-reservaTablaPx) - modelW*scale)/2, offY = (viewH - modelH*scale)/2;
   const X = xm => offX + (xm - viewMinX)*scale;
@@ -3605,19 +3649,78 @@ function dibujarMuro2D(svg, state, r){
     const okCentral = r.geo.eCategoria === "ok";
     svg.appendChild(el("circle",{cx:xr, cy:y0, r:5, fill: okCentral? col("--success-fg") : col("--danger-fg")}));
     svg.appendChild(el("line",{x1:xr,y1:y0,x2:xr,y2:y0-14,stroke: okCentral? col("--success-fg") : col("--danger-fg"), "stroke-width":1.4}));
+
+    // Diagrama de presión de contacto (reacción del suelo bajo la zapata),
+    // solo en Revisiones geotécnicas (2026-08-17, a pedido del usuario:
+    // "En revisión geotécnica coloca el diagrama de presiones q") — mismo
+    // lenguaje visual que los diagramas de Pa/Pp/Pq (trapecio
+    // semitransparente + valores en los extremos), pero horizontal (a lo
+    // largo de la base, x=0 en la punta/toe a x=Bf en el talón) y dibujado
+    // HACIA ABAJO de la base (y<0), con escala propia presión→metros
+    // (`qDiagDepth`, reservada arriba en modelMinY). q_max/q_min/
+    // distribucion/x_r son EXACTAMENTE los que ya calculó
+    // calcularGeotecnia (fórmulas 8.solve de Das, ecuación de la
+    // excentricidad medida desde el toe), nunca recalculados aparte. Por
+    // convención de esa fórmula (e=Bf/2-x_r, x_r medido desde el toe),
+    // q_max cae siempre en el toe (x=0) y q_min en el talón (x=Bf).
+    if(mostrarRevisiones){
+      const qMax = r.geo.q_max, qMin = r.geo.q_min;
+      if(isFinite(qMax) && qMax > 1e-6){
+        const scaleQ = qDiagDepth / qMax;
+        const qColor = "#00897b";
+        let qPts;
+        if(r.geo.distribucion === "Trapezoidal"){
+          qPts = [[0,0],[0,-qMax*scaleQ],[Bf,-qMin*scaleQ],[Bf,0]];
+        }else{
+          // Triangular (talón despegado): presión cae a 0 en Lef=3·x_r,
+          // medido desde el toe — del talón resta ninguna zona de contacto.
+          const Lef = Math.min(3*r.geo.x_r, Bf);
+          qPts = Lef > 1e-6 ? [[0,0],[0,-qMax*scaleQ],[Lef,0]] : [[0,0],[0,0],[0,0]];
+        }
+        poly(qPts, qColor, qColor, {opacity:0.32, "stroke-width":1.2});
+        // Los valores q_max/q_min se anclan a una altura FIJA cerca del
+        // fondo de la franja reservada (no a la altura variable del propio
+        // vértice del trapecio, que depende de qMax/qMin): con esos valores
+        // reales, el vértice caía justo a la misma altura (y=-0.35) donde ya
+        // viven las cotas fijas de toe/ts/heel (`dimH(...,-0.35,...)`, ver
+        // más abajo) y el texto se encimaba con "heel=..." (confirmado con
+        // captura). Ancladas cerca de -qDiagDepth (1.3 m) quedan siempre
+        // muy por debajo de esa franja de cotas. [Segunda corrección, misma
+        // verificación] q_max (ancla en x=0, crece a la derecha) y q_min
+        // (ancla en x=Bf, crece a la izquierda) a la MISMA altura se
+        // encimaban entre sí cuando Bf es angosto (confirmado con captura:
+        // "q_max=8.548 Tn/|q_min=2.378..." fundidos) — se separan también
+        // en Y (dos renglones), no solo por el ancla en X, para que nunca
+        // dependan de que Bf sea lo bastante ancho.
+        const yQMax = -qDiagDepth + 0.32, yQMin = -qDiagDepth + 0.14;
+        labelBg(0, yQMax, `q_max=${fmtPresionSuelo(qMax,3)}`, {fill:qColor, "text-anchor":"start", "font-size":"9px"});
+        if(r.geo.distribucion === "Trapezoidal"){
+          labelBg(Bf, yQMin, `q_min=${fmtPresionSuelo(qMin,3)}`, {fill:qColor, "text-anchor":"end", "font-size":"9px"});
+        }else{
+          const Lef = Math.min(3*r.geo.x_r, Bf);
+          labelBg(Lef, yQMin, "q=0", {fill:qColor, "text-anchor":"middle", "font-size":"9px"});
+        }
+        labelBg(Bf/2, -qDiagDepth-0.12, `Presión de contacto, q (${r.geo.distribucion})`, {fill:qColor, "text-anchor":"middle", "font-size":"10px", "font-weight":"600"});
+      }
+    }
   }
 
-  // Tabla "Resumen de pesos y momentos", DENTRO del canvas (2026-08-16,
-  // corrección a pedido del usuario: "pero dentro del canvas" — la primera
-  // versión vivía en una tarjeta del panel lateral). Se dibuja como
-  // <foreignObject> (HTML real embebido en el SVG, mismas clases/CSS que
-  // ya existían: table.results, zona-concreto/zona-suelo, tfoot) en vez de
-  // reconstruir cada celda a mano con <text>/<tspan> — mucho más simple y
-  // reusa el HTML ya armado por pesosTablaHTML(). Vive fuera del bloque de
-  // `uiState.showForces` a propósito: es una tabla de datos, no una fuerza
-  // que tenga sentido ocultar con ese toggle. Posicionada en PÍXELES (no
+  // Tabla(s) DENTRO del canvas (2026-08-16, corrección a pedido del
+  // usuario: "pero dentro del canvas"/"pero en el canvas" — la primera
+  // versión de cada una vivía en una tarjeta del panel lateral). Se
+  // dibujan como <foreignObject> (HTML real embebido en el SVG, mismas
+  // clases/CSS que ya existían: table.results, zona-concreto/zona-suelo/
+  // zona-sobrecarga, tfoot, .tabla-canvas) en vez de reconstruir cada
+  // celda a mano con <text>/<tspan> — mucho más simple y reusa el HTML ya
+  // armado por pesosTablaHTML()/movTablaHTML(). Viven fuera del bloque de
+  // `uiState.showForces` a propósito: son tablas de datos, no una fuerza
+  // que tenga sentido ocultar con ese toggle. Posicionadas en PÍXELES (no
   // en metros vía X()/Y()) porque su tamaño es de UI, no geométrico.
-  if(mostrarCargas){
+  // En "Cargas" es solo la tabla de pesos; en "Revisiones geotécnicas" son
+  // DOS tablas apiladas (pesos + momentos actuantes) en el mismo carril
+  // reservado (`reservaTablaPx` ya contempla este caso arriba, junto a
+  // scale/offX).
+  if(mostrarCargas || mostrarRevisiones){
     // anchoTablaPx/gapTablaPx ya se declararon arriba (junto a
     // scale/offX) — ahí mismo se resta `reservaTablaPx` del ancho
     // disponible para que el muro NUNCA se dibuje encima de este espacio,
@@ -3632,15 +3735,63 @@ function dibujarMuro2D(svg, state, r){
     fo.setAttribute("width", anchoTablaPx);
     fo.setAttribute("height", 10); // provisional, se corrige abajo con el alto real
     const divTabla = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
-    divTabla.innerHTML = pesosTablaHTML(r);
+    // [2026-08-17, corrección tras reporte real del usuario con captura:
+    // "No se ve completo" — la pila de tablas de Revisiones se recortaba en
+    // silencio cuando no cabía en el panel] El panel del visor tiene un alto
+    // físico fijo real (`.viewer-wrap{flex:1}`, ver comentario "2D/3D
+    // viewer") — con sismo/agua/cerco activos, o simplemente en una ventana
+    // no maximizada, la pila puede seguir sin caber aunque ya se compactó
+    // bastante (ver entrada de CLAUDE.md del mismo día). En vez de seguir
+    // exprimiendo tamaños de fuente/padding indefinidamente (con retornos
+    // cada vez más chicos y peor legibilidad), se limita la altura del
+    // <foreignObject> al espacio vertical REALMENTE disponible
+    // (`viewH - 2*pad`) y, si el contenido real es más alto que eso, el
+    // propio <div> se vuelve scrolleable (`overflow-y:auto`) — nunca más se
+    // recorta contenido sin forma de verlo, en el peor caso aparece una
+    // barra de scroll angosta dentro de esa franja, sin afectar el resto
+    // del dibujo (que sigue sin scroll, como el resto de la app).
+    const maxTablaAltoPx = viewH - 2*pad;
+    divTabla.style.maxHeight = maxTablaAltoPx + "px";
+    divTabla.style.overflowY = "auto";
+    divTabla.style.overflowX = "hidden";
+    // Títulos "Momento Resistente"/"Momento Actuante"/etc (2026-08-16 y
+    // 2026-08-17, a pedido del usuario) solo en Revisiones — en Cargas la
+    // tabla de pesos no necesita título aparte (ya está claro por contexto
+    // de esa pestaña). [Extensión 2026-08-17, "haz un apartado similar
+    // para las tablas y datos que influyen en las demás revisiones",
+    // confirmado con "Todas en el canvas, apiladas (como Volteo)"]: se
+    // agregan aquí mismo, apiladas, las tablas de Deslizamiento (fuerza
+    // actuante Fh + resistencia R) y Capacidad portante (desglose de qult),
+    // más una tabla resumen para Excentricidad — el usuario aceptó
+    // explícitamente el riesgo de que la pila creciera mucho con
+    // sismo/agua/cerco activos a la vez; ver el comentario sobre el scroll
+    // interno del <div> arriba, que es lo que finalmente absorbe ese riesgo
+    // sin recortar contenido.
+    if(mostrarCargas){
+      divTabla.innerHTML = pesosTablaHTML(r, "CanvasCargas");
+    } else {
+      const espaciador = `<div style="height:5px;"></div>`;
+      divTabla.innerHTML = [
+        `<div class="tabla-canvas-titulo">Momento Resistente</div>${pesosTablaHTML(r, "CanvasRevPesos")}`,
+        `<div class="tabla-canvas-titulo">Momento Actuante</div>${movTablaHTML(r, "CanvasRevMov")}`,
+        `<div class="tabla-canvas-titulo">Fuerza Actuante (deslizamiento)</div>${fuerzaActuanteTablaHTML(r, "CanvasRevFh")}`,
+        `<div class="tabla-canvas-titulo">Resistencia al Deslizamiento</div>${resistenciaTablaHTML(r, "CanvasRevR")}`,
+        `<div class="tabla-canvas-titulo">Capacidad de Carga Última</div>${qultTablaHTML(r, "CanvasRevQult")}`,
+        `<div class="tabla-canvas-titulo">Excentricidad</div>${excentricidadTablaHTML(r, "CanvasRevExc")}`,
+      ].join(espaciador);
+    }
     fo.appendChild(divTabla);
     svg.appendChild(fo);
     // Un foreignObject RECORTA su contenido al alto declarado (no crece
     // solo) — una estimación fija (filas × alto supuesto) se quedó corta y
     // cortaba la última fila y el pie de totales cuando había talud
     // (confirmado con captura). Se mide el alto REAL ya renderizado del
-    // <table> y se corrige el atributo "height" con ese valor + margen.
-    fo.setAttribute("height", divTabla.scrollHeight + 8);
+    // contenido (una tabla en Cargas, varias apiladas en Revisiones) y se
+    // corrige el atributo "height" con ese valor + margen, PERO nunca por
+    // encima de `maxTablaAltoPx` (si el contenido real es más alto, el
+    // <foreignObject> se queda del tamaño del espacio disponible y es el
+    // <div> interior el que scrollea, ver comentario arriba).
+    fo.setAttribute("height", Math.min(divTabla.scrollHeight + 8, maxTablaAltoPx));
   }
 
   // ---- Cotas ----
@@ -4519,16 +4670,172 @@ function calcularZonasPesos(r){
 // HTML de la tabla (mismas clases/CSS que ya existían para la versión de
 // panel lateral: table.results, zona-concreto/zona-suelo/zona-sobrecarga,
 // tfoot) — se inyecta dentro de un <foreignObject> en dibujarMuro2D.
-function pesosTablaHTML(r){
+// [Extensión 2026-08-16] `idSuffix` opcional: esta misma tabla ahora se
+// inyecta en DOS lugares a la vez (el <foreignObject> del canvas en Cargas
+// Y una tarjeta normal en Revisiones geotécnicas, a pedido del usuario
+// "agrega la misma tabla") — con un id fijo, ambas copias coexistirían en
+// el DOM con el mismo id (inválido, aunque inofensivo para CSS). El
+// estilo compacto/una-sola-línea vive en la clase `.tabla-canvas`
+// (reusada en las dos copias), no en el id.
+function pesosTablaHTML(r, idSuffix){
   const { zonas, sumaFv, sumaM } = calcularZonasPesos(r);
   const rowsHtml = zonas.map((z,i)=>{
     const cls = z.material === "Concreto" ? "zona-concreto" : z.material === "Suelo" ? "zona-suelo" : "zona-sobrecarga";
     return `<tr class="${cls}"><td>${i+1}</td><td>${z.material}</td><td>${fmtCat(z.gammaCat||"pesoVol",z.gamma,1)}</td><td>${fmtArea(z.area,3)}</td><td>${fmtFuerza(z.peso,3)}</td><td>${fmtLong(z.brazo,3)}</td><td>${fmtMomento(z.momento,3)}</td></tr>`;
   }).join("");
-  return `<table class="results" id="tablaPesos">
+  return `<table class="results tabla-canvas" id="tablaPesos${idSuffix||""}">
     <thead><tr><th>Zona</th><th>Material</th><th>γ</th><th>Área</th><th>Peso = V·γ</th><th>Brazo</th><th>Momento</th></tr></thead>
     <tbody>${rowsHtml}</tbody>
     <tfoot><tr><td colspan="4">ΣFv / ΣM</td><td>${fmtFuerza(sumaFv,3)}</td><td></td><td>${fmtMomento(sumaM,3)}</td></tr></tfoot>
+  </table>`;
+}
+
+// Tabla "Momentos actuantes" (2026-08-16, a pedido del usuario: "agrega...
+// la tabla para obtener los momentos actuantes") — desglose de Mov, mismo
+// patrón que pesosTablaHTML: reusa EXACTAMENTE los términos que ya suma
+// `Mov` en calcularGeotecnia (`Pa_h·arm + Pq_h·(H'/2) + Pw_h·(Hw/3) +
+// ΔPAE_h·(0.6H') + M_cerco`), nunca recalculados aparte. Cada fila solo
+// aparece si esa fuerza está activa Y es distinta de cero, para no listar
+// ceros vacíos (sobrecarga/agua/sismo/cerco son todos opcionales).
+function calcularZonasMov(r){
+  const pres = r.pres, g = state.geom;
+  const Hw = state.suelo.waterEnabled ? state.suelo.Hw : 0;
+  const zonas = [
+    { concepto:"Empuje activo, Pa,h", fuerza: pres.Pa_h, brazo: pres.arm },
+  ];
+  if(state.cargas.qsEnabled && pres.Pq_h > 1e-9){
+    zonas.push({ concepto:"Sobrecarga, Pq,h", fuerza: pres.Pq_h, brazo: pres.Hprime/2 });
+  }
+  if(state.suelo.waterEnabled && pres.Pw_h > 1e-9){
+    zonas.push({ concepto:"Hidrostático, Pw,h", fuerza: pres.Pw_h, brazo: Hw/3 });
+  }
+  if(state.sismo.enabled && pres.DeltaPAE_h > 1e-9){
+    zonas.push({ concepto:"Sismo, ΔPAE,h", fuerza: pres.DeltaPAE_h, brazo: 0.6*pres.Hprime });
+  }
+  if(state.cargas.cercoEnabled && state.cargas.P_cerco > 1e-9){
+    zonas.push({ concepto:"Cerco perimetral", fuerza: state.cargas.P_cerco, brazo: g.tf+g.H+state.cargas.h_cerco/2 });
+  }
+  let sumaFh = 0, sumaMov = 0;
+  zonas.forEach(z=>{ z.momento = z.fuerza*z.brazo; sumaFh += z.fuerza; sumaMov += z.momento; });
+  return { zonas, sumaFh, sumaMov };
+}
+function movTablaHTML(r, idSuffix){
+  const { zonas, sumaFh, sumaMov } = calcularZonasMov(r);
+  const rowsHtml = zonas.map((z,i)=>
+    `<tr><td>${i+1}</td><td>${z.concepto}</td><td>${fmtFuerza(z.fuerza,3)}</td><td>${fmtLong(z.brazo,3)}</td><td>${fmtMomento(z.momento,3)}</td></tr>`
+  ).join("");
+  return `<table class="results tabla-canvas" id="tablaMov${idSuffix||""}">
+    <thead><tr><th>Zona</th><th>Concepto</th><th>Fuerza</th><th>Brazo</th><th>Momento</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot><tr><td colspan="2">ΣFh / ΣMov</td><td>${fmtFuerza(sumaFh,3)}</td><td></td><td>${fmtMomento(sumaMov,3)}</td></tr></tfoot>
+  </table>`;
+}
+
+// Tabla "Fuerza Actuante" para Deslizamiento (2026-08-17, a pedido del
+// usuario) — mismos términos que ya suma `Fh` en calcularGeotecnia; de
+// hecho son EXACTAMENTE las mismas `zonas` que ya arma calcularZonasMov
+// (Pa_h/Pq_h/Pw_h/ΔPAE_h/cerco), solo que aquí no interesan brazo/momento
+// (eso es para volteo, no deslizamiento), así que se reutilizan las mismas
+// zonas pero solo se listan Zona/Concepto/Fuerza. [Nota] Esta tabla se
+// había quitado por ser redundante con "Momento Actuante" (misma Fuerza +
+// mismo ΣFh en el pie) mientras el stack completo no cabía en el panel; el
+// usuario la pidió de vuelta después de agregarse el scroll interno del
+// <foreignObject> (ver comentario en dibujarMuro2D), que ya resuelve el
+// problema de espacio sin tener que sacrificar esta tabla.
+function fuerzaActuanteTablaHTML(r, idSuffix){
+  const { zonas, sumaFh } = calcularZonasMov(r);
+  const rowsHtml = zonas.map((z,i)=>
+    `<tr><td>${i+1}</td><td>${z.concepto}</td><td>${fmtFuerza(z.fuerza,3)}</td></tr>`
+  ).join("");
+  return `<table class="results tabla-canvas" id="tablaFuerzaAct${idSuffix||""}">
+    <thead><tr><th>Zona</th><th>Concepto</th><th>Fuerza</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot><tr><td colspan="2">ΣFh</td><td>${fmtFuerza(sumaFh,3)}</td></tr></tfoot>
+  </table>`;
+}
+
+// Desglose de R (resistencia al deslizamiento) — mismos términos que ya
+// suma calcularGeotecnia (Fr=μ·N fricción, Fr_cohesion=B·k2·cf cohesión,
+// Pp_h empuje pasivo si está activo, Fkey llave de corte si está activa),
+// nunca recalculados aparte. Cada fila condicionada a que ese mecanismo
+// esté activo Y aporte algo distinto de cero, igual que en calcularZonasMov.
+function calcularZonasResistencia(r){
+  const geo = r.geo;
+  const zonas = [
+    { concepto:"Fricción base, μ·N", fuerza: geo.Fr },
+  ];
+  if(geo.Fr_cohesion > 1e-9){
+    zonas.push({ concepto:"Cohesión base, B·k2·cf", fuerza: geo.Fr_cohesion });
+  }
+  if(state.suelo.pasivoEnabled && geo.Pp_h > 1e-9){
+    zonas.push({ concepto:"Empuje pasivo, Pp,h", fuerza: geo.Pp_h });
+  }
+  if(state.geom.keyEnabled && geo.Fkey > 1e-9){
+    zonas.push({ concepto:"Llave de corte", fuerza: geo.Fkey });
+  }
+  let sumaR = 0;
+  zonas.forEach(z=>{ sumaR += z.fuerza; });
+  return { zonas, sumaR };
+}
+function resistenciaTablaHTML(r, idSuffix){
+  const { zonas, sumaR } = calcularZonasResistencia(r);
+  const rowsHtml = zonas.map((z,i)=>
+    `<tr><td>${i+1}</td><td>${z.concepto}</td><td>${fmtFuerza(z.fuerza,3)}</td></tr>`
+  ).join("");
+  return `<table class="results tabla-canvas" id="tablaResist${idSuffix||""}">
+    <thead><tr><th>Zona</th><th>Concepto</th><th>Fuerza</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot><tr><td colspan="2">ΣR</td><td>${fmtFuerza(sumaR,3)}</td></tr></tfoot>
+  </table>`;
+}
+
+// Desglose de qult (capacidad de carga última) en sus 3 términos aditivos
+// clásicos (cohesión + sobrecarga + peso propio), cada uno producto de un
+// factor de capacidad (Nc/Nq/Nγ) × factor de profundidad (Fcd/Fqd/Fgd) ×
+// factor de inclinación (Fci/Fqi/Fgi) — mismos valores que ya calcula
+// calcularGeotecnia, nunca recalculados aparte. Fgd siempre vale 1 (no
+// está expuesto en el return de calcularGeotecnia por ser una constante,
+// no una fórmula) así que se hardcodea aquí igual que allá.
+function calcularTerminosQult(r){
+  const geo = r.geo, su = state.suelo, Df = state.geom.Df;
+  const qDf = su.gamma_f * Df;
+  const Fgd = 1;
+  return [
+    { termino:"Cohesión", n: geo.Nc, fd: geo.Fcd, fi: geo.Fci, aporte: su.c_f*geo.Nc*geo.Fcd*geo.Fci },
+    { termino:"Sobrecarga (q=γf·Df)", n: geo.Nq, fd: geo.Fqd, fi: geo.Fqi, aporte: qDf*geo.Nq*geo.Fqd*geo.Fqi },
+    { termino:"Peso propio (B')", n: geo.Ngamma, fd: Fgd, fi: geo.Fgi, aporte: 0.5*su.gamma_f*geo.Bprime*geo.Ngamma*Fgd*geo.Fgi },
+  ];
+}
+function qultTablaHTML(r, idSuffix){
+  const terminos = calcularTerminosQult(r);
+  const rowsHtml = terminos.map((t,i)=>
+    `<tr><td>${i+1}</td><td>${t.termino}</td><td>${fmt(t.n,3)}</td><td>${fmt(t.fd,3)}</td><td>${fmt(t.fi,3)}</td><td>${fmtPresionSuelo(t.aporte,3)}</td></tr>`
+  ).join("");
+  return `<table class="results tabla-canvas" id="tablaQult${idSuffix||""}">
+    <thead><tr><th>Zona</th><th>Término</th><th>N</th><th>Fd</th><th>Fi</th><th>Aporte a qult</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot><tr><td colspan="5">qult</td><td>${fmtPresionSuelo(r.geo.qult,3)}</td></tr></tfoot>
+  </table>`;
+}
+
+// Derivación de la excentricidad (x_r, e) — a diferencia de las tablas
+// anteriores no es una suma de componentes independientes sino una cadena
+// de pasos, así que se muestra como Concepto/Valor en vez del formato
+// Zona/fila-por-componente usado arriba. Solo N/x_r/e (no Mr/Mov/ΣM): esos
+// tres ya están visibles en las tablas "Momento Resistente"/"Momento
+// Actuante" apiladas justo arriba en el mismo canvas — repetirlos aquí
+// era una redundancia que no valía el espacio vertical, muy escaso en
+// este panel (ver comentario sobre `table.tabla-canvas` más arriba).
+function excentricidadTablaHTML(r, idSuffix){
+  const geo = r.geo;
+  const filas = [
+    { concepto:"Carga vertical, N", valor: fmtFuerza(geo.N,3) },
+    { concepto:"x_r = (Mr−Mov) / N", valor: fmtLong(geo.x_r,3) },
+    { concepto:"e = Bf/2 − x_r", valor: fmtLong(geo.e,3) },
+  ];
+  const rowsHtml = filas.map(f=>`<tr><td>${f.concepto}</td><td>${f.valor}</td></tr>`).join("");
+  return `<table class="results tabla-canvas" id="tablaExc${idSuffix||""}">
+    <tbody>${rowsHtml}</tbody>
   </table>`;
 }
 
