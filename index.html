@@ -228,6 +228,15 @@ body{padding-bottom:var(--results-bar-h);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 
+/* Pestaña Proyecto (2026-08-15, a pedido del usuario, estilo GeoCim): sin
+   visor 2D/3D, solo los datos del proyecto — #main-layout recibe esta
+   clase mientras esa pestaña está activa (ver el handler de click de
+   .ribbon-tab). #content pasa de su ancho fijo de formulario lateral
+   (420px) a un formulario centrado y más ancho, ya que deja de compartir
+   la fila con el visor. */
+#main-layout.sin-visor #viewer-pane{display:none;}
+#main-layout.sin-visor #content{width:100%; max-width:640px; margin:0 auto; flex-shrink:1;}
+
 /* ---------- Cards & forms ---------- */
 .card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 18px; margin-bottom:16px; box-shadow:var(--shadow2); transition:background .2s,border-color .2s;}
 .card h3{margin:0 0 4px; font-size:15px;}
@@ -263,6 +272,22 @@ table.results td{padding:8px 10px; border-bottom:1px solid var(--border);}
 table.results tr.row-ok td{background:var(--success-bg);}
 table.results tr.row-bad td{background:var(--danger-bg);}
 table.results tr.row-warn td{background:var(--warning-bg);}
+
+/* Tabla "Resumen de pesos y momentos" (pestaña Cargas, 2026-08-16): tinte
+   sutil por material, mismos colores que ya usa el dibujo 2D para concreto/
+   suelo (--concrete-fill/--soil-fill), para que la tabla se sienta ligada
+   al esquema en vez de una lista genérica. La fila de totales usa negritas
+   y una línea superior más marcada, como un renglón "Σ" de hoja de cálculo. */
+table.results tr.zona-concreto td{background:color-mix(in srgb, var(--concrete-fill) 35%, transparent);}
+table.results tr.zona-suelo td{background:color-mix(in srgb, var(--soil-fill) 60%, transparent);}
+table.results tr.zona-sobrecarga td{background:color-mix(in srgb, var(--pq-color) 18%, transparent);}
+table.results tfoot td{font-weight:700; border-top:2px solid var(--border-strong); border-bottom:none;}
+/* #tablaPesos (dentro del canvas, ver dibujarMuro2D): texto SIEMPRE en una
+   sola línea, sin ajustarse al ancho de la columna (a pedido del usuario:
+   "que todos los textos se vean en una sola fila, no las ajustes a la
+   anchura") — el ancho del <foreignObject> ya se calculó para que quepa
+   sin wrap, ver anchoTablaPx. */
+#tablaPesos th, #tablaPesos td{white-space:nowrap; padding:5px 7px; font-size:11px;}
 
 /* ---------- Estratos del relleno (tarjetas + modal, estilo GeoCim) ---------- */
 .estrato-card{border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:6px;}
@@ -585,7 +610,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <button class="view-switch-btn active" id="btnView2D">2D</button>
         <button class="view-switch-btn" id="btnView3D">3D</button>
       </div>
-      <label class="viewer-toggle" title="Mostrar u ocultar las cotas en cualquier pestaña"><input type="checkbox" id="chkCotas" checked> Cotas</label>
+      <label class="viewer-toggle" id="wrapCotas" title="Mostrar u ocultar las cotas en cualquier pestaña"><input type="checkbox" id="chkCotas" checked> Cotas</label>
     </div>
     <div class="viewer-wrap">
       <svg id="wall2d" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -695,6 +720,19 @@ table.results tr.row-warn td{background:var(--warning-bg);}
             </select>
           </div>
         </div>
+      </div>
+
+      <div class="card">
+        <h3>Factores de seguridad</h3>
+        <p class="sub">Umbrales mínimos exigidos en las revisiones geotécnicas (pestaña Revisiones geotécnicas y Resultados). Se guardan con el proyecto (.gcon) — súbelos si el criterio del proyecto/norma es más estricto que el valor por default.</p>
+        <div class="form-grid">
+          <div class="field"><label>Volteo, estático</label><input type="number" step="0.1" data-bind="FS.volteo_estatico"></div>
+          <div class="field"><label>Volteo, sísmico</label><input type="number" step="0.1" data-bind="FS.volteo_sismico"></div>
+          <div class="field"><label>Deslizamiento, estático</label><input type="number" step="0.1" data-bind="FS.desliz_estatico"></div>
+          <div class="field"><label>Deslizamiento, sísmico</label><input type="number" step="0.1" data-bind="FS.desliz_sismico"></div>
+          <div class="field"><label>Capacidad de carga (qult/q máx)</label><input type="number" step="0.1" data-bind="FS.capacidad_carga"></div>
+        </div>
+        <p class="hint">La revisión de capacidad de carga exige AMBAS condiciones: q máx ≤ capacidad admisible QADM (Suelo y materiales) Y qult/q máx ≥ este factor.</p>
       </div>
     </section>
 
@@ -852,15 +890,14 @@ table.results tr.row-warn td{background:var(--warning-bg);}
         <h3>Resultados de presiones</h3>
         <div class="form-grid">
           <div class="field"><label data-calc="Ka">Coeficiente activo, Ka</label><input id="out-Ka" disabled></div>
-          <div class="field"><label data-calc="Pa">Fuerza activa, Pa</label><input id="out-Pa" disabled></div>
           <div class="field"><label data-calc="Pah">Componente horizontal, Pa,h</label><input id="out-Pah" disabled></div>
           <div class="field"><label data-calc="Pqh">Empuje por sobrecarga, Pq,h</label><input id="out-Pqh" disabled></div>
           <div class="field"><label data-calc="Pwh">Empuje hidrostático, Pw,h</label><input id="out-Pwh" disabled></div>
           <div class="field"><label data-calc="Kp">Coeficiente pasivo, Kp</label><input id="out-Kp" disabled></div>
-          <div class="field"><label data-calc="Pp">Fuerza pasiva, Pp</label><input id="out-Pp" disabled></div>
           <div class="field"><label data-calc="KAE">K_AE (sismo Mononobe-Okabe)</label><input id="out-KAE" disabled></div>
           <div class="field"><label data-calc="DeltaPAE">Incremento sísmico, ΔPAE,h</label><input id="out-DeltaPAE" disabled></div>
         </div>
+        <p class="hint">Ka usa las propiedades del primer estrato del relleno. Kp usa γp/φp/cp del suelo de fundación, capturadas en la pestaña Suelo y materiales.</p>
       </div>
     </section>
 
@@ -892,7 +929,7 @@ table.results tr.row-warn td{background:var(--warning-bg);}
 
       <div class="card">
         <h3>3. Capacidad portante</h3>
-        <p class="sub">Ref.: Terzaghi, Meyerhof — NAVFAC DM-7.02. qult es informativo, no de diseño.</p>
+        <p class="sub">Ref.: Terzaghi, Meyerhof — NAVFAC DM-7.02. Debe cumplir q máx ≤ QADM (Suelo y materiales) Y qult/q máx ≥ el factor de seguridad de capacidad de carga (Proyecto → Factores de seguridad).</p>
         <div class="form-grid">
           <div class="field"><label>q máx</label><input id="out-qmax" disabled></div>
           <div class="field"><label>q mín</label><input id="out-qmin" disabled></div>
@@ -2214,7 +2251,11 @@ function toDisplay(cat, baseVal){ return baseVal * unitFactor(cat); }
 function toBase(cat, dispVal){ return dispVal / unitFactor(cat); }
 function fmtCat(cat, baseVal, dec){
   if(baseVal===null || baseVal===undefined || !isFinite(baseVal)) return "—";
-  return fmt(toDisplay(cat, baseVal), dec===undefined?2:dec) + " " + unitLabel(cat);
+  // Default 3 decimales (no 2, 2026-08-16 a pedido del usuario: "que todos
+  // los resultados tengan 3 decimales. No redondees a número entero") —
+  // detonado por un valor real (~0.33 Tn/m²) que se veía como "0" con
+  // menos precisión en una unidad "grande" como Tn/m².
+  return fmt(toDisplay(cat, baseVal), dec===undefined?3:dec) + " " + unitLabel(cat);
 }
 // Envolturas con el nombre histórico, usadas en toda la app para no tener
 // que cambiar cada punto de llamada — ahora delegan en la categoría.
@@ -2710,12 +2751,20 @@ function calcularPresiones(state){
   if(suelo.waterEnabled){ Pw_h = 0.5 * suelo.gamma_w * Math.pow(suelo.Hw, 2); }
 
   // Presión pasiva (ecuación 8.9, Das): término friccionante + término de
-  // cohesión 2·c_p·√Kp·Df (antes solo se calculaba el primero).
-  let Kp = 0, Pp = 0;
+  // cohesión 2·c_p·√Kp·Df (antes solo se calculaba el primero). armPasivo
+  // (2026-08-16, expuesto para el diagrama de presión separado del esquema,
+  // ver dibujarMuro2D): brazo REAL de la resultante, ponderando el brazo
+  // triangular del término friccionante (Df/3) y el rectangular del término
+  // de cohesión (Df/2) — antes de esto no había un solo brazo calculado
+  // para Pp, el resaltado de hover seguía usando un rectángulo simplificado.
+  let Kp = 0, Pp = 0, armPasivo = 0;
   if(suelo.pasivoEnabled){
     const phiP = toRad(suelo.phi_p);
     Kp = Math.pow(Math.tan(Math.PI/4 + phiP/2), 2);
-    Pp = 0.5 * Kp * suelo.gamma_p * Math.pow(geom.Df, 2) + 2*(suelo.c_p||0)*Math.sqrt(Kp)*geom.Df;
+    const Pp_friccion = 0.5 * Kp * suelo.gamma_p * Math.pow(geom.Df, 2);
+    const Pp_cohesion = 2*(suelo.c_p||0)*Math.sqrt(Kp)*geom.Df;
+    Pp = Pp_friccion + Pp_cohesion;
+    armPasivo = Pp > 1e-9 ? (Pp_friccion*(geom.Df/3) + Pp_cohesion*(geom.Df/2))/Pp : geom.Df/3;
   }
 
   // Incremento sísmico (Bloque 4): solo si sismo.enabled. Mononobe-Okabe
@@ -2758,7 +2807,7 @@ function calcularPresiones(state){
   // segments es el mismo capasExt ya usado arriba (con Ka_i/sigmaTop/
   // sigmaBot/Fi anotados por segmento), null en Fluido_equivalente porque
   // ese método no segmenta (fórmula cerrada directa).
-  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, H, Hprime, DeltaPAE_h, KAE, psi, arm, theta,
+  return { Ka, Pa, Pa_h, Pa_v, Pq_h, Pw_h, Kp, Pp, armPasivo, H, Hprime, DeltaPAE_h, KAE, psi, arm, theta,
     segments: metodo === "Fluido_equivalente" ? null : capasExt, gamma_avg };
 }
 
@@ -2951,6 +3000,21 @@ function dibujarMuro2D(svg, state, r){
   const css = getComputedStyle(document.documentElement);
   const col = name => css.getPropertyValue(name).trim();
 
+  // Pestaña activa del ribbon (2026-08-15): varias anotaciones del dibujo
+  // (propiedades del estrato/suelo de fundación, Pa/Pp, cotas) dependen de
+  // en qué pestaña está el usuario, para no saturar el dibujo con datos que
+  // no son el foco de la pestaña actual. Se lee directo del DOM en vez de
+  // duplicarla en `state`/`uiState` — dibujarMuro2D ya se re-invoca en cada
+  // cambio de pestaña (ver el handler de click de `.ribbon-tab`).
+  const tabActiva = document.querySelector(".ribbon-tab.active")?.dataset.tab;
+  const mostrarSuelo = tabActiva === "suelo";
+  // Sobrecarga (franja qs sobre el relleno): oculta en "Suelo y materiales"
+  // y "Geometría del muro" (2026-08-16, a pedido del usuario en dos
+  // mensajes seguidos) — solo es el foco en Cargas/Presiones laterales.
+  const mostrarQs = tabActiva !== "suelo" && tabActiva !== "geometria";
+  const mostrarPresiones = tabActiva === "presiones";
+  const mostrarCargas = tabActiva === "cargas";
+
   const g = state.geom;
   const gc = calcGeometria(g);
   const heel = gc.heel, xBack = gc.xBack;
@@ -2970,8 +3034,44 @@ function dibujarMuro2D(svg, state, r){
   // Si el cerco perimetral está activo, su altura por encima de la corona
   // también debe caber en el lienzo.
   const cercoTopY = state.cargas.cercoEnabled ? (tf+H+state.cargas.h_cerco) : 0;
-  const modelMinY = -extraDepth, modelMaxY = Math.max(tf + Hr + extraTop + slopeRise, cercoTopY + 0.3, tf + H + 0.55);
-  const modelW = modelMaxX - modelMinX, modelH = modelMaxY - modelMinY;
+  // Flechas de peso propio + cotas de brazo, siempre visibles en "Cargas"
+  // (2026-08-16, a pedido del usuario). [Corrección, mismo día] La primera
+  // versión apilaba las 5 flechas en una escalera muy por encima de la
+  // corona ("que las indicaciones de las cargas no estén tan arriba,
+  // preferentemente que estén a la mitad del elemento del que están
+  // obteniendo el resultado") — ahora cada flecha vive a la altura MEDIA
+  // real del elemento que pesa (mitad del fuste, mitad de la zapata, etc.,
+  // ver el bloque "Pesos propios" más abajo), no en un carril artificial.
+  // Solo las COTAS de brazo (abajo de la zapata, mostrando la distancia
+  // horizontal desde x=0) siguen necesitando carriles propios, porque las
+  // 5 comparten el mismo origen y se anidan.
+  const pesoCotaBase = 1.15, pesoCotaStep = 0.55;
+  const modelMinY = mostrarCargas ? -(pesoCotaBase + 4*pesoCotaStep + 0.3) : -extraDepth;
+  const modelMaxY = Math.max(tf + Hr + extraTop + slopeRise, cercoTopY + 0.3, tf + H + 0.55, r.pres.Hprime + 0.3);
+
+  // Diagramas de presión lateral separados del esquema (2026-08-16, a pedido
+  // del usuario con una captura de otro software de referencia — ver el
+  // bloque "Fuerzas" más abajo, pressureDiagram/pressureResultant): en la
+  // pestaña "Presiones laterales" se amplía la VENTANA de vista (viewMinX/
+  // viewMaxX) para dar cabida a los diagramas de Pa/Pp/qs/Pw,h a los lados,
+  // SIN tocar modelMinX/modelMaxX (la geometría real de suelo/muro no se
+  // corre ni un mm, solo se ve más chica dentro de un lienzo más ancho).
+  // diagGap separa cada diagrama del siguiente; diagW es el ancho máximo que
+  // puede alcanzar CADA diagrama con su propia presión más alta (cada uno
+  // tiene su propia escala, ver más abajo). Del lado derecho puede haber
+  // hasta 3 carriles en fila (activo siempre, sobrecarga y/o hidrostática si
+  // están activas — el usuario pidió separarlas del activo, antes vivían
+  // superpuestas en el mismo carril); del lado izquierdo solo el pasivo.
+  // diagGap 0.5 (no 0.3): con un diagrama uniforme (rectángulo, p.ej.
+  // sobrecarga) la etiqueta de su resultante llega hasta el borde COMPLETO
+  // del carril (no se angosta hacia arriba como un triángulo), así que
+  // necesita más aire para no chocar con el título del carril siguiente.
+  const diagW = 1.2, diagGap = 1.6, diagLabelMargin = 0.55;
+  const lanesRight = 1 + (state.cargas.qsEnabled?1:0) + (state.suelo.waterEnabled && state.suelo.Hw>0 ?1:0);
+  const viewMinX = modelMinX - (mostrarPresiones && state.suelo.pasivoEnabled ? diagGap+diagW+diagLabelMargin : 0);
+  const viewMaxX = modelMaxX
+    + (mostrarPresiones ? lanesRight*(diagGap+diagW) + diagLabelMargin : 0);
+  const modelW = viewMaxX - viewMinX, modelH = modelMaxY - modelMinY;
 
   // El viewBox se hace IGUAL al tamaño real en píxeles del panel (medido en
   // vivo con clientWidth/clientHeight) y la escala se calcula directo contra
@@ -2984,9 +3084,24 @@ function dibujarMuro2D(svg, state, r){
   const viewW = svg.parentElement.clientWidth || 900;
   const viewH = svg.parentElement.clientHeight || 560;
   svg.setAttribute("viewBox", `0 0 ${viewW} ${viewH}`);
-  const scale = Math.min((viewW-2*pad)/modelW, (viewH-2*pad)/modelH);
-  const offX = (viewW - modelW*scale)/2, offY = (viewH - modelH*scale)/2;
-  const X = xm => offX + (xm - modelMinX)*scale;
+  // Tabla "Resumen de pesos y momentos" (2026-08-16, dentro del canvas a
+  // pedido del usuario — ver el bloque "Tabla de pesos" más abajo, donde
+  // se dibuja el <foreignObject>). [Corrección] Reservarle espacio en
+  // METROS (como hacen los diagramas de presión lateral) no garantiza
+  // espacio en PÍXELES: en "Cargas" la escala suele estar limitada por el
+  // alto del lienzo (las cotas de brazo apiladas abajo), no por el ancho,
+  // así que agrandar el modelo horizontalmente apenas movía nada (el
+  // centrado de offX solo reparte la mitad de lo ganado a cada lado) — la
+  // tabla terminaba encimada con el muro (confirmado midiendo con
+  // getBBox()). Ahora se reserva un margen FIJO EN PÍXELES
+  // (`anchoTablaPx+gapTablaPx`) SOLO del lado derecho, restado del ancho
+  // disponible para escala/centrado — igual mecanismo que `pad`, pero
+  // asimétrico (nunca le quita nada al lado izquierdo).
+  const anchoTablaPx = 540, gapTablaPx = 24;
+  const reservaTablaPx = mostrarCargas ? anchoTablaPx + gapTablaPx : 0;
+  const scale = Math.min((viewW-2*pad-reservaTablaPx)/modelW, (viewH-2*pad)/modelH);
+  const offX = pad + ((viewW-2*pad-reservaTablaPx) - modelW*scale)/2, offY = (viewH - modelH*scale)/2;
+  const X = xm => offX + (xm - viewMinX)*scale;
   const Y = ym => viewH - offY - (ym - modelMinY)*scale;
 
   // Se guarda la transformación de ESTE render (X/Y son closures ligadas a la
@@ -3054,13 +3169,13 @@ function dibujarMuro2D(svg, state, r){
   }
   // Dimensión horizontal, con líneas de proyección opcionales hacia targetY
   // (la altura real de la figura que se está acotando) y etiqueta arriba.
-  function dimH(x1,x2,y,label,targetY,extraDy){
+  function dimH(x1,x2,y,label,targetY,extraDy,fontSize){
     line(x1,y,x2,y,col("--muted"),{"marker-start":"url(#arrowHead)","marker-end":"url(#arrowHead)"});
     if(targetY!==undefined){
       lineaProyeccion(x1,targetY,x1,y);
       lineaProyeccion(x2,targetY,x2,y);
     }
-    labelBg((x1+x2)/2, y, label, {dy: -6 + (extraDy||0), "font-size":"10px"});
+    labelBg((x1+x2)/2, y, label, {dy: -6 + (extraDy||0), "font-size":fontSize||"10px"});
   }
   // Dimensión vertical, con líneas de proyección opcionales hacia targetX
   // (la posición real de la figura que se está acotando) y etiqueta rotada.
@@ -3072,6 +3187,85 @@ function dibujarMuro2D(svg, state, r){
     }
     const midY=(y1+y2)/2;
     labelBg(x, midY, label, {"text-anchor":"middle", transform:`rotate(-90 ${X(x)} ${Y(midY)})`});
+  }
+
+  // ---- Diagramas de presión lateral, separados del esquema del muro ----
+  // (2026-08-16, a pedido del usuario con una captura de otro software de
+  // referencia: los diagramas de empuje activo/pasivo/sobrecarga deben
+  // verse como figuras APARTE junto al muro, no como triángulos
+  // esquemáticos superpuestos al dibujo). Cada "pieza" es un tramo
+  // {yTop,yBot,sigTop,sigBot} en coordenadas REALES del modelo — mismos
+  // valores que ya calculó calcularPresiones por segmento (pres.segments),
+  // nunca recalculados aquí, mismo patrón que Wp/Ws/Pa del hover.
+  // pressureDiagram dibuja cada tramo como su propio trapecio (no un solo
+  // polígono continuo) para que un salto de Ka entre estratos se vea como
+  // el escalón que realmente es en vez de conectar diagonalmente valores
+  // que no son continuos.
+  function pressureDiagram(x0, dir, piezas, scale, fillColor, strokeColor){
+    piezas.forEach(p=>{
+      poly([[x0,p.yTop],[x0+dir*p.sigTop*scale,p.yTop],[x0+dir*p.sigBot*scale,p.yBot],[x0,p.yBot]],
+        fillColor, strokeColor, {opacity:0.38, "stroke-width":1});
+    });
+    const yTopAll = piezas[0].yTop, yBotAll = piezas[piezas.length-1].yBot;
+    line(x0, yBotAll, x0, yTopAll, strokeColor, {"stroke-width":1.2});
+  }
+  // Flecha horizontal de la resultante a la altura REAL donde actúa (arm):
+  // interpola la presión en esa altura dentro del tramo que la contiene
+  // para que la punta de la flecha toque exactamente el borde del diagrama
+  // ahí, con la fuerza y el brazo (H, altura de aplicación) como etiqueta.
+  function pressureResultant(x0, dir, piezas, scale, arm, forceVal, forceLabel, color){
+    let sig = 0;
+    for(const p of piezas){
+      if(arm >= p.yBot - 1e-6 && arm <= p.yTop + 1e-6){
+        const t = (p.yTop - arm) / Math.max(p.yTop - p.yBot, 1e-9);
+        sig = p.sigTop + (p.sigBot - p.sigTop) * t;
+        break;
+      }
+    }
+    const xArrow = x0 + dir*sig*scale;
+    const anchor = dir>0 ? "start" : "end";
+    // La etiqueta se dibuja PRIMERO (queda debajo en el orden del SVG) y la
+    // flecha DESPUÉS (queda encima): con las dos ancladas casi en el mismo
+    // punto (x0, arm), el fondo opaco de la etiqueta (labelBg) tapaba por
+    // completo la flecha cuando se dibujaba antes — reportado por el
+    // usuario ("las flechas no se ven"). Dibujar la flecha al final
+    // garantiza que quede visible sin importar cuánto se acerque la
+    // etiqueta.
+    //
+    // La etiqueta se ancla en x0 (no en xArrow): con un diagrama UNIFORME
+    // (rectángulo, p.ej. sobrecarga) xArrow está SIEMPRE en el borde lejano
+    // del carril, pegado al hueco con el carril vecino — la etiqueta se
+    // encimaba con el título/etiquetas del carril de al lado (reportado por
+    // el usuario: "que los diagramas no se encimen... ni con letreros").
+    // Ancladas en x0 crecen HACIA DENTRO del propio carril, nunca cruzan el
+    // hueco hacia el vecino. La fuerza va en 3 decimales (a pedido del
+    // usuario: "que todos los resultados tengan 3 decimales, no redondees a
+    // número entero") — el texto es más largo que antes, así que se bajó un
+    // punto la fuente (9px/8px, no 10px/9px) para compensar parte del
+    // espacio ganado sin perder la regla de los 3 decimales.
+    labelBg(x0, arm, `${forceLabel}=${fmtFuerza(forceVal,3)}`, {fill:color, "text-anchor":anchor, x:X(x0)+dir*6, dy:-4, "font-size":"9px"});
+    labelBg(x0, arm, `H=${fmtLong(arm,3)}`, {fill:color, "text-anchor":anchor, x:X(x0)+dir*6, dy:10, "font-size":"8px"});
+    line(x0, arm, xArrow, arm, color, {"stroke-width":1.6});
+    // La punta de la flecha va en x0 (lado del muro), no en xArrow (borde del
+    // diagrama): la resultante empuja HACIA el muro, no hacia afuera del
+    // diagrama — reportado por el usuario ("Pa,h y Pp invierte las
+    // flechas") con la primera versión, que apuntaba al revés.
+    const hL = 0.1;
+    poly([[x0+dir*hL, arm-hL*0.65],[x0+dir*hL, arm+hL*0.65],[x0,arm]], color, color);
+  }
+  // Etiquetas de presión (magnitud, no fuerza) en los extremos del
+  // diagrama — arriba y abajo — en la unidad de presión activa del usuario.
+  function pressureExtremeLabels(x0, dir, piezas, scale, color){
+    const top = piezas[0], bot = piezas[piezas.length-1];
+    const anchor = dir>0 ? "start" : "end";
+    // 2 decimales (no 0): con unidades "grandes" como Tn/m², una presión
+    // real pero chica (p.ej. la sobrecarga uniforme, ~0.33 Tn/m²) redondeaba
+    // a "0 Tn/m²" en ambos extremos — se veía como si no hubiera presión
+    // cuando sí la hay (reportado por el usuario con una captura mostrando
+    // "qs=1.00 Tn/m²" y "Pq,h=2 Tn/m" arriba, pero "0 Tn/m²" en los dos
+    // extremos del mismo diagrama).
+    labelBg(x0+dir*top.sigTop*scale, top.yTop, fmtCat("presion", top.sigTop, 3), {fill:color, "text-anchor":anchor, dy:-6, "font-size":"8px"});
+    labelBg(x0+dir*bot.sigBot*scale, bot.yBot, fmtCat("presion", bot.sigBot, 3), {fill:color, "text-anchor":anchor, dy:12, "font-size":"8px"});
   }
 
   // defs: marca de cota (trazo perpendicular a la línea, no flecha).
@@ -3109,6 +3303,17 @@ function dibujarMuro2D(svg, state, r){
   ];
   poly(soilPts, col("--soil-fill"), col("--soil-line"));
 
+  // Etiqueta con las propiedades del suelo de fundación (2026-08-15, a
+  // pedido del usuario: "coloca las propiedades del suelo de fundación" en
+  // la pestaña Suelo y materiales) — mismo patrón que la etiqueta de cada
+  // estrato del relleno (nombre + γ/c/φ en líneas separadas), pero para
+  // suelo.gamma_f/phi_f/c_f, mostrada solo en esa pestaña. Se ubica en la
+  // franja izquierda de suelo (el mismo carril horizontal donde ya va
+  // "NTN"), a media profundidad de Df para quedar dentro del polígono.
+  if(mostrarSuelo){
+    labelBgLines((modelMinX+0)/2, Df/2, ["Suelo de fundación", `γf=${fmtCat("pesoVol",state.suelo.gamma_f,1)}`, `cf=${fmtCat("presion",state.suelo.c_f,0)}`, `φf=${state.suelo.phi_f||0}°`], {"font-size":"9px"});
+  }
+
   // NTN frente al muro (nivel de terreno natural antes de la excavación,
   // hasta el borde exterior de la zapata en x=0 — la cobertura de suelo
   // sobre la puntera, de 0 a toe, no forma parte del NTN "original").
@@ -3132,7 +3337,12 @@ function dibujarMuro2D(svg, state, r){
     const pid = `capaFillPattern${i}`;
     defs.insertAdjacentHTML("beforeend", hatchPatternSVG(pid, capa.hatch||7, capa.color||"#e8d880"));
     poly([[xBack,yTop],[Bf+extraBack,rightTopY],[Bf+extraBack,yBot],[xBack,yBot]], `url(#${pid})`, col("--fill-line"));
-    if(capa.h > 0.35){ // evita saturar de texto los estratos muy delgados
+    // La etiqueta con las propiedades (γ/c/φ) solo se dibuja en la pestaña
+    // "Suelo y materiales" (2026-08-15, a pedido del usuario) — en
+    // Geometría del muro y las demás pestañas el estrato se sigue
+    // pintando con su textura, solo sin el texto de propiedades, para no
+    // saturar un dibujo cuyo foco ahí es otra cosa.
+    if(capa.h > 0.35 && mostrarSuelo){ // evita saturar de texto los estratos muy delgados
       labelBgLines((xBack+Bf+extraBack)/2, (yTop+yBot)/2, [capa.nm||"Estrato", `γ=${fmtCat("pesoVol",capa.gamma,1)}`, `c=${fmtCat("presion",capa.c,0)}`, `φ=${capa.phi||0}°`], {"font-size":"9px"});
     }
     zAccDibujo += capa.h;
@@ -3154,18 +3364,101 @@ function dibujarMuro2D(svg, state, r){
   }
 
   // ---- Fuerzas ----
+  // Pa/Pp (2026-08-15, a pedido del usuario): solo se dibujan cuando la
+  // pestaña activa del ribbon es "Presiones laterales" — en Geometría/Suelo
+  // y materiales/Cargas quedan fuera, para no saturar el dibujo con
+  // números que no son el foco de esa pestaña. El resto de las fuerzas
+  // (ΔPAE, cerco, sobrecarga) NO se pidieron con esta regla, siguen
+  // dependiendo solo de `uiState.showForces` como antes. `tabActiva` ya se
+  // calculó al inicio de la función (se reutiliza también para las
+  // etiquetas de suelo y las cotas, ver más abajo/arriba).
+  const mostrarPaPp = mostrarPresiones; // alias, ya calculado arriba junto con mostrarSuelo
   if(uiState.showForces){
-    // Presión activa (triángulo esquemático a lo largo de la cara posterior
-    // del fuste) — usa Hr (altura REAL del relleno), no H (altura del
-    // fuste): si el relleno no llega a la corona, el triángulo debe
-    // quedarse en esa cota más baja, igual que el relleno dibujado, para
-    // no verse como si el suelo cubriera todo el fuste cuando no es así.
-    const triW = 55; // px, ancho esquemático (no a escala de presión real)
     const yTop = tf+Hr, yBase = tf;
     const xB = X(xBack);
-    const paPts = `${xB},${Y(yTop)} ${xB},${Y(yBase)} ${xB+triW},${Y(yBase)}`;
-    svg.appendChild(el("polygon",{points:paPts, fill: col("--pa-color"), opacity:0.35, stroke: col("--pa-color")}));
-    labelBg(xBack, tf+Hr/3, `Pa=${fmtFuerza(r.pres.Pa,2)}`, {fill: col("--pa-color"), "text-anchor":"start", x:xB+triW+4, "font-size":"10px"});
+    // Diagramas de empuje ACTIVO / SOBRECARGA / HIDROSTÁTICO, cada uno en su
+    // propio carril separado a la derecha del relleno (2026-08-16): antes
+    // eran triángulos esquemáticos pegados a la cara del fuste (sobrecarga
+    // superpuesta al activo, hidrostática sin dibujo alguno), sin relación
+    // real con la escala de presión. El usuario pidió separar también
+    // sobrecarga e hidrostática del activo — cada carril usa su PROPIA
+    // escala (diagW / su propio máximo de presión), no una compartida, para
+    // que cada uno se lea con claridad sin importar cuánto más grande sea
+    // el activo. `laneX0(i)` da el origen x del carril i-ésimo (0=activo,
+    // luego sobrecarga si está activa, luego hidrostática si está activa —
+    // mismo orden que cuenta `lanesRight` más arriba, para que el ancho
+    // reservado en viewMaxX siempre alcance).
+    if(mostrarPaPp){
+      const laneX0 = i => modelMaxX + (i+1)*diagGap + i*diagW;
+      let lane = 0;
+      const Hp = r.pres.Hprime;
+      // Título de cada carril SIEMPRE a la misma altura (la del carril más
+      // alto de los 3 + margen), en vez de "yTop propio + 0.25": si cada
+      // título quedara pegado al tope de SU PROPIO diagrama, uno más bajo
+      // (p.ej. hidrostática, limitada por Hw) terminaba a la misma altura
+      // que la etiqueta de la resultante del carril vecino (arm suele caer
+      // a mitad de Hp) y se encimaban. Con los 3 títulos alineados arriba
+      // del todo, nunca compiten con ninguna etiqueta de resultante (que
+      // siempre queda más abajo, a la altura "arm" < Hp).
+      const titleYRight = Math.max(Hp, state.suelo.waterEnabled ? state.suelo.Hw : 0) + 1.0;
+
+      // ---- Activo (siempre, usa pres.segments — nunca recalculado aquí) ----
+      let piezasActivas;
+      if(r.pres.segments){
+        let zAcc = 0;
+        piezasActivas = r.pres.segments.map(s=>{
+          const pTop = Hp - zAcc, pBot = pTop - s.h;
+          zAcc += s.h;
+          return { yTop:pTop, yBot:pBot, sigTop:s.sigmaTop, sigBot:s.sigmaBot };
+        });
+      }else{
+        // Fluido equivalente: perfil triangular único (no hay segments).
+        piezasActivas = [{ yTop:Hp, yBot:0, sigTop:0, sigBot: state.EFP*Hp }];
+      }
+      let maxSigmaA = 0;
+      piezasActivas.forEach(p=> maxSigmaA = Math.max(maxSigmaA, p.sigTop, p.sigBot));
+      if(maxSigmaA > 1e-6){
+        const scaleA = diagW / maxSigmaA;
+        const x0A = laneX0(lane);
+        pressureDiagram(x0A, 1, piezasActivas, scaleA, col("--pa-color"), col("--pa-color"));
+        pressureResultant(x0A, 1, piezasActivas, scaleA, r.pres.arm, r.pres.Pa_h, "Pa,h", col("--pa-color"));
+        pressureExtremeLabels(x0A, 1, piezasActivas, scaleA, col("--pa-color"));
+        labelBg(x0A, titleYRight, "Empuje activo", {fill: col("--pa-color"), "text-anchor":"start", "font-size":"10px", "font-weight":"600"});
+      }
+      lane++;
+
+      // ---- Sobrecarga (carril propio, presión uniforme con la profundidad) ----
+      if(state.cargas.qsEnabled){
+        const kaUso = r.pres.Ka!=null ? r.pres.Ka : state.EFP/Math.max(r.pres.gamma_avg,1e-9);
+        const sigmaQs = kaUso * state.cargas.qs;
+        if(sigmaQs > 1e-6){
+          const piezasQs = [{ yTop:Hp, yBot:0, sigTop:sigmaQs, sigBot:sigmaQs }];
+          const scaleQ = diagW / sigmaQs;
+          const x0Q = laneX0(lane);
+          pressureDiagram(x0Q, 1, piezasQs, scaleQ, col("--pq-color"), col("--pq-color"));
+          pressureResultant(x0Q, 1, piezasQs, scaleQ, Hp/2, r.pres.Pq_h, "Pq,h", col("--pq-color"));
+          pressureExtremeLabels(x0Q, 1, piezasQs, scaleQ, col("--pq-color"));
+          labelBg(x0Q, titleYRight, "Sobrecarga", {fill: col("--pq-color"), "text-anchor":"start", "font-size":"10px", "font-weight":"600"});
+        }
+        lane++;
+      }
+
+      // ---- Hidrostática (carril propio, triángulo 0 en la superficie del
+      // agua hasta γw·Hw en la base — antes no tenía NINGÚN dibujo, solo el
+      // campo numérico y el resaltado de hover). ----
+      if(state.suelo.waterEnabled && r.pres.Pw_h > 1e-6){
+        const Hw = state.suelo.Hw;
+        const sigmaW = state.suelo.gamma_w * Hw;
+        const piezasW = [{ yTop:Hw, yBot:0, sigTop:0, sigBot:sigmaW }];
+        const scaleW = diagW / sigmaW;
+        const x0W = laneX0(lane);
+        pressureDiagram(x0W, 1, piezasW, scaleW, col("--water-line"), col("--water-line"));
+        pressureResultant(x0W, 1, piezasW, scaleW, Hw/3, r.pres.Pw_h, "Pw,h", col("--water-line"));
+        pressureExtremeLabels(x0W, 1, piezasW, scaleW, col("--water-line"));
+        labelBg(x0W, titleYRight, "Hidrostática", {fill: col("--water-line"), "text-anchor":"start", "font-size":"10px", "font-weight":"600"});
+        lane++;
+      }
+    }
 
     // Incremento sísmico (amarillo, Bloque 5): misma cara que Pa, punto de
     // aplicación real a 0.6·Hr — se usa esa altura para la etiqueta, así
@@ -3177,29 +3470,131 @@ function dibujarMuro2D(svg, state, r){
       labelBg(xBack, tf+0.6*Hr, `ΔPAE=${fmtFuerza(r.pres.DeltaPAE_h,2)}`, {fill:"#c99a1f", "text-anchor":"start", x:xB+triWs+4, "font-size":"10px"});
     }
 
+    // Carga de la torre (Pu_torre, 2026-08-16 a pedido del usuario: "en
+    // cargas coloca una flecha en donde se está aplicando la carga y su
+    // valor") — es la única carga de la pestaña Cargas que hasta ahora no
+    // tenía ninguna representación en el dibujo (a diferencia de qs/cerco,
+    // que ya se veían). Solo visual: el valor todavía no se integra al
+    // cálculo geotécnico (ver nota en el formulario de esa pestaña). Se
+    // dibuja como flecha vertical descendente, en x = xBack + dist_torre
+    // (medida desde la cara posterior del fuste, misma referencia que ya
+    // usa la condición "Torre cercana al muro" en calcularGeotecnia), sobre
+    // el terreno en ese punto (sigue el talud si beta>0). Solo en la
+    // pestaña Cargas, mismo patrón de "solo en su pestaña" que Pa/Pp en
+    // Presiones laterales.
+    if(state.cargas.torreEnabled && tabActiva === "cargas"){
+      const xTorre = xBack + state.cargas.dist_torre;
+      const yTerrenoTorre = backTopY + Math.max(xTorre-xBack,0) * Math.tan(toRad(g.beta||0));
+      // arrowLen corto y fijo (0.9): Pu_torre se aplica EN el terreno, así
+      // que ya está "a la altura de su elemento" por definición — no hace
+      // falta la torre de carriles que sí necesitaban los 5 pesos (que
+      // vivían muy arriba antes de esta corrección). Si coincide con el
+      // cerco por tener dist_torre≈0 (caso sin configurar), es un choque
+      // aceptado — se resuelve capturando una distancia real, que es
+      // justamente para lo que existe el campo.
+      const arrowLen = 0.9, headH = 0.14, headW = 0.1;
+      line(xTorre, yTerrenoTorre+arrowLen, xTorre, yTerrenoTorre+headH, "#e05a2b", {"stroke-width":2.2});
+      poly([[xTorre-headW,yTerrenoTorre+headH],[xTorre+headW,yTerrenoTorre+headH],[xTorre,yTerrenoTorre]], "#e05a2b", "#e05a2b");
+      labelBg(xTorre, yTerrenoTorre+arrowLen+0.14, `Pu_torre=${fmt(state.cargas.Pu_torre,3)} kN`, {fill:"#e05a2b", "font-size":"9px"});
+    }
+
+    // Pesos propios: flecha + cota de brazo, siempre visibles en Cargas
+    // (2026-08-16, a pedido del usuario: "vas a colocar los pesos
+    // calculados indicados con una flecha que coincida con el eje donde se
+    // aplica la carga y las cotas van a estar en función de esas
+    // longitudes con respecto al punto de referencia" — confirmado vía
+    // preguntas: los 5 pesos, siempre visibles, punto de referencia x=0.
+    // [Corrección, mismo día] "que las indicaciones de las cargas no estén
+    // tan arriba, preferentemente que estén a la mitad del elemento del
+    // que están obteniendo el resultado": la primera versión apilaba las
+    // 5 flechas en una escalera artificial muy por encima de la corona.
+    // Ahora cada `yMid` es la altura MEDIA real del área que ese peso
+    // representa — misma geometría que ya usa `highlightRegionPoints()`
+    // para el resaltado de hover (Ws/Wr: mitad del fuste/relleno, de tf a
+    // tf+H; Wf: mitad de la zapata, de 0 a tf; Wp: mitad del trapecio de
+    // suelo sobre la puntera, de tf a Df; Wtri: mitad del triángulo de
+    // talud) — nunca inventada aparte. El resaltado de hover EXISTENTE
+    // sigue funcionando igual, esto es una capa adicional siempre visible,
+    // no un reemplazo. Los brazos (x) siguen siendo EXACTAMENTE los
+    // mismos que ya usa Mr en calcularGeotecnia. Las cotas (abajo) siguen
+    // ordenadas de menor a mayor brazo y ANIDADAS (la más corta pegada a
+    // la zapata) — eso no cambió, solo las flechas de arriba.
+    if(mostrarCargas){
+      const pesoColor = "#6d4c41";
+      const talRise = g.beta > 0.01 ? heel * Math.tan(toRad(g.beta)) : 0;
+      const pesos = [
+        { label:"Ws", val:r.geo.Ws, x:r.geo.brazoStem, yMid: tf + H/2 },
+        { label:"Wf", val:r.geo.Wf, x:Bf/2, yMid: tf/2 },
+        { label:"Wr", val:r.geo.Wr, x:Bf-heel/2, yMid: tf + H/2 },
+        { label:"Wp", val:r.geo.Wp, x:toe/2, yMid: Math.max((tf+Df)/2, tf+0.05) },
+      ];
+      if(r.geo.hayTalud) pesos.push({ label:"Wtri", val:r.geo.Wtri, x:r.geo.brazoTri, yMid: tf+H+talRise/2 });
+      pesos.sort((a,b)=>a.x-b.x);
+      const xMinPesos = Math.min(...pesos.map(q=>q.x));
+      pesos.forEach((p,i)=>{
+        const halfLen = 0.22, headH2 = 0.09;
+        line(p.x, p.yMid+halfLen, p.x, p.yMid-halfLen+headH2, pesoColor, {"stroke-width":2});
+        poly([[p.x-headH2,p.yMid-halfLen+headH2],[p.x+headH2,p.yMid-halfLen+headH2],[p.x,p.yMid-halfLen]], pesoColor, pesoColor);
+        // Ancla del texto: por default centrado, pero se desvía para
+        // crecer LEJOS de otras etiquetas con las que compartiría zona —
+        // (1) Ws/Wr siempre caen a la misma altura media (mitad del fuste
+        // = mitad del relleno sobre el talón, tf a tf+H), así que la más a
+        // la izquierda del grupo ancla "end" (crece a la izquierda) y la
+        // más a la derecha ancla "start" (crece a la derecha), en vez de
+        // las dos creciendo hacia el centro y encimándose; (2) el peso con
+        // el brazo más chico (típicamente Wp) puede quedar cerca en altura
+        // de la etiqueta "NTN" (línea de terreno natural, siempre a la
+        // izquierda de x=0) — se ancla "start" para crecer hacia la
+        // derecha, lejos de esa zona.
+        const empatados = pesos.filter(q=>Math.abs(q.yMid-p.yMid)<0.05);
+        let anchor = "middle", xOff = 0;
+        if(p.x === xMinPesos){ anchor = "start"; xOff = 6; }
+        else if(empatados.length>1){
+          const esElMasIzq = p.x === Math.min(...empatados.map(q=>q.x));
+          anchor = esElMasIzq ? "end" : "start";
+          xOff = esElMasIzq ? -6 : 6;
+        }
+        labelBg(p.x, p.yMid+halfLen+0.16, `${p.label}=${fmtFuerza(p.val,3)}`, {fill:pesoColor, "text-anchor":anchor, x:X(p.x)+xOff, "font-size":"9px"});
+        const yCota = -(pesoCotaBase + i*pesoCotaStep);
+        dimH(0, p.x, yCota, `brazo ${p.label}=${fmtLong(p.x,3)}`, 0, 0, "9px");
+      });
+    }
+
     // Cerco perimetral (morado): línea vertical sobre la corona hasta la
     // altura del cerco, con la carga horizontal indicada junto a ella.
     if(state.cargas.cercoEnabled){
       const hC = state.cargas.h_cerco;
       line(xBack, tf+H, xBack, tf+H+hC, "#8e24aa", {"stroke-width":2.2});
-      labelBg(xBack, tf+H+hC*0.55, `Cerco P=${fmt(state.cargas.P_cerco,0)} kg/m`, {fill:"#8e24aa", "text-anchor":"start", x:X(xBack)+8, "font-size":"10px"});
+      labelBg(xBack, tf+H+hC*0.55, `Cerco P=${fmt(state.cargas.P_cerco,3)} kg/m`, {fill:"#8e24aa", "text-anchor":"start", x:X(xBack)+8, "font-size":"9px"});
     }
 
     // Sobrecarga (franja delgada sobre el relleno, siguiendo el mismo talud)
-    if(state.cargas.qsEnabled){
+    // — ver mostrarQs (oculta en Suelo y materiales/Geometría del muro).
+    if(state.cargas.qsEnabled && mostrarQs){
       const qsThick = 0.12; // espesor esquemático de la franja, en metros de modelo
       const qsPts = [[xBack,backTopY],[Bf+extraBack,backTopY+slopeRise],[Bf+extraBack,backTopY+slopeRise+qsThick],[xBack,backTopY+qsThick]];
       poly(qsPts, col("--pq-color"), col("--pq-color"), {opacity:0.5});
       labelBg((xBack+Bf+extraBack)/2, backTopY+slopeRise/2+qsThick, `qs=${fmtPresionSuelo(state.cargas.qs,2)}`, {fill: col("--pq-color"), dy:-8, "font-size":"10px"});
     }
 
-    // Presión pasiva (triángulo esquemático frente a la cara de la puntera, x=0)
-    if(state.suelo.pasivoEnabled){
-      const triWp = 30;
-      const xT = X(0);
-      const ppPts = `${xT},${Y(0)} ${xT},${Y(Df)} ${xT-triWp},${Y(0)}`;
-      svg.appendChild(el("polygon",{points:ppPts, fill: col("--pp-color"), opacity:0.35, stroke: col("--pp-color")}));
-      labelBg((modelMinX+0)/2, Df+0.42, `Pp=${fmtFuerza(r.pres.Pp,2)}`, {fill: col("--pp-color"), "font-size":"10px"});
+    // Diagrama de empuje PASIVO, separado del esquema (2026-08-16): antes
+    // era un triángulo esquemático pegado a la cara de la puntera, sin
+    // relación real con la escala de presión. Ahora es un trapecio real
+    // (ecuación 8.9, Das: término friccionante triangular + término de
+    // cohesión rectangular, mismo Kp/armPasivo ya expuestos por calcularPresiones),
+    // dibujado a la izquierda del suelo, con su propia escala.
+    if(state.suelo.pasivoEnabled && mostrarPaPp && r.pres.Pp > 1e-6){
+      const cohesionSigma = 2*(state.suelo.c_p||0)*Math.sqrt(r.pres.Kp);
+      const piezasPasivas = [{ yTop:Df, yBot:0, sigTop:cohesionSigma, sigBot: r.pres.Kp*state.suelo.gamma_p*Df + cohesionSigma }];
+      const maxSigmaL = Math.max(piezasPasivas[0].sigTop, piezasPasivas[0].sigBot);
+      if(maxSigmaL > 1e-6){
+        const scaleL = diagW / maxSigmaL;
+        const x0L = modelMinX - diagGap;
+        pressureDiagram(x0L, -1, piezasPasivas, scaleL, col("--pp-color"), col("--pp-color"));
+        pressureResultant(x0L, -1, piezasPasivas, scaleL, r.pres.armPasivo, r.pres.Pp, "Pp", col("--pp-color"));
+        pressureExtremeLabels(x0L, -1, piezasPasivas, scaleL, col("--pp-color"));
+        labelBg(x0L, Df+1.0, "Empuje pasivo", {fill: col("--pp-color"), "text-anchor":"end", "font-size":"10px", "font-weight":"600"});
+      }
     }
 
     // Resultante y tercio central en la base de la zapata
@@ -3212,9 +3607,49 @@ function dibujarMuro2D(svg, state, r){
     svg.appendChild(el("line",{x1:xr,y1:y0,x2:xr,y2:y0-14,stroke: okCentral? col("--success-fg") : col("--danger-fg"), "stroke-width":1.4}));
   }
 
+  // Tabla "Resumen de pesos y momentos", DENTRO del canvas (2026-08-16,
+  // corrección a pedido del usuario: "pero dentro del canvas" — la primera
+  // versión vivía en una tarjeta del panel lateral). Se dibuja como
+  // <foreignObject> (HTML real embebido en el SVG, mismas clases/CSS que
+  // ya existían: table.results, zona-concreto/zona-suelo, tfoot) en vez de
+  // reconstruir cada celda a mano con <text>/<tspan> — mucho más simple y
+  // reusa el HTML ya armado por pesosTablaHTML(). Vive fuera del bloque de
+  // `uiState.showForces` a propósito: es una tabla de datos, no una fuerza
+  // que tenga sentido ocultar con ese toggle. Posicionada en PÍXELES (no
+  // en metros vía X()/Y()) porque su tamaño es de UI, no geométrico.
+  if(mostrarCargas){
+    // anchoTablaPx/gapTablaPx ya se declararon arriba (junto a
+    // scale/offX) — ahí mismo se resta `reservaTablaPx` del ancho
+    // disponible para que el muro NUNCA se dibuje encima de este espacio,
+    // sin importar si la escala termina limitada por el ancho o el alto
+    // del lienzo. Aquí solo se posiciona la tabla dentro de ese espacio
+    // ya garantizado, pegada al borde derecho del viewBox.
+    const xTabla = viewW - pad - anchoTablaPx;
+    const NS2 = "http://www.w3.org/2000/svg";
+    const fo = document.createElementNS(NS2, "foreignObject");
+    fo.setAttribute("x", xTabla);
+    fo.setAttribute("y", pad);
+    fo.setAttribute("width", anchoTablaPx);
+    fo.setAttribute("height", 10); // provisional, se corrige abajo con el alto real
+    const divTabla = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+    divTabla.innerHTML = pesosTablaHTML(r);
+    fo.appendChild(divTabla);
+    svg.appendChild(fo);
+    // Un foreignObject RECORTA su contenido al alto declarado (no crece
+    // solo) — una estimación fija (filas × alto supuesto) se quedó corta y
+    // cortaba la última fila y el pie de totales cuando había talud
+    // (confirmado con captura). Se mide el alto REAL ya renderizado del
+    // <table> y se corrige el atributo "height" con ese valor + margen.
+    fo.setAttribute("height", divTabla.scrollHeight + 8);
+  }
+
   // ---- Cotas ----
   // Cada medida vive en su propio "carril" (lane) de x o de y para
   // garantizar que ninguna etiqueta se sobreponga con otra.
+  // [2026-08-15] El apagado en "Suelo y materiales" se maneja desmarcando
+  // de verdad el checkbox "Cotas" al entrar a esa pestaña (ver
+  // actualizarVisorSegunPestana) — no aquí con una condición extra; este
+  // bloque solo obedece uiState.showCotas como siempre.
   if(uiState.showCotas){
     // H: carril vertical más externo, a la izquierda de todo — la línea de
     // proyección llega hasta xBack (cara posterior del fuste, constante en
@@ -4029,14 +4464,80 @@ function renderCargasOutputs(r){
   document.getElementById("out-Wp").value = fmtFuerza(r.geo.Wp);
 }
 
+// Zonas de la tabla "Resumen de pesos y momentos" (2026-08-16, a pedido del
+// usuario, con una captura de referencia de otro software) — [Corrección,
+// mismo día] la primera versión vivía en una tarjeta del panel lateral;
+// el usuario pidió que fuera DENTRO del canvas ("pero dentro del canvas"),
+// junto al esquema, así que ahora se dibuja como <foreignObject> dentro de
+// #wall2d (ver dibujarMuro2D) en vez de una tabla HTML aparte — se conserva
+// esta función pura (sin tocar el DOM) para que el HTML de la tabla se
+// arme en un solo lugar. Reusa los mismos pesos/brazos/áreas YA CALCULADOS
+// por calcularGeotecnia (Ws/Wf/Wr/Wtri/Wp, areaStem, areaWp, brazoStem,
+// brazoTri) — nunca recalculados aparte, mismo patrón que toda la sesión.
+// Wr y Wtri no traen una "γ propia" expuesta (su peso sale de sumar capa
+// por capa del relleno estratificado) — se DERIVA el área real
+// (heel×Hrelleno, ½·heel²·tanβ) y el γ "efectivo" como peso/área, que es
+// matemáticamente exacto (peso=área×γ se sigue cumpliendo), no una
+// aproximación nueva.
+function calcularZonasPesos(r){
+  const geo = r.geo, g = state.geom, Bf = g.Bf, tf = g.tf, toe = g.toe;
+  const heel = geo.heel;
+  const Hrelleno = geo.capasPeso.reduce((s,c)=>s+c.h, 0);
+  const gammaTop = geo.capasPeso.length ? geo.capasPeso[0].gamma : 0;
+
+  const zonas = [
+    { material:"Concreto", gamma: state.materiales.gc, area: geo.areaStem, peso: geo.Ws, brazo: geo.brazoStem },
+    { material:"Concreto", gamma: state.materiales.gc, area: Bf*tf, peso: geo.Wf, brazo: Bf/2 },
+    { material:"Suelo", gamma: Hrelleno>1e-9 ? geo.Wr/(heel*Hrelleno) : 0, area: heel*Hrelleno, peso: geo.Wr, brazo: Bf-heel/2 },
+  ];
+  if(geo.hayTalud){
+    zonas.push({ material:"Suelo", gamma: gammaTop, area: 0.5*heel*heel*Math.tan(toRad(g.beta)), peso: geo.Wtri, brazo: geo.brazoTri });
+  }
+  zonas.push({ material:"Suelo", gamma: state.suelo.gamma_f, area: geo.areaWp, peso: geo.Wp, brazo: toe/2 });
+
+  // Sobrecarga (2026-08-16, a pedido del usuario: "falta considerar la
+  // sobrecarga" — el ΣFv/ΣM de la tabla solo sumaba los 5 pesos propios,
+  // sin la carga vertical que aporta qs cuando está activa). Reusa
+  // `geo.Pq_v` (=qs·heel) y su brazo (Bf-heel/2) EXACTAMENTE como ya los
+  // usa `Mr` en calcularGeotecnia (`Mr += ... + Pq_v*(Bf-heel/2) + ...`)
+  // — nunca recalculado aparte. No es un peso propio (no tiene γ/volumen,
+  // es una presión aplicada sobre un área), así que usa la categoría
+  // "presion" para esa columna en vez de "pesoVol" (`gammaCat`) — la
+  // aritmética Peso=Área×valor sigue cumpliéndose igual (qs×heel=Pq_v).
+  // Pa_v (componente vertical del empuje activo, también sumado en N/Mr)
+  // se deja FUERA a propósito: es una fuerza lateral, no una carga
+  // vertical tipo "peso"; el usuario pidió específicamente la sobrecarga.
+  if(state.cargas.qsEnabled && geo.Pq_v > 1e-9){
+    zonas.push({ material:"Sobrecarga", gamma: state.cargas.qs, gammaCat:"presion", area: heel, peso: geo.Pq_v, brazo: Bf-heel/2 });
+  }
+
+  let sumaFv = 0, sumaM = 0;
+  zonas.forEach(z=>{ z.momento = z.peso*z.brazo; sumaFv += z.peso; sumaM += z.momento; });
+  return { zonas, sumaFv, sumaM };
+}
+
+// HTML de la tabla (mismas clases/CSS que ya existían para la versión de
+// panel lateral: table.results, zona-concreto/zona-suelo/zona-sobrecarga,
+// tfoot) — se inyecta dentro de un <foreignObject> en dibujarMuro2D.
+function pesosTablaHTML(r){
+  const { zonas, sumaFv, sumaM } = calcularZonasPesos(r);
+  const rowsHtml = zonas.map((z,i)=>{
+    const cls = z.material === "Concreto" ? "zona-concreto" : z.material === "Suelo" ? "zona-suelo" : "zona-sobrecarga";
+    return `<tr class="${cls}"><td>${i+1}</td><td>${z.material}</td><td>${fmtCat(z.gammaCat||"pesoVol",z.gamma,1)}</td><td>${fmtArea(z.area,3)}</td><td>${fmtFuerza(z.peso,3)}</td><td>${fmtLong(z.brazo,3)}</td><td>${fmtMomento(z.momento,3)}</td></tr>`;
+  }).join("");
+  return `<table class="results" id="tablaPesos">
+    <thead><tr><th>Zona</th><th>Material</th><th>γ</th><th>Área</th><th>Peso = V·γ</th><th>Brazo</th><th>Momento</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot><tr><td colspan="4">ΣFv / ΣM</td><td>${fmtFuerza(sumaFv,3)}</td><td></td><td>${fmtMomento(sumaM,3)}</td></tr></tfoot>
+  </table>`;
+}
+
 function renderPresionesOutputs(r){
   document.getElementById("out-Ka").value = fmt(r.pres.Ka,4);
-  document.getElementById("out-Pa").value = fmtFuerza(r.pres.Pa);
   document.getElementById("out-Pah").value = fmtFuerza(r.pres.Pa_h);
   document.getElementById("out-Pqh").value = fmtFuerza(r.pres.Pq_h);
   document.getElementById("out-Pwh").value = fmtFuerza(r.pres.Pw_h);
   document.getElementById("out-Kp").value = state.suelo.pasivoEnabled ? fmt(r.pres.Kp,4) : "—";
-  document.getElementById("out-Pp").value = state.suelo.pasivoEnabled ? fmtFuerza(r.pres.Pp) : "—";
   document.getElementById("out-KAE").value = state.sismo.enabled ? fmt(r.pres.KAE,4) : "—";
   document.getElementById("out-DeltaPAE").value = state.sismo.enabled ? fmtFuerza(r.pres.DeltaPAE_h) : "—";
 }
@@ -4054,13 +4555,13 @@ function renderRevisiones(r){
 
   document.getElementById("out-Mr").value = fmtMomento(geo.Mr);
   document.getElementById("out-Mov").value = fmtMomento(geo.Mov);
-  document.getElementById("out-FSvolteo").value = isFinite(geo.FS_volteo) ? fmt(geo.FS_volteo,2) : "∞";
+  document.getElementById("out-FSvolteo").value = isFinite(geo.FS_volteo) ? fmt(geo.FS_volteo,3) : "∞";
   const okVolteo = geo.FS_volteo >= umbralVolteo;
   document.getElementById("badge-volteo").innerHTML = badgeHTML(okVolteo, `CUMPLE (≥ ${umbralVolteo}${sufijo})`, `NO CUMPLE (req. ≥ ${umbralVolteo}${sufijo})`);
 
   document.getElementById("out-Fh").value = fmtFuerza(geo.Fh);
   document.getElementById("out-R").value = fmtFuerza(geo.R);
-  document.getElementById("out-FSdesliz").value = isFinite(geo.FS_desliz) ? fmt(geo.FS_desliz,2) : "∞";
+  document.getElementById("out-FSdesliz").value = isFinite(geo.FS_desliz) ? fmt(geo.FS_desliz,3) : "∞";
   const okDesliz = geo.FS_desliz >= umbralDesliz;
   document.getElementById("badge-desliz").innerHTML = badgeHTML(okDesliz, `CUMPLE (≥ ${umbralDesliz}${sufijo})`, `NO CUMPLE (req. ≥ ${umbralDesliz}${sufijo})`);
 
@@ -4071,10 +4572,19 @@ function renderRevisiones(r){
   document.getElementById("out-qmin").value = fmtPresionSuelo(geo.q_min);
   document.getElementById("out-distrib").value = geo.distribucion;
   document.getElementById("out-qult").value = fmtPresionSuelo(geo.qult);
-  document.getElementById("out-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,2) : "∞";
-  const okCarga = geo.q_max <= state.suelo.QADM && geo.q_min >= 0;
+  document.getElementById("out-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,3) : "∞";
+  // Capacidad de carga exige AMBAS condiciones desde que el usuario pidió
+  // conectar FS.capacidad_carga a un chequeo real (2026-08-16): antes solo
+  // se comparaba q_max contra QADM (capacidad admisible) y qult/FS_carga
+  // quedaban "informativos, no de diseño" — ahora también se exige
+  // FS_carga (qult/q_max) ≥ FS.capacidad_carga, igual convención que
+  // volteo/deslizamiento (factor de seguridad editable en Proyecto).
+  const okQADM = geo.q_max <= state.suelo.QADM && geo.q_min >= 0;
+  const okFScarga = geo.FS_carga >= FS.capacidad_carga;
+  const okCarga = okQADM && okFScarga;
   const qadmTxt = fmtPresionSuelo(state.suelo.QADM);
-  document.getElementById("badge-carga").innerHTML = badgeHTML(okCarga, `CUMPLE (q_max ≤ ${qadmTxt})`, `NO CUMPLE (q_max > ${qadmTxt})`);
+  const cargaMsg = `q_max ≤ ${qadmTxt} y FS ≥ ${FS.capacidad_carga}`;
+  document.getElementById("badge-carga").innerHTML = badgeHTML(okCarga, `CUMPLE (${cargaMsg})`, `NO CUMPLE (req. ${cargaMsg})`);
 
   const B6 = state.geom.Bf/6;
   document.getElementById("out-e").value = fmtLong(geo.e,3);
@@ -4087,7 +4597,7 @@ function renderRevisiones(r){
   const gsb = document.getElementById("globalStabilityBox");
   if(geo.requiereGlobal){
     gsb.innerHTML = `<div class="warn-box">⚠ Se recomienda análisis de estabilidad global (método de Bishop o Janbu) con un programa especializado (Slide, SLOPE/W).<br><small>${geo.condiciones.join(" · ")}</small></div>` +
-      (geo.FS_talud_simple!==null ? `<p class="hint">FS simplificado de cuña plana (referencia, no sustituye Bishop): ${fmt(geo.FS_talud_simple,2)}</p>` : "");
+      (geo.FS_talud_simple!==null ? `<p class="hint">FS simplificado de cuña plana (referencia, no sustituye Bishop): ${fmt(geo.FS_talud_simple,3)}</p>` : "");
   }else{
     gsb.innerHTML = `<div class="info-box">No se identifican condicionantes que obliguen a un análisis de estabilidad global detallado con la información actual.</div>`;
   }
@@ -4127,10 +4637,11 @@ function renderSummaryCards(r, checks){
   const umbralVolteo = sismico ? FS.volteo_sismico : FS.volteo_estatico;
   const umbralDesliz = sismico ? FS.desliz_sismico : FS.desliz_estatico;
   const rows = [
-    { nombre:`FS Volteo (${sismico?"sísmico":"estático"})`, valor: isFinite(r.geo.FS_volteo)?fmt(r.geo.FS_volteo,2):"∞", min:`≥ ${umbralVolteo}`, ok: checks.okVolteo },
-    { nombre:`FS Deslizamiento (${sismico?"sísmico":"estático"})`, valor: isFinite(r.geo.FS_desliz)?fmt(r.geo.FS_desliz,2):"∞", min:`≥ ${umbralDesliz}`, ok: checks.okDesliz },
+    { nombre:`FS Volteo (${sismico?"sísmico":"estático"})`, valor: isFinite(r.geo.FS_volteo)?fmt(r.geo.FS_volteo,3):"∞", min:`≥ ${umbralVolteo}`, ok: checks.okVolteo },
+    { nombre:`FS Deslizamiento (${sismico?"sísmico":"estático"})`, valor: isFinite(r.geo.FS_desliz)?fmt(r.geo.FS_desliz,3):"∞", min:`≥ ${umbralDesliz}`, ok: checks.okDesliz },
     { nombre:"q máx", valor: fmtPresionSuelo(r.geo.q_max), min:`≤ ${fmtPresionSuelo(state.suelo.QADM)}`, ok: r.geo.q_max<=state.suelo.QADM },
     { nombre:"q mín", valor: fmtPresionSuelo(r.geo.q_min), min:"≥ 0", ok: r.geo.q_min>=0 },
+    { nombre:"FS Capacidad de carga (qult/q máx)", valor: isFinite(r.geo.FS_carga)?fmt(r.geo.FS_carga,3):"∞", min:`≥ ${FS.capacidad_carga}`, ok: r.geo.FS_carga>=FS.capacidad_carga },
     { nombre:"Excentricidad e", valor: fmtLong(r.geo.e,3), min:`≤ B/6 = ${fmtLong(state.geom.Bf/6,3)}`, ok: r.geo.eCategoria!=="bad", warn: r.geo.eCategoria==="warn" }
   ];
   document.getElementById("resumenGeoBody").innerHTML = rows.map(row=>{
@@ -4162,12 +4673,20 @@ function renderResultsBar(r, checks){
   const B6 = state.geom.Bf/6;
 
   const items = [
-    { t:"Volteo", v: isFinite(geo.FS_volteo) ? "FS " + fmt(geo.FS_volteo,2) : "FS ∞",
+    { t:"Volteo", v: isFinite(geo.FS_volteo) ? "FS " + fmt(geo.FS_volteo,3) : "FS ∞",
       util: isFinite(geo.FS_volteo) ? umbralVolteo/geo.FS_volteo : 0 },
-    { t:"Deslizamiento", v: isFinite(geo.FS_desliz) ? "FS " + fmt(geo.FS_desliz,2) : "FS ∞",
+    { t:"Deslizamiento", v: isFinite(geo.FS_desliz) ? "FS " + fmt(geo.FS_desliz,3) : "FS ∞",
       util: isFinite(geo.FS_desliz) ? umbralDesliz/geo.FS_desliz : 0 },
+    // Capacidad de carga ahora exige DOS criterios (q_max≤QADM Y FS_carga≥
+    // FS.capacidad_carga, ver renderRevisiones) — la utilización toma el
+    // PEOR de los dos (más alto = más cerca de fallar), para que la barra
+    // se ponga roja/ámbar si cualquiera de los dos criterios falla, no solo
+    // el de QADM como antes.
     { t:"Capacidad de carga", v: fmtPresionSuelo(geo.q_max),
-      util: state.suelo.QADM > 1e-6 ? geo.q_max/state.suelo.QADM : 0 },
+      util: Math.max(
+        state.suelo.QADM > 1e-6 ? geo.q_max/state.suelo.QADM : 0,
+        isFinite(geo.FS_carga) && geo.FS_carga > 1e-6 ? FS.capacidad_carga/geo.FS_carga : 0
+      ) },
     { t:"Excentricidad", v: fmtLong(geo.e,3),
       util: B6 > 1e-6 ? Math.abs(geo.e)/B6 : 0 },
   ];
@@ -4257,11 +4776,11 @@ function renderResultadosDetalle(r){
 
   document.getElementById("res-Mr").value = fmtMomento(geo.Mr);
   document.getElementById("res-Mov").value = fmtMomento(geo.Mov);
-  document.getElementById("res-FSvolteo").value = isFinite(geo.FS_volteo) ? fmt(geo.FS_volteo,2) : "∞";
+  document.getElementById("res-FSvolteo").value = isFinite(geo.FS_volteo) ? fmt(geo.FS_volteo,3) : "∞";
 
   document.getElementById("res-Fh").value = fmtFuerza(geo.Fh);
   document.getElementById("res-R").value = fmtFuerza(geo.R);
-  document.getElementById("res-FSdesliz").value = isFinite(geo.FS_desliz) ? fmt(geo.FS_desliz,2) : "∞";
+  document.getElementById("res-FSdesliz").value = isFinite(geo.FS_desliz) ? fmt(geo.FS_desliz,3) : "∞";
 
   document.getElementById("res-e").value = fmtLong(geo.e,3);
   document.getElementById("res-B6").value = fmtLong(state.geom.Bf/6,3);
@@ -4269,7 +4788,7 @@ function renderResultadosDetalle(r){
   document.getElementById("res-qmax").value = isFinite(geo.q_max) ? fmtPresionSuelo(geo.q_max) : "∞";
   document.getElementById("res-qmin").value = fmtPresionSuelo(geo.q_min);
   document.getElementById("res-qult").value = fmtPresionSuelo(geo.qult);
-  document.getElementById("res-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,2) : "∞";
+  document.getElementById("res-FScarga").value = isFinite(geo.FS_carga) ? fmt(geo.FS_carga,3) : "∞";
 }
 
 function syncInputsFromState(){
@@ -4410,12 +4929,25 @@ function bindAll(){
     }, {passive:false});
   });
 
-  // Presets de sobrecarga (Bloque 17)
+  // Presets de sobrecarga (Bloque 17). QS_PRESETS está SIEMPRE en la
+  // unidad base kg/m² (mismo criterio que cualquier state.*, ver
+  // "Sistema de unidades por categoría" en CLAUDE.md) — state.cargas.qs se
+  // asigna directo (ya es la unidad base). El campo #in-qs, en cambio,
+  // muestra la unidad de presión que el usuario haya elegido (puede ser
+  // kPa, Tn/m², etc.), así que su .value debe pasar por toDisplay() antes
+  // de escribirse — asignar el número crudo del preset (como se hacía
+  // antes) dejaba el campo mostrando, p.ej., "250" bajo la etiqueta "[kPa]"
+  // cuando en realidad son 250 kg/m² (≈2.45 kPa): el motor de cálculo
+  // seguía usando el valor correcto, pero el campo visible mentía sobre su
+  // propia unidad — reportado por el usuario ("revisa qs aplicada").
   const QS_PRESETS = { ligera:250, normal:500, pesada:1000 };
   document.getElementById("qsPreset").addEventListener("change", e=>{
     const v = e.target.value;
     state.cargas.qsPreset = v;
-    if(v!=="custom"){ state.cargas.qs = QS_PRESETS[v]; document.getElementById("in-qs").value = QS_PRESETS[v]; }
+    if(v!=="custom"){
+      state.cargas.qs = QS_PRESETS[v];
+      document.getElementById("in-qs").value = Math.round(toDisplay("presion", QS_PRESETS[v])*1e5)/1e5;
+    }
     scheduleRecalc();
   });
   document.getElementById("in-qs").addEventListener("input", ()=>{
@@ -4459,6 +4991,11 @@ function bindAll(){
       btn.classList.add("active");
       document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
       document.querySelector(`.ribbon-panel[data-ribbon="${btn.dataset.tab}"]`)?.classList.add("active");
+      actualizarVisorSegunPestana(btn.dataset.tab);
+      // Pa/Pp en el dibujo 2D dependen de qué pestaña está activa (ver
+      // dibujarMuro2D) — hay que volver a dibujar tras cada cambio de
+      // pestaña para que aparezcan/desaparezcan de inmediato.
+      renderAll();
     });
   });
 }
@@ -4505,11 +5042,58 @@ function initTheme(){
 /* ================================================================
    10. INICIALIZACIÓN
    ================================================================ */
+// Oculta el visor 2D/3D en la pestaña Proyecto (2026-08-15, estilo GeoCim:
+// esa pestaña es solo datos del proyecto, sin dibujo) — ver la clase
+// .sin-visor en el CSS. Se llama tanto al hacer clic en una pestaña como
+// una vez en init(), ya que "proyecto" es la pestaña activa por default al
+// cargar la página (antes de cualquier clic).
+function actualizarVisorSegunPestana(tabId){
+  document.getElementById("main-layout").classList.toggle("sin-visor", tabId === "proyecto");
+  // Cotas desactivadas POR DEFAULT al entrar a "Suelo y materiales" o a
+  // "Presiones laterales" y "Cargas" (2026-08-15/16, a pedido del usuario —
+  // el checkbox mismo debe verse desmarcado, no solo dejar de tener
+  // efecto): se apaga de verdad uiState.showCotas y se sincroniza el
+  // checkbox cada vez que se entra a esas pestañas. El usuario puede volver
+  // a marcarlo a mano mientras está ahí si lo quiere para esa visita — es
+  // un default, no un bloqueo. "Presiones laterales" se agregó porque ahí
+  // el muro se dibuja más chico (los diagramas de presión lateral
+  // separados ocupan espacio a los lados) y las cotas ya no caben con
+  // holgura; "Cargas" por el mismo motivo desde que se agregaron las
+  // flechas+cotas de brazo de los pesos propios (también agrandan el
+  // lienzo verticalmente) — las cotas generales (H/Df/tf/toe/ts/heel/Bf/tc)
+  // competían con esas etiquetas nuevas.
+  if(tabId === "suelo" || tabId === "presiones" || tabId === "cargas"){
+    uiState.showCotas = false;
+    document.getElementById("chkCotas").checked = false;
+  }
+  // El toggle "Cotas" se OCULTA por completo (no solo se apaga por
+  // default) en "Cargas" (2026-08-16, a pedido del usuario: "en cargas
+  // quita la opción de ver las cotas, en este dibujo no son necesarias")
+  // — esa pestaña ya tiene su propio sistema de cotas de brazo (uno por
+  // peso propio, siempre visible), las cotas generales (H/Df/tf/toe/ts/
+  // heel/Bf/tc) no aportan nada ahí. En el resto de pestañas el toggle
+  // sigue visible como siempre (incluidas Suelo/Presiones, donde solo se
+  // apaga por default, el usuario puede reactivarlo).
+  document.getElementById("wrapCotas").style.display = (tabId === "cargas") ? "none" : "";
+  // Cotas ACTIVADAS por default al entrar a "Geometría del muro" (mismo
+  // día, a pedido del usuario) — patrón inverso al de arriba: si el
+  // usuario las había apagado a mano en otra pestaña (o quedaron apagadas
+  // por el default de Suelo/Presiones), Geometría las vuelve a prender
+  // porque ahí sí son el foco (es la pestaña donde se ajustan las
+  // dimensiones del muro). Mismo mecanismo (estado real + checkbox
+  // sincronizado), el usuario puede volver a apagarlas a mano si quiere.
+  if(tabId === "geometria"){
+    uiState.showCotas = true;
+    document.getElementById("chkCotas").checked = true;
+  }
+}
+
 function init(){
   initTheme();
   initStratModal();
   initCalcTooltips();
   bindAll();
+  actualizarVisorSegunPestana("proyecto");
 
   const saved = loadFromStorage();
   if(saved) state = mergeState(defaultState(), migrarSueloViejo(saved));
